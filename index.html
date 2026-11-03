@@ -629,6 +629,10 @@ function update(dt){
         else ebullet(e.x,e.y,Math.cos(a)*210,Math.sin(a)*210,e.dmg);
       }}
     }
+    if(!e.boss&&e.type!=='zig'&&e.type!=='swift'){ // ships can't sail through islands either — they slide around them (aircraft fly over)
+      for(const pl of G.planets){const dx=e.x-pl.x,dy=e.y-pl.y,d=Math.hypot(dx,dy),min=islR(pl)+e.r*.9;
+        if(d<min){const nx=d?dx/d:0,ny=d?dy/d:-1;e.x+=nx*(min-d);e.y+=ny*(min-d);e.sd=e.sd||(Math.random()<.5?-1:1);e.x+=(Math.abs(dx)<4?e.sd:Math.sign(dx))*80*dt}}
+    }
     e.x=Math.max(e.r,Math.min(W-e.r,e.x));
     if(!e.dead&&Math.hypot(e.x-p.x,e.y-p.y)<e.r+12){
       hitPlayer(e.boss?30:e.dmg*1.5);
@@ -690,6 +694,8 @@ function update(dt){
       for(let i=0;i<8;i++){const a=i/8*6.283;ebullet(b.x,b.y,Math.cos(a)*140,Math.sin(a)*140,b.d*.7)}continue}}
     if(Math.hypot(b.x-p.x,b.y-p.y)<b.r+9){b.dead=true;hitPlayer(b.d)}
   }
+  // islands & rigs block every bullet and missile (friend or foe) — use them as cover
+  for(const arr of[G.bullets,G.msl,G.eb])for(const o of arr){if(o.dead)continue;for(const pl of G.planets)if(Math.hypot(o.x-pl.x,o.y-pl.y)<islR(pl)){o.dead=true;boom(o.x,o.y,3,'#f6d48f');break}}
   // pickups
   for(const k of G.pk){
     if(k.hold>0){k.hold-=dt;k.x+=k.vx*dt;k.y+=k.vy*dt;k.vx*=.96;k.vy*=.96;continue}
