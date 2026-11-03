@@ -23,6 +23,9 @@
   .pips{letter-spacing:2px;color:#4af}
   .up button{padding:6px 12px;font-size:14px;margin:0}
   .stats{color:#9ab;margin:6px 0}
+  #perks{display:flex;flex-direction:column;gap:10px;width:min(420px,100%);margin:12px 0}
+  #perks button{text-align:left;padding:14px 16px;margin:0;font-size:17px}
+  #perks small{display:block;color:#9ab;margin-top:3px;font-size:13px}
   .small{font-size:13px;color:#789;max-width:520px;text-align:center}
 </style>
 </head>
@@ -34,9 +37,10 @@
     <h1>STARFORGE</h1>
     <div style="color:#89a;letter-spacing:3px">ENDLESS VOID</div>
     <p class="small">Blast the endless swarm to harvest <span class="shard">Quantum Shards</span>.<br>When your ship is destroyed, forge your wreckage into stronger hulls, shields and weapons. Then dive back in and go further.</p>
-    <p class="small"><b>Move:</b> drag with finger/mouse (1:1) or WASD / arrows &nbsp; <b>Fire:</b> automatic — tap / click / Space repeatedly to fire faster &nbsp; <b>Dash:</b> Shift &nbsp; <b>Power-ups:</b> grab dropped orbs (S/P/R/L) for 20s of scatter shot, heavy rounds, overdrive or piercing lance</p>
+    <p class="small"><b>Move:</b> drag with finger/mouse (1:1) or WASD / arrows &nbsp; <b>Fire:</b> automatic — tap / click / Space repeatedly to fire faster &nbsp; <b>Dash:</b> DASH button / Shift &nbsp; <b>Perks:</b> pick 1 of 3 after every wave &nbsp; <b>Combos:</b> chain kills for bonus shards &nbsp; <b>Power-ups:</b> grab dropped orbs (S/P/R/L) for 20s of scatter shot, heavy rounds, overdrive or piercing lance</p>
     <button id="startBtn">Launch</button>
     <button id="shopBtn0">Hangar</button>
+    <button id="muteBtn" style="border-color:#456;background:#101a30">Sound: On</button>
   </div>
 
   <div id="shopPanel" class="panel">
@@ -47,6 +51,12 @@
       <button id="launchBtn">Launch ▶</button>
       <button id="resetBtn" style="border-color:#a44;background:#3a1220">Reset progress</button>
     </div>
+  </div>
+
+  <div id="perkPanel" class="panel">
+    <h2>CHOOSE A PERK</h2>
+    <div class="small">Perks last for this run only — build your ship as you go.</div>
+    <div id="perks"></div>
   </div>
 
   <div id="over" class="panel">
@@ -80,6 +90,7 @@ const UPG=[
   {id:'multi', name:'Spread Cannons', desc:'+1 gun barrel',           max:5,  base:80, grow:2.1,  cat:'Weapons'},
   {id:'pierce',name:'Piercing Rounds',desc:'Bolts pierce +1 enemy',   max:4,  base:70, grow:1.9,  cat:'Weapons'},
   {id:'missile',name:'Homing Missiles',desc:'Missile pods, +1 per level',max:6,base:90, grow:1.8,  cat:'Weapons'},
+  {id:'drone',name:'Wingman Drones',desc:'+1 orbiting auto-turret drone',max:3,base:120,grow:2.0,cat:'Weapons'},
   {id:'shield',name:'Deflector Shield',desc:'+20 shield capacity',    max:12, base:25, grow:1.45, cat:'Defence'},
   {id:'regen', name:'Shield Recharge',desc:'Faster shield regen',     max:8,  base:35, grow:1.55, cat:'Defence'},
   {id:'armor', name:'Reactive Armor', desc:'-6% damage taken',        max:8,  base:45, grow:1.6,  cat:'Defence'},
@@ -100,6 +111,7 @@ function buildStats(){
     barrels:1+lvl('multi'),
     pierce:lvl('pierce'),
     missiles:lvl('missile'),
+    drones:lvl('drone'),
     maxShield:20*lvl('shield'),
     shieldRegen:(3+2.5*lvl('regen')),
     armor:Math.pow(0.94,lvl('armor')),
@@ -108,30 +120,61 @@ function buildStats(){
   };
 }
 
+// ---------- Sound (tiny synth, no assets) ----------
+let AC=null;const lastS={};
+function sfx(k){
+  if(save.sound===false)return;
+  try{
+    const now=performance.now();if(now-(lastS[k]||0)<(k==='pick'?70:45))return;lastS[k]=now;
+    AC=AC||new(window.AudioContext||window.webkitAudioContext)();if(AC.state==='suspended')AC.resume();
+    const P={boom:[170,40,.2,'sawtooth',.1],pick:[700,1100,.07,'square',.025],perk:[400,900,.3,'triangle',.12],
+      dash:[320,110,.14,'sine',.1],hit:[220,60,.22,'square',.1],pu:[500,1300,.3,'triangle',.12]}[k];
+    const t=AC.currentTime,o=AC.createOscillator(),g=AC.createGain();
+    o.type=P[3];o.frequency.setValueAtTime(P[0],t);o.frequency.exponentialRampToValueAtTime(P[1],t+P[2]);
+    g.gain.setValueAtTime(P[4],t);g.gain.exponentialRampToValueAtTime(.001,t+P[2]);
+    o.connect(g);g.connect(AC.destination);o.start(t);o.stop(t+P[2]);
+  }catch(e){}
+}
+
 // ---------- Input ----------
 const keys={};let mouse={x:W/2,y:H-100,active:false,down:false};
 addEventListener('keydown',e=>{keys[e.code]=true;if(['Space','ArrowUp','ArrowDown','ArrowLeft','ArrowRight'].includes(e.code))e.preventDefault()});
 addEventListener('keyup',e=>keys[e.code]=false);
 // Drag control: the ship moves exactly as far as the finger/mouse drags (1:1). Each tap fires an extra volley.
-let drag=null,lastTap=0;
+let drag=null,dragId=null,lastTap=0,lastDir={x:0,y:-1};
+const DASH_BTN={x:W-52,y:H-62,r:34};
 function ptr(e){const r=cv.getBoundingClientRect();return{x:(e.clientX-r.left)*W/r.width,y:(e.clientY-r.top)*H/r.height}}
 function tapFire(){
   if(!G||state!=='play')return;
   const now=performance.now();if(now-lastTap<40)return;lastTap=now;
   fire();G.p.fireT=Math.max(G.p.fireT,G.S.fireDelay*(G.buf.rapid>0?0.25:0.5));
 }
+function doDash(){
+  if(!G||state!=='play')return;const p=G.p;if(p.dashCd>0)return;
+  let dx=0,dy=0;
+  if(keys.KeyA||keys.ArrowLeft)dx--;if(keys.KeyD||keys.ArrowRight)dx++;
+  if(keys.KeyW||keys.ArrowUp)dy--;if(keys.KeyS||keys.ArrowDown)dy++;
+  if(!dx&&!dy){dx=lastDir.x;dy=lastDir.y}
+  const l=Math.hypot(dx,dy)||1;
+  p.x=Math.max(16,Math.min(W-16,p.x+dx/l*140));p.y=Math.max(30,Math.min(H-24,p.y+dy/l*140));
+  p.dashCd=G.S.dashCd;p.inv=.45;sfx('dash');
+  for(let i=0;i<12;i++)G.fx.push({k:'p',x:p.x,y:p.y,vx:rand(-90,90),vy:rand(-90,90),t:0,max:.4,col:'#8cf'});
+}
 cv.addEventListener('pointerdown',e=>{
-  drag=ptr(e);mouse.down=true;try{cv.setPointerCapture(e.pointerId)}catch(_){}
-  tapFire();
+  const q=ptr(e);
+  if(state==='play'&&Math.hypot(q.x-DASH_BTN.x,q.y-DASH_BTN.y)<DASH_BTN.r+8){doDash();return}
+  if(dragId===null){drag=q;dragId=e.pointerId;try{cv.setPointerCapture(e.pointerId)}catch(_){}}
+  tapFire();   // extra fingers can keep tapping to fire while one finger drags
 });
 cv.addEventListener('pointermove',e=>{
-  if(!drag||!G||state!=='play')return;
-  const q=ptr(e),p=G.p;
-  p.x=Math.max(16,Math.min(W-16,p.x+q.x-drag.x));
-  p.y=Math.max(30,Math.min(H-24,p.y+q.y-drag.y));
+  if(e.pointerId!==dragId||!drag||!G||state!=='play')return;
+  const q=ptr(e),p=G.p,dx=q.x-drag.x,dy=q.y-drag.y,l=Math.hypot(dx,dy);
+  p.x=Math.max(16,Math.min(W-16,p.x+dx));
+  p.y=Math.max(30,Math.min(H-24,p.y+dy));
+  if(l>.8)lastDir={x:dx/l*.4+lastDir.x*.6,y:dy/l*.4+lastDir.y*.6};
   drag=q;
 });
-const endDrag=()=>{drag=null;mouse.down=false};
+const endDrag=e=>{if(e.pointerId===dragId){drag=null;dragId=null}};
 addEventListener('pointerup',endDrag);addEventListener('pointercancel',endDrag);
 addEventListener('keydown',e=>{if(e.code==='Space'&&!e.repeat)tapFire()});
 
@@ -145,18 +188,47 @@ const PU={
 };
 const PU_KEYS=Object.keys(PU);
 
+// ---------- In-run perks (this run only) ----------
+const PERKS=[
+  {name:'Overcharged Plasma',desc:'+25% weapon damage',fn:(S)=>S.damage*=1.25},
+  {name:'Hair Trigger',desc:'+25% fire rate',fn:(S)=>S.fireDelay*=0.8},
+  {name:'Extra Barrel',desc:'+1 gun barrel',ok:S=>S.barrels<8,fn:(S)=>S.barrels++},
+  {name:'Armor-Piercing',desc:'Bolts pierce +1 enemy',fn:(S)=>S.pierce++},
+  {name:'Missile Rack',desc:'+1 homing missile',ok:S=>S.missiles<10,fn:(S)=>S.missiles++},
+  {name:'Wingman Drone',desc:'+1 orbiting turret drone',ok:S=>S.drones<6,fn:(S)=>S.drones++},
+  {name:'Reinforced Hull',desc:'+40 max hull (and repair 40)',fn:(S,G)=>{S.maxHull+=40;G.p.hull+=40}},
+  {name:'Field Repair',desc:'Restore 60% of your hull',fn:(S,G)=>G.p.hull=Math.min(S.maxHull,G.p.hull+S.maxHull*.6)},
+  {name:'Shield Capacitor',desc:'+30 shield capacity',fn:(S,G)=>{S.maxShield+=30;G.p.shield+=30;S.shieldRegen=Math.max(S.shieldRegen,5)}},
+  {name:'Tractor Beam',desc:'+60% shard pickup range',fn:(S)=>S.magnet*=1.6},
+  {name:'Prospector',desc:'+25% shards earned',fn:(S)=>S.yield*=1.25},
+  {name:'Hull Siphon',desc:'Each kill repairs 1 hull',fn:(S,G)=>G.leech=(G.leech||0)+1},
+  {name:'Ablative Plating',desc:'-12% damage taken',fn:(S)=>S.armor*=0.88},
+];
+
 // ---------- Game state ----------
 let G=null,state='menu',last=0;
 function newRun(){
   const S=buildStats();
   G={S,t:0,wave:0,shards:0,kills:0,
     p:{x:W/2,y:H-90,vx:0,vy:0,hull:S.maxHull,shield:S.maxShield,fireT:0,missT:0,dashT:0,dashCd:0,inv:0,shieldT:0,novaT:S.novaCd*0.5,flash:0},
-    bullets:[],eb:[],en:[],pk:[],fx:[],msl:[],pu:[],buf:{},
+    bullets:[],eb:[],en:[],pk:[],fx:[],msl:[],pu:[],buf:{},combo:0,comboT:0,vac:false,droneT:0,leech:0,
     spawnQ:[],spawnT:0,waveClear:false,banner:{text:'',t:0},shake:0,
     stars:Array.from({length:90},()=>({x:rand(0,W),y:rand(0,H),s:rand(.3,1.4)}))};
   nextWave();
 }
 
+function openPerks(){
+  state='perk';G.vac=false;
+  const pool=PERKS.filter(p=>!p.ok||p.ok(G.S));
+  const picks=[];while(picks.length<3&&pool.length)picks.push(pool.splice(Math.floor(Math.random()*pool.length),1)[0]);
+  const box=$('perks');box.innerHTML='';
+  for(const pk of picks){
+    const b=document.createElement('button');b.innerHTML=`<b>${pk.name}</b><small>${pk.desc}</small>`;
+    b.onclick=()=>{pk.fn(G.S,G);sfx('perk');show(null);state='play';nextWave()};
+    box.appendChild(b);
+  }
+  show('perkPanel');
+}
 function enemyDef(type,w){
   const hpS=Math.pow(1.17,w-1)*(1+0.03*w), dmgS=1+0.08*(w-1);
   const D={
@@ -164,6 +236,7 @@ function enemyDef(type,w){
     zig:   {hp:24*hpS,r:13,spd:80+w*3,col:'#fa4',val:2,fire:0,dmg:12*dmgS,zig:true},
     gun:   {hp:40*hpS,r:16,spd:45+w*2,col:'#f6c',val:3,fire:Math.max(.7,2.2-w*.05),dmg:10*dmgS},
     tank:  {hp:130*hpS,r:24,spd:35+w,col:'#9a6',val:7,fire:Math.max(1,2.8-w*.04),dmg:14*dmgS,spread:true},
+    split: {hp:70*hpS,r:20,spd:50+w*2,col:'#c8f',val:4,fire:0,dmg:13*dmgS,split:true},
     swift: {hp:16*hpS,r:10,spd:170+w*4,col:'#4fd',val:2,fire:0,dmg:15*dmgS,dive:true},
   };
   return Object.assign({type},D[type]);
@@ -180,6 +253,7 @@ function nextWave(){
     if(w>=2)pool.push('zig');
     if(w>=3)pool.push('gun');
     if(w>=4)pool.push('swift');
+    if(w>=5)pool.push('split');
     if(w>=6)pool.push('tank');
     for(let i=0;i<n;i++){
       let type=pool[Math.floor(Math.random()*pool.length)];
@@ -187,7 +261,7 @@ function nextWave(){
       G.spawnQ.push({t:i*Math.max(.25,.9-w*.02),type});
     }
   }
-  G.spawnT=0;G.waveClear=false;
+  G.spawnT=0;G.waveClear=false;G.vac=false;
   G.banner={text:(w%5===0?'⚠ BOSS ':'')+'WAVE '+w,t:2.2};
 }
 function spawn(type){
@@ -198,6 +272,8 @@ function spawn(type){
     e.maxhp=hp;e.fireT=1.5;G.enemyBoss=e;
   }else{
     e=enemyDef(type,w);e.maxhp=e.hp;e.x=rand(30,W-30);e.y=-30;e.fireT=rand(.5,e.fire||1);
+    // elites: tougher, tankier, worth more, always drop a power-up
+    if(w>=3&&Math.random()<Math.min(.04+.012*w,.2)){e.elite=true;e.hp*=3;e.maxhp=e.hp;e.r*=1.25;e.val*=3;e.dmg*=1.3}
   }
   e.ph=rand(0,6.28);e.flash=0;G.en.push(e);
 }
@@ -208,7 +284,7 @@ function hitPlayer(dmg){
   dmg*=G.S.armor;p.shieldT=2.5;p.flash=.15;G.shake=Math.max(G.shake,6);
   if(p.shield>0){const a=Math.min(p.shield,dmg);p.shield-=a;dmg-=a;}
   if(dmg>0)p.hull-=dmg;
-  p.inv=.35;
+  p.inv=.35;sfx('hit');
   if(G.S.novaCd&&p.novaT<=0){p.novaT=G.S.novaCd;nova();}
   if(p.hull<=0){p.hull=0;die();}
 }
@@ -234,17 +310,20 @@ function boom(x,y,n,col){
 function damageEnemy(e,d){
   e.hp-=d;e.flash=.08;
   if(e.hp<=0&&!e.dead){
-    e.dead=true;G.kills++;
+    e.dead=true;G.kills++;sfx('boom');
+    G.combo++;G.comboT=2.5;
+    if(G.leech)G.p.hull=Math.min(G.S.maxHull,G.p.hull+G.leech);
+    if(e.type==='split')for(let i=0;i<2;i++){const c=enemyDef('drone',G.wave);c.hp*=.6;c.maxhp=c.hp;c.r=9;c.x=e.x+(i?16:-16);c.y=e.y;c.fireT=1;c.ph=rand(0,6);c.flash=0;c.val=1;c.spd*=1.4;G.en.push(c)}
     // drop chance: 18% (45% tanks), guaranteed once 8 kills pass without a drop; bosses drop two
     G.sinceDrop=(G.sinceDrop||0)+1;
     const dc=e.boss?1:(e.val>=5?0.45:0.18);
-    if(e.boss||G.sinceDrop>=8||Math.random()<dc){
+    if(e.boss||e.elite||G.sinceDrop>=8||Math.random()<dc){
       G.sinceDrop=0;
       for(let i=0;i<(e.boss?2:1);i++)G.pu.push({x:e.x+(i?30:0),y:e.y,t:PU_KEYS[Math.floor(Math.random()*PU_KEYS.length)],ph:0});
     }
     boom(e.x,e.y,e.boss?60:12,e.col);G.shake=Math.max(G.shake,e.boss?14:2);
     const n=e.boss?14:(e.val>=5?3:1);
-    for(let i=0;i<n;i++)G.pk.push({x:e.x+rand(-8,8),y:e.y+rand(-8,8),vx:rand(-60,60),vy:rand(-60,40),v:Math.max(1,e.val/n)*G.S.yield*(1+G.wave*0.05)});
+    for(let i=0;i<n;i++)G.pk.push({x:e.x+rand(-8,8),y:e.y+rand(-8,8),vx:rand(-60,60),vy:rand(-60,40),v:Math.max(1,e.val/n)*G.S.yield*(1+G.wave*0.05)*(1+Math.min(G.combo,50)*0.02)});
   }
 }
 function fire(){
@@ -280,10 +359,7 @@ function update(dt){
   if(ax||ay){const l=Math.hypot(ax,ay);p.vx=ax/l*S.speed;p.vy=ay/l*S.speed;mouse.active=false}
   else{p.vx=0;p.vy=0}
   p.dashCd-=dt;
-  if((keys.ShiftLeft||keys.ShiftRight)&&p.dashCd<=0&&(p.vx||p.vy)){
-    const l=Math.hypot(p.vx,p.vy);p.x+=p.vx/l*130;p.y+=p.vy/l*130;p.dashCd=S.dashCd;p.inv=.4;
-    for(let i=0;i<10;i++)G.fx.push({k:'p',x:p.x,y:p.y,vx:rand(-80,80),vy:rand(-80,80),t:0,max:.4,col:'#8cf'});
-  }
+  if(keys.ShiftLeft||keys.ShiftRight)doDash();
   p.x=Math.max(16,Math.min(W-16,p.x+p.vx*dt));p.y=Math.max(30,Math.min(H-24,p.y+p.vy*dt));
   p.inv-=dt;p.flash-=dt;p.novaT-=dt;
   // shield regen
@@ -291,6 +367,13 @@ function update(dt){
   // weapons
   p.fireT-=dt;
   if(p.fireT<=0){fire();p.fireT=S.fireDelay*(G.buf.rapid>0?0.5:1);}
+  if(S.drones){G.droneT-=dt;if(G.droneT<=0){G.droneT=.55;
+    for(let i=0;i<S.drones;i++){
+      const dp=dronePos(i);let tg=null,bd=1e9;
+      for(const e of G.en){if(e.dead||e.y<10)continue;const d=(e.x-dp.x)**2+(e.y-dp.y)**2;if(d<bd){bd=d;tg=e}}
+      if(tg){const a=Math.atan2(tg.y-dp.y,tg.x-dp.x);
+        G.bullets.push({x:dp.x,y:dp.y,vx:Math.cos(a)*520,vy:Math.sin(a)*520,d:S.damage*.5,pierce:0,hit:new Set(),w:3,h:9})}
+    }}}
   if(S.missiles){p.missT-=dt;if(p.missT<=0){fireMissiles();p.missT=2.2;}}
   // spawning
   G.spawnT+=dt;
@@ -300,7 +383,7 @@ function update(dt){
     G.banner={text:'WAVE CLEARED',t:1.6};
     p.hull=Math.min(S.maxHull,p.hull+S.maxHull*0.1);
   }
-  if(G.waveClear){G.waveT-=dt;if(G.waveT<=0)nextWave();}
+  if(G.waveClear){G.vac=true;G.waveT-=dt;if(G.waveT<=0&&(!G.pk.length||G.waveT<-2.5))openPerks();}
   // bullets
   for(const b of G.bullets){b.x+=b.vx*dt;b.y+=b.vy*dt;if(b.life!==undefined&&(b.life-=dt)<=0)b.dead=true}
   for(const k in G.buf)if(G.buf[k]>0)G.buf[k]-=dt;
@@ -308,7 +391,7 @@ function update(dt){
     u.ph+=dt;u.y+=55*dt;
     const dx=p.x-u.x,dy=p.y-u.y,d=Math.hypot(dx,dy);
     if(d<S.magnet*0.6){u.x+=dx/d*260*dt;u.y+=dy/d*260*dt}
-    if(d<24){u.dead=true;G.buf[u.t]=PU_TIME;G.banner={text:PU[u.t].name+'!',t:1.2};
+    if(d<24){u.dead=true;G.buf[u.t]=PU_TIME;sfx('pu');G.banner={text:PU[u.t].name+'!',t:1.2};
       G.fx.push({k:'ring',x:p.x,y:p.y,r:10,t:0,max:.5,R:70});}
     if(u.y>H+20)u.dead=true;
   }
@@ -387,10 +470,11 @@ function update(dt){
   // pickups
   for(const k of G.pk){
     const dx=p.x-k.x,dy=p.y-k.y,d=Math.hypot(dx,dy);
-    if(d<S.magnet){const f=(1-d/S.magnet)*900+200;k.vx+=dx/d*f*dt;k.vy+=dy/d*f*dt}
-    k.vx*=.97;k.vy=k.vy*.97+(d<S.magnet?0:25*dt);
+    const mag=G.vac?1500:S.magnet;
+    if(d<mag){const f=(1-d/mag)*900+200;k.vx+=dx/d*f*dt;k.vy+=dy/d*f*dt}
+    k.vx*=.97;k.vy=k.vy*.97+(d<mag?0:25*dt);
     k.x+=k.vx*dt;k.y+=k.vy*dt;
-    if(d<16){k.dead=true;G.shards+=k.v}
+    if(d<16){k.dead=true;G.shards+=k.v;sfx('pick')}
     if(k.y>H+20)k.dead=true;
   }
   for(const f of G.fx){f.t+=dt;if(f.k==='p'){f.x+=f.vx*dt;f.y+=f.vy*dt}}
@@ -402,9 +486,11 @@ function update(dt){
   G.pk=G.pk.filter(k=>!k.dead);
   G.pu=G.pu.filter(u=>!u.dead);
   G.fx=G.fx.filter(f=>f.t<f.max);
+  G.comboT-=dt;if(G.comboT<=0)G.combo=0;
   G.banner.t-=dt;G.shake=Math.max(0,G.shake-30*dt);
   for(const s of G.stars){s.y+=s.s*60*dt;if(s.y>H){s.y=0;s.x=rand(0,W)}}
 }
+function dronePos(i){const n=G.S.drones,a=G.t*2.2+i*6.283/n;return{x:G.p.x+Math.cos(a)*38,y:G.p.y+Math.sin(a)*38}}
 function ebullet(x,y,vx,vy,d){G.eb.push({x,y,vx,vy,d,r:5})}
 
 // ---------- Render ----------
@@ -440,8 +526,10 @@ function draw(){
     else if(e.type==='tank'){ctx.rect(-e.r,-e.r*.8,e.r*2,e.r*1.6)}
     else if(e.type==='swift'){ctx.moveTo(0,e.r);ctx.lineTo(e.r,-e.r);ctx.lineTo(-e.r,-e.r)}
     else if(e.type==='gun'){ctx.moveTo(0,e.r);ctx.lineTo(e.r,-e.r*.6);ctx.lineTo(0,-e.r*.2);ctx.lineTo(-e.r,-e.r*.6)}
+    else if(e.type==='split'){for(let i=0;i<6;i++){const a=i/6*6.283+e.ph;ctx.lineTo(Math.cos(a)*e.r,Math.sin(a)*e.r)}}
     else ctx.arc(0,0,e.r,0,6.283);
     ctx.closePath();ctx.fill();
+    if(e.elite){ctx.strokeStyle='#fd4';ctx.lineWidth=3;ctx.shadowColor='#fd4';ctx.shadowBlur=14;ctx.stroke()}
     if(e.hp<e.maxhp&&!e.boss){ctx.shadowBlur=0;ctx.fillStyle='#000a';ctx.fillRect(-e.r,-e.r-8,e.r*2,3);
       ctx.fillStyle='#6f6';ctx.fillRect(-e.r,-e.r-8,e.r*2*e.hp/e.maxhp,3)}
     ctx.restore();
@@ -464,6 +552,8 @@ function draw(){
       ctx.beginPath();ctx.arc(p.x,p.y,24,0,6.283);ctx.stroke()}
     ctx.restore();
   }
+  if(state==='play'&&G.S.drones){ctx.fillStyle='#8ff';ctx.shadowColor='#4cf';ctx.shadowBlur=10;
+    for(let i=0;i<G.S.drones;i++){const d=dronePos(i);ctx.beginPath();ctx.arc(d.x,d.y,5,0,6.283);ctx.fill()}ctx.shadowBlur=0}
   // fx
   for(const f of G.fx){
     const a=1-f.t/f.max;
@@ -483,8 +573,15 @@ function draw(){
   for(const k of PU_KEYS){const t=G.buf[k];if(t>0){
     const d=PU[k];ctx.globalAlpha=t<3&&Math.floor(t*6)%2?.4:1;
     bar(12,by,200,12,t/PU_TIME,d.col,d.name+' '+Math.ceil(t)+'s');ctx.globalAlpha=1;by+=16}}
-  if(p.dashCd>0){ctx.fillStyle='#678';ctx.fillText('Dash '+p.dashCd.toFixed(1)+'s',12,H-12)}else{ctx.fillStyle='#8cf';ctx.fillText('Dash ready [Shift]',12,H-12)}
-  if(S.novaCd){ctx.fillStyle=p.novaT<=0?'#fd6':'#678';ctx.fillText(p.novaT<=0?'Nova armed':'Nova '+Math.ceil(p.novaT)+'s',140,H-12)}
+  if(G.combo>=3){ctx.textAlign='right';ctx.globalAlpha=Math.min(1,G.comboT+.3);ctx.fillStyle='#fd6';ctx.font='bold 15px system-ui';
+    ctx.fillText('COMBO ×'+G.combo+'  (+'+Math.round(Math.min(G.combo,50)*2)+'% shards)',W-12,64);ctx.globalAlpha=1;ctx.textAlign='left'}
+  if(state==='play'){ctx.save();ctx.translate(DASH_BTN.x,DASH_BTN.y);ctx.globalAlpha=.6;
+    ctx.fillStyle='#0a1a3a';ctx.beginPath();ctx.arc(0,0,DASH_BTN.r,0,6.283);ctx.fill();
+    ctx.strokeStyle=p.dashCd>0?'#456':'#6cf';ctx.lineWidth=3;ctx.beginPath();
+    if(p.dashCd>0)ctx.arc(0,0,DASH_BTN.r-2,-1.5708,-1.5708+6.283*(1-p.dashCd/S.dashCd));else ctx.arc(0,0,DASH_BTN.r-2,0,6.283);
+    ctx.stroke();ctx.fillStyle=p.dashCd>0?'#789':'#cfe';ctx.font='bold 13px system-ui';ctx.textAlign='center';ctx.textBaseline='middle';
+    ctx.fillText('DASH',0,1);ctx.restore();ctx.textBaseline='alphabetic'}
+  if(S.novaCd){ctx.fillStyle=p.novaT<=0?'#fd6':'#678';ctx.fillText(p.novaT<=0?'Nova armed':'Nova '+Math.ceil(p.novaT)+'s',12,H-12)}
   if(G.enemyBoss&&G.en.includes(G.enemyBoss)){const b=G.enemyBoss;bar(W/2-150,H-40,300,10,Math.max(0,b.hp/b.maxhp),'#f3f','BOSS')}
   if(G.banner.t>0){ctx.globalAlpha=Math.min(1,G.banner.t);ctx.fillStyle='#fff';ctx.font='bold 34px system-ui';ctx.textAlign='center';
     ctx.fillText(G.banner.text,W/2,H/2-60);ctx.globalAlpha=1;ctx.textAlign='left'}
@@ -527,8 +624,10 @@ function launch(){show(null);newRun();state='play'}
 $('startBtn').onclick=launch;$('shopBtn0').onclick=openShop;
 $('launchBtn').onclick=launch;$('toShop').onclick=openShop;
 $('resetBtn').onclick=()=>{if(confirm('Erase all progress?')){save={shards:0,best:0,levels:{},runs:0};persist();renderShop()}};
-addEventListener('keydown',e=>{if(e.code==='Enter'&&state!=='play'&&state!=='over'&&!$('shopPanel').classList.contains('show'))launch()});
+addEventListener('keydown',e=>{if(e.code==='Enter'&&state==='menu')launch()});
 
+const muteLabel=()=>$('muteBtn').textContent='Sound: '+(save.sound===false?'Off':'On');
+$('muteBtn').onclick=()=>{save.sound=save.sound===false;persist();muteLabel();sfx('perk')};muteLabel();
 requestAnimationFrame(frame);
 })();
 </script>
