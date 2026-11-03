@@ -27,7 +27,9 @@
   .up{border:3px solid var(--ink);border-radius:18px;padding:10px;background:#1f6fb8;box-shadow:0 5px 0 var(--ink);text-align:left}
   .up b{color:#ffe45c;font-size:18px}
   .up small{display:block;color:#e4d8ff;margin:3px 0 6px;font-size:14px}
-  .pips{letter-spacing:2px;color:#8ff0ff}
+  .pips{color:#8ff0ff;font-weight:700;font-size:14px}
+  .pbar{height:8px;border:2px solid var(--ink);border-radius:6px;background:#0d3566;margin:4px 0 8px;overflow:hidden}
+  .pbar i{display:block;height:100%;background:#8ff0ff}
   .up button{padding:6px 14px;font-size:15px;margin:0;box-shadow:0 3px 0 var(--ink)}
   .stats{color:#e4d8ff;margin:6px 0;font-size:17px}
   #adCard{position:relative;width:min(380px,100%);box-sizing:border-box;background:#fff8e6;color:#1b1340;border:4px solid var(--ink);border-radius:20px;padding:20px 16px 14px;box-shadow:0 6px 0 var(--ink)}
@@ -127,50 +129,51 @@ const persist=()=>{try{localStorage.setItem(SAVE,JSON.stringify(save))}catch(e){
 
 // ---------- Upgrades ----------
 const UPG=[
-  {id:'hull',  name:'Double Hull',     desc:'+25 max hull',            max:12, base:20, grow:1.45, cat:'Ship'},
-  {id:'engine',name:'Diesel Engines',  desc:'+8% move speed',          max:8,  base:25, grow:1.5,  cat:'Ship'},
-  {id:'dash',  name:'Turbo Boost',    desc:'Shorter turbo cooldown',   max:6,  base:40, grow:1.6,  cat:'Ship'},
-  {id:'magnet',name:'Barrel Net',     desc:'+pickup range',           max:6,  base:30, grow:1.5,  cat:'Ship'},
-  {id:'damage',name:'Hot Rounds',     desc:'+20% gun damage',      max:15, base:25, grow:1.5,  cat:'Weapons'},
-  {id:'rate',  name:'Rapid Loader',   desc:'+12% fire rate',          max:10, base:30, grow:1.5,  cat:'Weapons'},
-  {id:'multi', name:'Extra Gun Mounts', desc:'+1 gun barrel',           max:5,  base:80, grow:2.1,  cat:'Weapons'},
-  {id:'pierce',name:'Armor-Piercing Rounds',desc:'Rounds pierce +1 target',   max:4,  base:70, grow:1.9,  cat:'Weapons'},
-  {id:'missile',name:'Interceptor Missiles',desc:'Homing interceptors, +1 per level',max:6,base:90, grow:1.8,  cat:'Weapons'},
-  {id:'drone',name:'Escort Tugboats',desc:'+1 escort tug that guards and shoots',max:3,base:120,grow:2.0,cat:'Weapons'},
-  {id:'smoke',name:'Smoke Screen',desc:'ACTIVE (key 1): a cloud that eats every enemy projectile around you for 6s. Higher levels: bigger, longer, faster recharge',max:4,base:140,grow:1.8,cat:'Abilities'},
-  {id:'salvo',name:'Missile Salvo',desc:'ACTIVE (key 2): launch a ring of homing interceptors at once. Higher levels: more missiles, faster recharge',max:4,base:160,grow:1.8,cat:'Abilities'},
-  {id:'repair',name:'Emergency Repairs',desc:'ACTIVE (key 3): repair about a third of your hull. Higher levels: heals more, faster recharge',max:4,base:180,grow:1.8,cat:'Abilities'},
-  {id:'shield',name:'Blast Shield',desc:'+20 shield capacity',    max:12, base:25, grow:1.45, cat:'Defence'},
-  {id:'regen', name:'Damage Control',desc:'Faster shield repair',     max:8,  base:35, grow:1.55, cat:'Defence'},
-  {id:'armor', name:'Reactive Armor', desc:'-6% damage taken',        max:8,  base:45, grow:1.6,  cat:'Defence'},
-  {id:'nova',  name:'Flare Launcher',  desc:'Auto-fires flares when hit, clearing bullets (cooldown shrinks)',max:5,base:100,grow:1.9,cat:'Defence'},
-  {id:'range',name:'Radar Range',desc:'+25 gun range (guns only hit what is close)',max:6,base:40,grow:1.5,cat:'Weapons'},
-  {id:'lucky',name:'Lucky Charm',desc:'More power-up drops (+5% chance, shorter pity)',max:3,base:80,grow:1.9,cat:'Economy'},
-  {id:'extender',name:'Extended Ammo Belts',desc:'Power-ups last +4s longer',max:5,base:60,grow:1.6,cat:'Weapons'},
-  {id:'revive',name:'Insurance Payout',desc:'Rebuilt once per level with half hull',max:2,base:200,grow:2.6,cat:'Defence'},
-  {id:'yield', name:'Oil Contracts',   desc:'+15% barrels earned',      max:10, base:35, grow:1.55, cat:'Economy'},
+  {id:'hull',  name:'Double Hull',     desc:'+12 max hull per level',            max:24, base:20, grow:1.2,  cat:'Ship'},
+  {id:'engine',name:'Diesel Engines',  desc:'+4% move speed per level',          max:16, base:25, grow:1.22, cat:'Ship'},
+  {id:'dash',  name:'Turbo Boost',     desc:'Slightly shorter turbo cooldown',   max:12, base:40, grow:1.26, cat:'Ship'},
+  {id:'magnet',name:'Barrel Net',      desc:'+22 barrel pickup range per level', max:12, base:30, grow:1.22, cat:'Ship'},
+  {id:'damage',name:'Hot Rounds',      desc:'+10% gun damage per level',         max:30, base:25, grow:1.22, cat:'Weapons'},
+  {id:'rate',  name:'Rapid Loader',    desc:'+6% fire rate per level',           max:20, base:30, grow:1.22, cat:'Weapons'},
+  {id:'multi', name:'Extra Gun Mounts',desc:'+1 gun barrel every 2 levels',      max:10, base:80, grow:1.4,  cat:'Weapons'},
+  {id:'pierce',name:'Armor-Piercing Rounds',desc:'Rounds pierce +1 target every 2 levels',max:8,base:70,grow:1.38,cat:'Weapons'},
+  {id:'missile',name:'Interceptor Missiles',desc:'+1 homing interceptor every 2 levels',max:12,base:90,grow:1.34,cat:'Weapons'},
+  {id:'drone', name:'Escort Tugboats', desc:'+1 escort tug every 2 levels',      max:6,  base:120,grow:1.41, cat:'Weapons'},
+  {id:'range', name:'Radar Range',     desc:'+12 gun range per level',           max:12, base:40, grow:1.22, cat:'Weapons'},
+  {id:'extender',name:'Extended Ammo Belts',desc:'Power-ups last +2s longer per level',max:10,base:60,grow:1.27,cat:'Weapons'},
+  {id:'shield',name:'Blast Shield',    desc:'+10 shield capacity per level',     max:24, base:25, grow:1.2,  cat:'Defence'},
+  {id:'regen', name:'Damage Control',  desc:'Slightly faster shield repair',     max:16, base:35, grow:1.25, cat:'Defence'},
+  {id:'armor', name:'Reactive Armor',  desc:'-3% damage taken per level',        max:16, base:45, grow:1.27, cat:'Defence'},
+  {id:'nova',  name:'Flare Launcher',  desc:'Auto-fires flares when hit, clearing bullets (cooldown shrinks a little per level)',max:10,base:100,grow:1.38,cat:'Defence'},
+  {id:'revive',name:'Insurance Payout',desc:'Rebuilt once with half hull, +1 more every 2 levels',max:4,base:200,grow:1.6,cat:'Defence'},
+  {id:'smoke', name:'Smoke Screen',    desc:'ACTIVE (key 1): a cloud that eats every enemy projectile around you. Levels: slightly bigger, longer, faster recharge',max:8,base:140,grow:1.34,cat:'Abilities'},
+  {id:'salvo', name:'Missile Salvo',   desc:'ACTIVE (key 2): launch a ring of homing interceptors. Levels: +1 missile, faster recharge',max:8,base:160,grow:1.34,cat:'Abilities'},
+  {id:'repair',name:'Emergency Repairs',desc:'ACTIVE (key 3): repair part of your hull. Levels: heals a bit more, faster recharge',max:8,base:180,grow:1.34,cat:'Abilities'},
+  {id:'lucky', name:'Lucky Charm',     desc:'+2.5% power-up drop chance per level, and a shorter bad-luck streak every 2 levels',max:6,base:80,grow:1.38,cat:'Economy'},
+  {id:'yield', name:'Oil Contracts',   desc:'+7.5% barrels earned per level',    max:20, base:35, grow:1.25, cat:'Economy'},
 ];
 const lvl=id=>save.levels[id]||0;
 const cost=u=>Math.round(u.base*Math.pow(u.grow,lvl(u.id)));
 
 function buildStats(){
+  const L=lvl;
   return {
-    maxHull:100+25*lvl('hull'),
-    speed:260*(1+0.08*lvl('engine')),
-    dashCd:3.0-0.35*lvl('dash'),
-    magnet:70+45*lvl('magnet'),
-    damage:8*(1+0.2*lvl('damage')),
-    fireDelay:0.30/(1+0.12*lvl('rate')),
-    barrels:1+lvl('multi'),
-    pierce:lvl('pierce'),
-    missiles:lvl('missile'),
-    drones:lvl('drone'),smoke:lvl('smoke'),salvo:lvl('salvo'),repair:lvl('repair'),
-    range:190+25*lvl('range'),luck:lvl('lucky'),puTime:20+4*lvl('extender'),revives:lvl('revive'),
-    maxShield:20*lvl('shield'),
-    shieldRegen:(3+2.5*lvl('regen')),
-    armor:Math.pow(0.94,lvl('armor')),
-    novaCd:lvl('nova')?(22-3*lvl('nova')):0,
-    yield:1+0.15*lvl('yield'),
+    maxHull:100+12*L('hull'),
+    speed:260*(1+0.04*L('engine')),
+    dashCd:3.0-0.18*L('dash'),
+    magnet:70+22*L('magnet'),
+    damage:8*(1+0.10*L('damage')),
+    fireDelay:0.30/(1+0.06*L('rate')),
+    barrels:1+Math.floor(L('multi')/2),
+    pierce:Math.floor(L('pierce')/2),
+    missiles:Math.ceil(L('missile')/2),
+    drones:Math.ceil(L('drone')/2),smoke:L('smoke'),salvo:L('salvo'),repair:L('repair'),
+    range:190+12*L('range'),luck:L('lucky'),puTime:20+2*L('extender'),revives:Math.ceil(L('revive')/2),
+    maxShield:10*L('shield'),
+    shieldRegen:(3+1.25*L('regen')),
+    armor:Math.pow(0.97,L('armor')),
+    novaCd:L('nova')?(22-1.5*L('nova')):0,
+    yield:1+0.075*L('yield'),
   };
 }
 
@@ -280,9 +283,9 @@ function useAbility(i){
   if(!G||state!=='play')return;
   const S=G.S,p=G.p,id=ABIL[i].id,L=S[id];if(!L||p.abCd[id]>0)return;
   let cd;
-  if(id==='smoke'){G.smoke={t:0,max:6+.5*(L-1),r:85+10*(L-1)};cd=Math.max(12,28-3*(L-1));sfx('dash')}
-  else if(id==='salvo'){const n=6+2*L;for(let k=0;k<n;k++){const a=k/n*TAU;G.msl.push({x:p.x,y:p.y-10,vx:Math.cos(a)*150,vy:Math.sin(a)*150,d:S.damage*2.2,t:0})}cd=Math.max(10,26-2.5*(L-1));sfx('nova')}
-  else{p.hull=Math.min(S.maxHull,p.hull+S.maxHull*(.3+.05*L));cd=Math.max(20,50-5*(L-1));
+  if(id==='smoke'){G.smoke={t:0,max:6+.25*(L-1),r:85+5*(L-1)};cd=Math.max(10,28-1.5*(L-1));sfx('dash')}
+  else if(id==='salvo'){const n=6+L;for(let k=0;k<n;k++){const a=k/n*TAU;G.msl.push({x:p.x,y:p.y-10,vx:Math.cos(a)*150,vy:Math.sin(a)*150,d:S.damage*2.2,t:0})}cd=Math.max(8,26-1.25*(L-1));sfx('nova')}
+  else{p.hull=Math.min(S.maxHull,p.hull+S.maxHull*(.28+.025*L));cd=Math.max(15,50-2.5*(L-1));
     G.fx.push({k:'ring',x:p.x,y:p.y,r:10,t:0,max:.6,R:80,col:'#4fcf6b'});G.txt.push({x:p.x,y:p.y-40,t:0,w:'+REPAIRED!',c:'#7be06b',rot:0,big:false});sfx('perk')}
   p.abCd[id]=cd;p.abMax[id]=cd;
 }
@@ -344,9 +347,9 @@ const PERKS=[
   {name:'Oil Contract',desc:'+25% barrels earned',fn:(S)=>S.yield*=1.25},
   {name:'Salvage Crew',desc:'Each kill repairs 1 hull',fn:(S,G)=>G.leech=(G.leech||0)+1},
   {name:'Reactive Armor',desc:'-12% damage taken',fn:(S)=>S.armor*=0.88},
-  {name:'Smoke Generator',desc:'ABILITY: smoke screen that blocks projectiles (tap ☁️ / key 1)',ok:S=>S.smoke<4,fn:(S)=>S.smoke++},
-  {name:'Salvo Racks',desc:'ABILITY: fire a ring of interceptors (tap 🚀 / key 2)',ok:S=>S.salvo<4,fn:(S)=>S.salvo++},
-  {name:'Repair Bay',desc:'ABILITY: repair part of your hull (tap 🔧 / key 3)',ok:S=>S.repair<4,fn:(S)=>S.repair++},
+  {name:'Smoke Generator',desc:'ABILITY: smoke screen that blocks projectiles (tap ☁️ / key 1)',ok:S=>S.smoke<8,fn:(S)=>S.smoke++},
+  {name:'Salvo Racks',desc:'ABILITY: fire a ring of interceptors (tap 🚀 / key 2)',ok:S=>S.salvo<8,fn:(S)=>S.salvo++},
+  {name:'Repair Bay',desc:'ABILITY: repair part of your hull (tap 🔧 / key 3)',ok:S=>S.repair<8,fn:(S)=>S.repair++},
 ];
 
 // ---------- Breaking-news popups: the Cheeto-in-Chief stirs up the US fleet ----------
@@ -660,8 +663,8 @@ function damageEnemy(e,d){
     if(e.type==='split')for(let i=0;i<2;i++){const c=enemyDef('drone',G.wave);c.hp*=.6;c.maxhp=c.hp;c.r=9;c.col=e.col;c.fac=e.fac;c.x=e.x+(i?16:-16);c.y=e.y;c.fireT=1;c.ph=rand(0,6);c.flash=0;c.val=1;c.spd*=1.4;G.en.push(c)}
     // drop chance: 18% (45% tanks), guaranteed once 8 kills pass without a drop; bosses drop two
     G.sinceDrop=(G.sinceDrop||0)+1;
-    const dc=e.boss?1:(e.val>=5?0.45:0.18)+0.05*G.S.luck;
-    if(e.boss||e.elite||G.sinceDrop>=8-G.S.luck||Math.random()<dc){
+    const dc=e.boss?1:(e.val>=5?0.45:0.18)+0.025*G.S.luck;
+    if(e.boss||e.elite||G.sinceDrop>=8-Math.floor(G.S.luck/2)||Math.random()<dc){
       G.sinceDrop=0;
       for(let i=0;i<(e.boss?2:1);i++)G.pu.push({x:e.x+(i?30:0),y:e.y,t:PU_KEYS[Math.floor(Math.random()*PU_KEYS.length)],ph:0});
     }
@@ -1338,7 +1341,7 @@ function renderShop(){
     const l=lvl(u.id),maxed=l>=u.max,c=cost(u);
     const d=document.createElement('div');d.className='up';
     d.innerHTML=`<b>${u.name}</b> <small style="display:inline">[${u.cat}]</small><small>${u.desc}</small>
-      <div class="pips">${'●'.repeat(l)}${'○'.repeat(u.max-l)}</div>`;
+      <div class="pips">Lv ${l} / ${u.max}</div><div class="pbar"><i style="width:${l/u.max*100}%"></i></div>`;
     const b=document.createElement('button');
     b.textContent=maxed?'MAX':`Upgrade — 🛢 ${c}`;
     b.disabled=maxed||save.shards<c;
