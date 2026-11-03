@@ -46,7 +46,7 @@
     <h1>🛢️ TANKER RUN</h1>
     <div class="sub">STRAIT OF HORMUZ</div>
     <p class="small">You're a big, slow oil tanker trying to sail through the Strait of Hormuz — and Iranian and US ships and planes are firing missiles and bullets at you from every side!<br>Your point-defense guns are weak, but they can <b>shoot incoming missiles and bullets out of the air</b>. Scoop up <span class="shard">Barrels</span> of crude from the wreckage. When you're sunk, spend them at the shipyard on a tougher tanker, then sail again to get further.</p>
-    <p class="small"><b>Steer:</b> drag with finger/mouse (1:1) or WASD / arrows &nbsp; <b>Guns:</b> automatic — tap / click / Space repeatedly to shoot faster &nbsp; <b>Turbo:</b> TURBO button / Shift &nbsp; <b>Perks:</b> pick 1 of 3 after every leg &nbsp; <b>Checkpoints:</b> every 15 legs you reach a new stretch of sea — enemies get 2× tougher, and you can restart from there after you sink &nbsp; <b>Combos:</b> chain kills for bonus barrels &nbsp; <b>Power-ups:</b> grab floating orbs (S/P/R/L) for timed ammo upgrades</p>
+    <p class="small"><b>Steer:</b> drag with finger/mouse (1:1) or WASD / arrows &nbsp; <b>Guns:</b> auto-aim at the nearest missile, bullet or ship inside your dotted range ring (short range!) — tap / click / Space repeatedly to shoot faster &nbsp; <b>Turbo:</b> TURBO button / Shift &nbsp; <b>Perks:</b> pick 1 of 3 after every leg &nbsp; <b>Checkpoints:</b> every 15 legs you reach a new stretch of sea — enemies get 2× tougher, and you can restart from there after you sink &nbsp; <b>Combos:</b> chain kills for bonus barrels &nbsp; <b>Power-ups:</b> grab floating orbs (S/P/R/L) for timed ammo upgrades</p>
     <button id="startBtn">Set Sail ⚓</button>
     <button id="tierBtn" class="alt" style="display:none"></button>
     <button id="shopBtn0" class="alt">Shipyard</button>
@@ -106,6 +106,7 @@ const UPG=[
   {id:'regen', name:'Damage Control',desc:'Faster shield repair',     max:8,  base:35, grow:1.55, cat:'Defence'},
   {id:'armor', name:'Reactive Armor', desc:'-6% damage taken',        max:8,  base:45, grow:1.6,  cat:'Defence'},
   {id:'nova',  name:'Flare Launcher',  desc:'Auto-fires flares when hit, clearing bullets (cooldown shrinks)',max:5,base:100,grow:1.9,cat:'Defence'},
+  {id:'range',name:'Radar Range',desc:'+25 gun range (guns only hit what is close)',max:6,base:40,grow:1.5,cat:'Weapons'},
   {id:'lucky',name:'Lucky Charm',desc:'More power-up drops (+5% chance, shorter pity)',max:3,base:80,grow:1.9,cat:'Economy'},
   {id:'extender',name:'Extended Ammo Belts',desc:'Power-ups last +4s longer',max:5,base:60,grow:1.6,cat:'Weapons'},
   {id:'revive',name:'Insurance Payout',desc:'Rebuilt once per level with half hull',max:2,base:200,grow:2.6,cat:'Defence'},
@@ -126,7 +127,7 @@ function buildStats(){
     pierce:lvl('pierce'),
     missiles:lvl('missile'),
     drones:lvl('drone'),
-    luck:lvl('lucky'),puTime:20+4*lvl('extender'),revives:lvl('revive'),
+    range:190+25*lvl('range'),luck:lvl('lucky'),puTime:20+4*lvl('extender'),revives:lvl('revive'),
     maxShield:20*lvl('shield'),
     shieldRegen:(3+2.5*lvl('regen')),
     armor:Math.pow(0.94,lvl('armor')),
@@ -206,7 +207,7 @@ function ptr(e){const r=cv.getBoundingClientRect();return{x:(e.clientX-r.left)*W
 function tapFire(){
   if(!G||state!=='play')return;
   const now=performance.now();if(now-lastTap<40)return;lastTap=now;
-  fire();G.p.fireT=Math.max(G.p.fireT,G.S.fireDelay*(G.buf.rapid>0?0.25:0.5));
+  if(fire())G.p.fireT=Math.max(G.p.fireT,G.S.fireDelay*(G.buf.rapid>0?0.25:0.5));
 }
 function doDash(){
   if(!G||state!=='play')return;const p=G.p;if(p.dashCd>0)return;
@@ -250,6 +251,7 @@ const PU_KEYS=Object.keys(PU);
 // ---------- In-run perks (this run only) ----------
 const PERKS=[
   {name:'Hot Rounds',desc:'+25% weapon damage',fn:(S)=>S.damage*=1.25},
+  {name:'Long-Range Radar',desc:'+35 gun range',fn:(S)=>S.range+=35},
   {name:'Quick Loader',desc:'+25% fire rate',fn:(S)=>S.fireDelay*=0.8},
   {name:'Extra Gun Mount',desc:'+1 gun barrel',ok:S=>S.barrels<8,fn:(S)=>S.barrels++},
   {name:'Armor-Piercing',desc:'Bolts pierce +1 enemy',fn:(S)=>S.pierce++},
@@ -271,7 +273,7 @@ function newRun(){
   const st=Math.min(save.startTier||0,save.maxTier||0);
   G={S,t:0,wave:SECTOR*st,shards:0,kills:0,
     p:{x:W/2,y:H-90,vx:0,vy:0,hull:S.maxHull,shield:S.maxShield,fireT:0,missT:0,dashT:0,dashCd:0,inv:0,shieldT:0,novaT:S.novaCd*0.5,flash:0},
-    bullets:[],eb:[],en:[],pk:[],fx:[],msl:[],pu:[],buf:{},txt:[],planets:[{x:90,y:150,r:42,v:14},{x:360,y:470,r:28,v:14},{x:210,y:700,r:34,v:14,ring:true}],combo:0,comboT:0,vac:false,droneT:0,leech:0,
+    bullets:[],eb:[],en:[],pk:[],fx:[],msl:[],pu:[],buf:{},spills:[],leakT:0,txt:[],planets:[{x:90,y:150,r:42,v:14},{x:360,y:470,r:28,v:14},{x:210,y:700,r:34,v:14,ring:true}],combo:0,comboT:0,vac:false,droneT:0,leech:0,
     spawnQ:[],spawnT:0,waveClear:false,banner:{text:'',t:0},shake:0,
     stars:Array.from({length:90},()=>({x:rand(0,W),y:rand(0,H),s:rand(.3,1.4)}))};
   // diving into a deeper sector gives free random perks to help you survive
@@ -327,18 +329,18 @@ function drawWormhole(){ // checkpoint: sail into the next stretch of sea
 }
 function enemyDef(type,w){
   const T=tierOf(w);   // each wormhole sector doubles enemy health and adds 50% damage
-  const hpS=Math.pow(1.16,w-1)*(1+0.04*w)*1.25*Math.pow(2,T), dmgS=(1+0.08*(w-1))*(1+.5*T);
+  const hpS=Math.pow(1.19,w-1)*(1+0.05*w)*1.8*Math.pow(2,T), dmgS=(1+0.1*(w-1))*1.25*(1+.6*T);
   const D={
-    drone: {hp:18*hpS,r:13,spd:70+w*3,col:'#f66',val:1,fire:w>=3?Math.max(2,4.5-w*.1):0,dmg:11*dmgS},
-    zig:   {hp:24*hpS,r:13,spd:80+w*3,col:'#fa4',val:2,fire:w>=4?Math.max(1.8,4-w*.08):0,dmg:11*dmgS,zig:true},
-    gun:   {hp:40*hpS,r:16,spd:45+w*2,col:'#f6c',val:3,fire:Math.max(.55,1.9-w*.05),dmg:10*dmgS},
-    tank:  {hp:130*hpS,r:24,spd:35+w,col:'#9a6',val:7,fire:Math.max(.8,2.4-w*.04),dmg:14*dmgS,spread:true},
+    drone: {hp:18*hpS,r:13,spd:70+w*3,col:'#f66',val:1,fire:w>=2?Math.max(1.3,3.2-w*.1):0,dmg:11*dmgS},
+    zig:   {hp:24*hpS,r:13,spd:80+w*3,col:'#fa4',val:2,fire:w>=3?Math.max(1.2,3-w*.08):0,dmg:11*dmgS,zig:true},
+    gun:   {hp:40*hpS,r:16,spd:45+w*2,col:'#f6c',val:3,fire:Math.max(.42,1.5-w*.05),dmg:10*dmgS},
+    tank:  {hp:130*hpS,r:24,spd:35+w,col:'#9a6',val:7,fire:Math.max(.65,2-w*.04),dmg:14*dmgS,spread:true},
     split: {hp:70*hpS,r:20,spd:50+w*2,col:'#c8f',val:4,fire:0,dmg:13*dmgS,split:true},
-    sniper:{hp:34*hpS,r:14,spd:60,col:'#6bd3ff',val:4,fire:0,sfire:Math.max(1.6,3.2-w*.05),dmg:18*dmgS,sniper:true},
-    layer: {hp:70*hpS,r:18,spd:45,col:'#ffd23f',val:5,fire:0,lfire:Math.max(1.5,2.8-w*.04),dmg:12*dmgS,layer:true},
+    sniper:{hp:34*hpS,r:14,spd:60,col:'#6bd3ff',val:4,fire:0,sfire:Math.max(1.1,2.5-w*.05),dmg:18*dmgS,sniper:true},
+    layer: {hp:70*hpS,r:18,spd:45,col:'#ffd23f',val:5,fire:0,lfire:Math.max(1.1,2.2-w*.04),dmg:12*dmgS,layer:true},
     healer:{hp:50*hpS,r:16,spd:40,col:'#e8f0ff',val:5,fire:0,dmg:10*dmgS,healer:true},
     rock:  {hp:60*hpS,r:21,spd:80+w*2,col:'#b78b57',val:2,fire:0,dmg:16*dmgS,rock:true},
-    swift: {hp:16*hpS,r:10,spd:170+w*4,col:'#4fd',val:2,fire:w>=4?Math.max(1.4,3-w*.05):0,dmg:13*dmgS,dive:true},
+    swift: {hp:16*hpS,r:10,spd:170+w*4,col:'#4fd',val:2,fire:w>=3?Math.max(.9,2.4-w*.05):0,dmg:13*dmgS,dive:true},
   };
   const o=Object.assign({type},D[type]);
   o.spd*=1+.1*T;for(const k of['fire','sfire','lfire'])if(o[k])o[k]*=Math.pow(.9,T);
@@ -351,7 +353,7 @@ function nextWave(){
     G.spawnQ.push({t:0,type:'boss'});
     for(let i=0;i<Math.min(4+w,24);i++)G.spawnQ.push({t:1+i*.8,type:i%4===3?'gun':'drone'});
   }else{
-    const n=Math.min(110,Math.round((8+w*3.2)*(1+.3*tierOf(w))));
+    const n=Math.min(130,Math.round((10+w*4)*(1+.35*tierOf(w))));
     const pool=['drone'];
     if(w>=2)pool.push('zig');
     if(w>=3)pool.push('gun');
@@ -364,7 +366,7 @@ function nextWave(){
     for(let i=0;i<n;i++){
       let type=pool[Math.floor(Math.random()*pool.length)];
       if(w>=6&&i%8===7)type='tank';
-      G.spawnQ.push({t:i*Math.max(.17,.7-w*.02),type});
+      G.spawnQ.push({t:i*Math.max(.14,.55-w*.02),type});
     }
   }
   G.spawnT=0;G.waveClear=false;G.vac=false;
@@ -374,7 +376,7 @@ function spawn(type){
   const w=G.wave;let e;
   if(type==='boss'){
     const T=tierOf(w),bt=(w/5-1)%3;
-    const hp=900*Math.pow(1.3,w/5-1)*(1+0.1*w)*Math.pow(2,T);
+    const hp=1600*Math.pow(1.35,w/5-1)*(1+0.12*w)*Math.pow(2,T);
     e={type:'boss',hp,r:46,spd:40,col:['#4f7fe8','#2fb35f','#7f93b5'][bt],fac:['us','ir','us'][bt],val:40+w*4,fire:1.1,dmg:(14+w)*(1+.5*T),boss:true,x:W/2,y:-60,ph:0,bt,name:BOSS_NAMES[bt]};
     e.maxhp=hp;e.fireT=1.5;G.enemyBoss=e;sfx('bossalert');
   }else{
@@ -382,7 +384,7 @@ function spawn(type){
     // elites: tougher, tankier, worth more, always drop a power-up
     if(type==='rock')e.vx=rand(-50,50);
     if(!['healer','layer','rock'].includes(type)){e.fac=Math.random()<.5?'ir':'us';e.col=e.fac==='ir'?'#2fb35f':'#4f7fe8'}
-    if(w>=3&&Math.random()<Math.min(.06+.015*w,.3)){e.elite=true;e.hp*=3;e.maxhp=e.hp;e.r*=1.25;e.val*=3;e.dmg*=1.3}
+    if(w>=3&&Math.random()<Math.min(.08+.02*w,.4)){e.elite=true;e.hp*=3;e.maxhp=e.hp;e.r*=1.25;e.val*=3;e.dmg*=1.3}
   }
   e.ph=rand(0,6.28);e.flash=0;G.en.push(e);
 }
@@ -394,6 +396,11 @@ function hitPlayer(dmg){
   if(p.shield>0){const a=Math.min(p.shield,dmg);p.shield-=a;dmg-=a;}
   if(dmg>0)p.hull-=dmg;
   p.inv=.35;sfx('hit');
+  const lose=Math.min(G.shards,Math.max(1,G.shards*.08));   // every hit spills some of your cargo
+  if(lose>=.5){G.shards-=lose;const n=Math.min(8,Math.ceil(lose/2));
+    for(let i=0;i<n;i++){const a=rand(0,6.28),sp=rand(80,170);G.pk.push({x:p.x,y:p.y,vx:Math.cos(a)*sp,vy:Math.sin(a)*sp-40,v:lose/n,hold:1.1})}
+    G.txt.push({x:p.x,y:p.y-34,t:0,w:'-'+Math.ceil(lose)+' 🛢',c:'#ff6b6b',rot:0,big:false})}
+  for(let i=0;i<2;i++)G.spills.push({x:p.x+rand(-14,14),y:p.y+rand(-4,24),r:rand(20,32),t:0,max:rand(7,10),ph:rand(0,6)});
   if(G.S.novaCd&&p.novaT<=0){p.novaT=G.S.novaCd;nova();}
   if(p.hull<=0){
     if(G.S.revives>0){G.S.revives--;p.hull=G.S.maxHull*.5;p.inv=2.5;nova();G.banner={text:'SECOND WIND! 💖',t:1.8}}
@@ -443,24 +450,34 @@ function damageEnemy(e,d){
     for(let i=0;i<n;i++)G.pk.push({x:e.x+rand(-8,8),y:e.y+rand(-8,8),vx:rand(-60,60),vy:rand(-60,40),v:Math.max(1,e.val/n)*G.S.yield*(1+G.wave*0.05)*(1+Math.min(G.combo,50)*0.02)*(1+tierOf(G.wave))});
   }
 }
+function findTarget(){ // nearest threat inside the gun ring: incoming missiles first, then bullets, then ships
+  const p=G.p,R=G.S.range;let best=null,bs=1e9;
+  for(const q of G.eb){if(q.dead)continue;const d=Math.hypot(q.x-p.x,q.y-(p.y-10));if(d>R)continue;const sc=d*(q.kind==='m'?.6:1);if(sc<bs){bs=sc;best=q}}
+  if(!best)for(const e of G.en){if(e.dead||e.y<0)continue;const d=Math.hypot(e.x-p.x,e.y-p.y)-e.r;if(d>R)continue;if(d<bs){bs=d;best=e}}
+  return best;
+}
 function fire(){
-  const S=G.S,p=G.p,B=G.buf;sfx('pew');
+  const S=G.S,p=G.p,B=G.buf,t=findTarget();
+  if(!t)return false;
+  sfx('pew');
+  const ox=p.x,oy=p.y-22,base=Math.atan2(t.y-oy,t.x-ox);p.aim=base;
   let n=S.barrels,spread=0.09,dmg=S.damage,pierce=S.pierce,spd=620,w=4,h=14;
   if(B.power>0){dmg*=2.2;w=8;h=20}
   if(B.lance>0){pierce+=4;spd=900;dmg*=1.3;w=Math.max(w,5);h=26}
+  const life=(S.range+20)/spd*(B.lance>0?1.5:1);
   if(B.scatter>0){
-    // shotgun: wide fan of pellets
     const pellets=7+S.barrels;
     for(let i=0;i<pellets;i++){
-      const a=(i-(pellets-1)/2)*0.1+rand(-.03,.03),v=spd*rand(.85,1.1);
-      G.bullets.push({x:p.x,y:p.y-26,vx:Math.sin(a)*v,vy:-Math.cos(a)*v,d:dmg*0.7,pierce,hit:new Set(),w:Math.max(3,w-1),h:Math.max(8,h-6),life:.55});
+      const a=base+(i-(pellets-1)/2)*0.1+rand(-.03,.03),v=spd*rand(.85,1.1);
+      G.bullets.push({x:ox,y:oy,vx:Math.cos(a)*v,vy:Math.sin(a)*v,d:dmg*0.7,pierce,hit:new Set(),w:Math.max(3,w-1),h:Math.max(8,h-6),life:life*.85,pel:true});
     }
-    return;
+    return true;
   }
   for(let i=0;i<n;i++){
-    const a=(i-(n-1)/2)*spread;
-    G.bullets.push({x:p.x+(i-(n-1)/2)*6,y:p.y-26,vx:Math.sin(a)*spd,vy:-Math.cos(a)*spd,d:dmg,pierce,hit:new Set(),w,h});
+    const a=base+(i-(n-1)/2)*spread;
+    G.bullets.push({x:ox,y:oy,vx:Math.cos(a)*spd,vy:Math.sin(a)*spd,d:dmg,pierce,hit:new Set(),w,h,life});
   }
+  return true;
 }
 function fireMissiles(){
   const n=G.S.missiles;
@@ -483,13 +500,15 @@ function update(dt){
   p.shieldT-=dt;if(p.shieldT<=0&&p.shield<S.maxShield)p.shield=Math.min(S.maxShield,p.shield+S.shieldRegen*dt);
   // weapons
   p.fireT-=dt;
-  if(p.fireT<=0){fire();p.fireT=S.fireDelay*(G.buf.rapid>0?0.5:1);}
+  {const tg=findTarget(),want=tg?Math.atan2(tg.y-(p.y-22),tg.x-p.x):-Math.PI/2;let da=want-(p.aim??-Math.PI/2);
+   while(da>Math.PI)da-=6.283;while(da<-Math.PI)da+=6.283;p.aim=(p.aim??-Math.PI/2)+da*Math.min(1,dt*14)}
+  if(p.fireT<=0){p.fireT=fire()?S.fireDelay*(G.buf.rapid>0?0.5:1):0.05}
   if(S.drones){G.droneT-=dt;if(G.droneT<=0){G.droneT=.55;
     for(let i=0;i<S.drones;i++){
       const dp=dronePos(i);let tg=null,bd=1e9;
       for(const e of G.en){if(e.dead||e.y<10)continue;const d=(e.x-dp.x)**2+(e.y-dp.y)**2;if(d<bd){bd=d;tg=e}}
       if(tg){const a=Math.atan2(tg.y-dp.y,tg.x-dp.x);
-        G.bullets.push({x:dp.x,y:dp.y,vx:Math.cos(a)*520,vy:Math.sin(a)*520,d:S.damage*.5,pierce:0,hit:new Set(),w:3,h:9})}
+        G.bullets.push({x:dp.x,y:dp.y,vx:Math.cos(a)*520,vy:Math.sin(a)*520,d:S.damage*.5,pierce:0,hit:new Set(),w:3,h:9,life:.45})}
     }}}
   if(S.missiles){p.missT-=dt;if(p.missT<=0){fireMissiles();p.missT=2.2;}}
   // spawning
@@ -544,7 +563,7 @@ function update(dt){
           boom(e.x,e.y,10,'#7be06b')}
       }
       if(e.fireT<=0){
-        e.fireT=Math.max(.4,1.0-G.wave*.01);e.atk=(e.atk||0)+1;
+        e.fireT=Math.max(.3,.8-G.wave*.01);e.atk=(e.atk||0)+1;
         const n=10+Math.min(14,G.wave|0);
         if(e.atk%3===0){for(const sx of[-1,1])ebullet(e.x+sx*30,e.y+20,sx*40,150,e.dmg,'m')}
         if(e.bt!==1&&e.atk%2){for(let i=0;i<n;i++){const a=i/n*6.283+e.ph;ebullet(e.x,e.y,Math.cos(a)*150,Math.sin(a)*150,e.dmg)}}
@@ -578,8 +597,10 @@ function update(dt){
       if(e.fire){e.fireT-=dt;if(e.fireT<=0&&e.y>0&&e.y<H-150){
         e.fireT=e.fire;const a=Math.atan2(p.y-e.y,p.x-e.x);
         e.sh=(e.sh||0)+1;
-        if(e.spread&&e.sh%3===0){ebullet(e.x,e.y,Math.cos(a)*150,Math.sin(a)*150,e.dmg,'m')}
+        if(e.spread&&e.sh%2===0){ebullet(e.x,e.y,Math.cos(a)*150,Math.sin(a)*150,e.dmg,'m')}
         else if(e.spread){const m=G.wave>=10?2:1;for(let i=-m;i<=m;i++)ebullet(e.x,e.y,Math.cos(a+i*.22)*200,Math.sin(a+i*.22)*200,e.dmg)}
+        else if(e.type==='gun'&&G.wave>=6&&e.sh%4===0){ebullet(e.x,e.y,Math.cos(a)*150,Math.sin(a)*150,e.dmg,'m')}
+        else if((e.type==='drone'&&G.wave>=7)||(e.type==='swift'&&G.wave>=6)){for(let i=-1;i<=1;i+=2)ebullet(e.x,e.y,Math.cos(a+i*.14)*230,Math.sin(a+i*.14)*230,e.dmg)}
         else if(e.type==='gun'&&G.wave>=8){for(let i=-1;i<=1;i+=2)ebullet(e.x,e.y,Math.cos(a+i*.12)*220,Math.sin(a+i*.12)*220,e.dmg)}
         else ebullet(e.x,e.y,Math.cos(a)*210,Math.sin(a)*210,e.dmg);
       }}
@@ -647,6 +668,7 @@ function update(dt){
   }
   // pickups
   for(const k of G.pk){
+    if(k.hold>0){k.hold-=dt;k.x+=k.vx*dt;k.y+=k.vy*dt;k.vx*=.96;k.vy*=.96;continue}
     const dx=p.x-k.x,dy=p.y-k.y,d=Math.hypot(dx,dy);
     const mag=G.vac?1500:S.magnet;
     if(d<mag){const f=(1-d/mag)*900+200;k.vx+=dx/d*f*dt;k.vy+=dy/d*f*dt}
@@ -664,6 +686,9 @@ function update(dt){
   G.pk=G.pk.filter(k=>!k.dead);
   G.pu=G.pu.filter(u=>!u.dead);
   G.fx=G.fx.filter(f=>f.t<f.max);
+  for(const sp of G.spills){sp.t+=dt;sp.y+=35*dt}
+  G.spills=G.spills.filter(sp=>sp.t<sp.max);
+  if(p.hull<S.maxHull*.35){G.leakT-=dt;if(G.leakT<=0){G.leakT=.7;G.spills.push({x:p.x+rand(-6,6),y:p.y+24,r:rand(12,20),t:0,max:rand(5,7),ph:rand(0,6)})}}
   for(const w of G.txt)w.t+=dt;
   G.txt=G.txt.filter(w=>w.t<.8);
   for(const pl of G.planets){pl.y+=pl.v*dt;if(pl.y>H+90){pl.y=-90;pl.x=rand(90,W-90)}}
@@ -673,7 +698,7 @@ function update(dt){
 }
 function dronePos(i){const n=G.S.drones,a=G.t*2.2+i*6.283/n;return{x:G.p.x+Math.cos(a)*38,y:G.p.y+Math.sin(a)*38}}
 function ebullet(x,y,vx,vy,d,kind){
-  const k=Math.min(1.5,1+G.wave*.012),o={x,y,vx:vx*k,vy:vy*k,d,r:5,hp:1,kind:'b'};
+  const k=Math.min(1.8,1+G.wave*.02),o={x,y,vx:vx*k,vy:vy*k,d,r:5,hp:1,kind:'b'};
   if(kind==='m'){o.kind='m';o.r=8;o.hp=3;o.home=1.7;o.life=6;o.d=d*1.4}      // homing missile
   if(kind==='s'){o.kind='m';o.r=8;o.hp=2;o.life=4;o.d=d*1.3}                  // fast straight missile
   G.eb.push(o);
@@ -719,6 +744,14 @@ function planet(pl){ // sandy islands and oil rigs
     for(let i=0;i<6;i++){const a=i/6*TAU+.3;ctx.beginPath();ctx.ellipse(Math.cos(a)*r*.22,Math.sin(a)*r*.22,r*.3,r*.1,a,0,TAU);outlineFill('#46c46a',2)}
     ctx.beginPath();ctx.arc(0,0,3.5,0,TAU);outlineFill('#8a5a2b',2);
   }
+  ctx.restore();
+}
+function drawSpill(sp){
+  const u=sp.t/sp.max,a=Math.min(1,(1-u)*1.6),r=sp.r*(.55+.45*Math.min(1,sp.t*1.2))*(1-.25*u*u);
+  ctx.save();ctx.translate(sp.x,sp.y);
+  ctx.globalAlpha=a*.8;blobPath(r,5,.14,sp.ph+G.t*.4);ctx.fillStyle='#1b1830';ctx.fill();
+  ctx.globalAlpha=a*.5;ctx.translate(-r*.15,-r*.12);blobPath(r*.6,4,.15,sp.ph+1);ctx.fillStyle='hsl(280 70% 55%)';ctx.fill();
+  ctx.translate(r*.3,r*.2);blobPath(r*.35,3,.2,sp.ph+2);ctx.fillStyle='hsl(170 80% 50%)';ctx.fill();
   ctx.restore();
 }
 function coasts(){
@@ -818,6 +851,8 @@ function playerShip(p){
   eye(-3.4,19.5,2.8,0,-1);eye(3.4,19.5,2.8,0,-1);
   ctx.beginPath();ctx.arc(0,22.5,2.2,.15*Math.PI,.85*Math.PI);ctx.lineWidth=1.3;ctx.strokeStyle=OUT;ctx.stroke();
   ctx.beginPath();ctx.arc(-9,5,2.8,0,TAU);ctx.arc(9,5,2.8,0,TAU);ctx.fillStyle='#8a97b4';ctx.fill();   // life boats
+  ctx.save();ctx.translate(0,-24);ctx.rotate((p.aim??-Math.PI/2)+Math.PI/2-p.tilt*.6);     // point-defence turret tracks the nearest threat
+  rrect(-2.2,-13,4.4,13,1.5);outlineFill('#9aa0b8',2);ctx.beginPath();ctx.arc(0,0,5,0,TAU);outlineFill('#c8cfdf',2.5);ctx.restore();
   if(p.shield>0){const a=.25+.35*p.shield/G.S.maxShield;ctx.beginPath();ctx.arc(0,0,40,0,TAU);ctx.fillStyle='rgba(120,210,255,'+a*.5+')';ctx.fill();
     ctx.lineWidth=2.5;ctx.strokeStyle='rgba(255,255,255,'+(a+.2)+')';ctx.stroke();
     ctx.beginPath();ctx.arc(0,0,33,-2.5,-1.7);ctx.lineWidth=3;ctx.strokeStyle='rgba(255,255,255,.8)';ctx.stroke()}
@@ -832,6 +867,7 @@ function draw(){
   ctx.strokeStyle='rgba(255,255,255,.35)';ctx.lineWidth=2.5;ctx.lineCap='round';
   for(const s of G.stars){const w=8+s.s*8;ctx.beginPath();ctx.moveTo(s.x-w,s.y);ctx.quadraticCurveTo(s.x-w/2,s.y-4*s.s,s.x,s.y);ctx.quadraticCurveTo(s.x+w/2,s.y+4*s.s,s.x+w,s.y);ctx.stroke()}
   coasts();
+  for(const sp of G.spills)drawSpill(sp);
   for(const pl of G.planets)planet(pl);
   {const sec=tierOf(G.wave);if(sec>0){ctx.fillStyle=['','rgba(255,140,60,.2)','rgba(40,20,90,.3)','rgba(10,10,50,.4)','rgba(255,90,90,.2)'][sec%5];ctx.fillRect(-20,-20,W+40,H+40)}}
   ctx.globalAlpha=1;
@@ -851,8 +887,8 @@ function draw(){
   // bullets
   for(const b of G.bullets){
     const w=b.w||4,h=b.h||14;ctx.save();ctx.translate(b.x,b.y);ctx.rotate(Math.atan2(b.vx,-b.vy));
-    let col='#ffe45c';if(w>=8)col='#ff7a45';else if(h>=26)col='#5ff0ff';else if(b.life!==undefined)col='#ffb347';else if(w===3)col='#b8fbff';
-    if(b.life!==undefined){ctx.beginPath();ctx.arc(0,0,w/2+1.5,0,TAU)}else rrect(-w/2-1,-h/2,w+2,h,(w+2)/2);
+    let col='#ffe45c';if(w>=8)col='#ff7a45';else if(h>=26)col='#5ff0ff';else if(b.pel)col='#ffb347';else if(w===3)col='#b8fbff';
+    if(b.pel){ctx.beginPath();ctx.arc(0,0,w/2+1.5,0,TAU)}else rrect(-w/2-1,-h/2,w+2,h,(w+2)/2);
     outlineFill(col,2);ctx.restore()}
   for(const m of G.msl){ctx.save();ctx.translate(m.x,m.y);ctx.rotate(Math.atan2(m.vy,m.vx));
     ctx.beginPath();ctx.ellipse(0,0,8,4.5,0,0,TAU);outlineFill('#fff',2);ctx.beginPath();ctx.moveTo(4,-3.5);ctx.quadraticCurveTo(10,0,4,3.5);ctx.closePath();outlineFill('#ff5b5b',2);ctx.restore()}
@@ -872,6 +908,8 @@ function draw(){
     }
     ctx.restore()}
   const p=G.p;
+  if(state==='play'){ctx.save();ctx.setLineDash([6,10]);ctx.lineDashOffset=-G.t*14;ctx.strokeStyle='rgba(255,255,255,.28)';ctx.lineWidth=2;
+    ctx.beginPath();ctx.arc(p.x,p.y-10,G.S.range,0,TAU);ctx.stroke();ctx.restore()}
   if(state==='play')playerShip(p);
   if(state==='play'&&G.S.drones){for(let i=0;i<G.S.drones;i++){const d=dronePos(i),a=G.t*2.2+i*TAU/G.S.drones;
     ctx.save();ctx.translate(d.x,d.y);ctx.rotate(a+Math.PI);   // tugboats circle the tanker
