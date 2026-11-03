@@ -34,7 +34,7 @@
     <h1>STARFORGE</h1>
     <div style="color:#89a;letter-spacing:3px">ENDLESS VOID</div>
     <p class="small">Blast the endless swarm to harvest <span class="shard">Quantum Shards</span>.<br>When your ship is destroyed, forge your wreckage into stronger hulls, shields and weapons. Then dive back in and go further.</p>
-    <p class="small"><b>Move:</b> drag with finger/mouse (1:1) or WASD / arrows &nbsp; <b>Fire:</b> automatic — tap / click / Space repeatedly to fire faster &nbsp; <b>Dash:</b> Shift</p>
+    <p class="small"><b>Move:</b> drag with finger/mouse (1:1) or WASD / arrows &nbsp; <b>Fire:</b> automatic — tap / click / Space repeatedly to fire faster &nbsp; <b>Dash:</b> Shift &nbsp; <b>Power-ups:</b> grab dropped orbs (S/P/R/L) for 20s of scatter shot, heavy rounds, overdrive or piercing lance</p>
     <button id="startBtn">Launch</button>
     <button id="shopBtn0">Hangar</button>
   </div>
@@ -118,7 +118,7 @@ function ptr(e){const r=cv.getBoundingClientRect();return{x:(e.clientX-r.left)*W
 function tapFire(){
   if(!G||state!=='play')return;
   const now=performance.now();if(now-lastTap<40)return;lastTap=now;
-  fire();G.p.fireT=Math.max(G.p.fireT,G.S.fireDelay*0.5);
+  fire();G.p.fireT=Math.max(G.p.fireT,G.S.fireDelay*(G.buf.rapid>0?0.25:0.5));
 }
 cv.addEventListener('pointerdown',e=>{
   drag=ptr(e);mouse.down=true;try{cv.setPointerCapture(e.pointerId)}catch(_){}
@@ -135,13 +135,23 @@ const endDrag=()=>{drag=null;mouse.down=false};
 addEventListener('pointerup',endDrag);addEventListener('pointercancel',endDrag);
 addEventListener('keydown',e=>{if(e.code==='Space'&&!e.repeat)tapFire()});
 
+// ---------- Temporary weapon power-ups (20s) ----------
+const PU_TIME=20;
+const PU={
+  scatter:{name:'SCATTER SHOT',letter:'S',col:'#fa3'},
+  power:  {name:'HEAVY ROUNDS',letter:'P',col:'#f55'},
+  rapid:  {name:'OVERDRIVE',   letter:'R',col:'#5f8'},
+  lance:  {name:'PIERCING LANCE',letter:'L',col:'#6cf'},
+};
+const PU_KEYS=Object.keys(PU);
+
 // ---------- Game state ----------
 let G=null,state='menu',last=0;
 function newRun(){
   const S=buildStats();
   G={S,t:0,wave:0,shards:0,kills:0,
     p:{x:W/2,y:H-90,vx:0,vy:0,hull:S.maxHull,shield:S.maxShield,fireT:0,missT:0,dashT:0,dashCd:0,inv:0,shieldT:0,novaT:S.novaCd*0.5,flash:0},
-    bullets:[],eb:[],en:[],pk:[],fx:[],msl:[],
+    bullets:[],eb:[],en:[],pk:[],fx:[],msl:[],pu:[],buf:{},
     spawnQ:[],spawnT:0,waveClear:false,banner:{text:'',t:0},shake:0,
     stars:Array.from({length:70},()=>({x:rand(0,W),y:rand(0,H),s:rand(.3,1.4)}))};
   nextWave();
@@ -225,16 +235,30 @@ function damageEnemy(e,d){
   e.hp-=d;e.flash=.08;
   if(e.hp<=0&&!e.dead){
     e.dead=true;G.kills++;
+    const dc=e.boss?1:(e.val>=5?0.3:0.07);
+    for(let i=0;i<(e.boss?2:1);i++)if(Math.random()<dc)G.pu.push({x:e.x+(i?30:0),y:e.y,t:PU_KEYS[Math.floor(Math.random()*PU_KEYS.length)],ph:0});
     boom(e.x,e.y,e.boss?60:12,e.col);G.shake=Math.max(G.shake,e.boss?14:2);
     const n=e.boss?14:(e.val>=5?3:1);
     for(let i=0;i<n;i++)G.pk.push({x:e.x+rand(-8,8),y:e.y+rand(-8,8),vx:rand(-60,60),vy:rand(-60,40),v:Math.max(1,e.val/n)*G.S.yield*(1+G.wave*0.05)});
   }
 }
 function fire(){
-  const S=G.S,p=G.p,n=S.barrels,spread=0.09;
+  const S=G.S,p=G.p,B=G.buf;
+  let n=S.barrels,spread=0.09,dmg=S.damage,pierce=S.pierce,spd=620,w=4,h=14;
+  if(B.power>0){dmg*=2.2;w=8;h=20}
+  if(B.lance>0){pierce+=4;spd=900;dmg*=1.3;w=Math.max(w,5);h=26}
+  if(B.scatter>0){
+    // shotgun: wide fan of pellets
+    const pellets=7+S.barrels;
+    for(let i=0;i<pellets;i++){
+      const a=(i-(pellets-1)/2)*0.1+rand(-.03,.03),v=spd*rand(.85,1.1);
+      G.bullets.push({x:p.x,y:p.y-14,vx:Math.sin(a)*v,vy:-Math.cos(a)*v,d:dmg*0.7,pierce,hit:new Set(),w:Math.max(3,w-1),h:Math.max(8,h-6),life:.55});
+    }
+    return;
+  }
   for(let i=0;i<n;i++){
     const a=(i-(n-1)/2)*spread;
-    G.bullets.push({x:p.x+(i-(n-1)/2)*6,y:p.y-14,vx:Math.sin(a)*620,vy:-Math.cos(a)*620,d:S.damage,pierce:S.pierce,hit:new Set()});
+    G.bullets.push({x:p.x+(i-(n-1)/2)*6,y:p.y-14,vx:Math.sin(a)*spd,vy:-Math.cos(a)*spd,d:dmg,pierce,hit:new Set(),w,h});
   }
 }
 function fireMissiles(){
@@ -261,7 +285,7 @@ function update(dt){
   p.shieldT-=dt;if(p.shieldT<=0&&p.shield<S.maxShield)p.shield=Math.min(S.maxShield,p.shield+S.shieldRegen*dt);
   // weapons
   p.fireT-=dt;
-  if(p.fireT<=0){fire();p.fireT=S.fireDelay;}
+  if(p.fireT<=0){fire();p.fireT=S.fireDelay*(G.buf.rapid>0?0.5:1);}
   if(S.missiles){p.missT-=dt;if(p.missT<=0){fireMissiles();p.missT=2.2;}}
   // spawning
   G.spawnT+=dt;
@@ -273,7 +297,16 @@ function update(dt){
   }
   if(G.waveClear){G.waveT-=dt;if(G.waveT<=0)nextWave();}
   // bullets
-  for(const b of G.bullets){b.x+=b.vx*dt;b.y+=b.vy*dt}
+  for(const b of G.bullets){b.x+=b.vx*dt;b.y+=b.vy*dt;if(b.life!==undefined&&(b.life-=dt)<=0)b.dead=true}
+  for(const k in G.buf)if(G.buf[k]>0)G.buf[k]-=dt;
+  for(const u of G.pu){
+    u.ph+=dt;u.y+=55*dt;
+    const dx=p.x-u.x,dy=p.y-u.y,d=Math.hypot(dx,dy);
+    if(d<S.magnet*0.6){u.x+=dx/d*260*dt;u.y+=dy/d*260*dt}
+    if(d<24){u.dead=true;G.buf[u.t]=PU_TIME;G.banner={text:PU[u.t].name+'!',t:1.2};
+      G.fx.push({k:'ring',x:p.x,y:p.y,r:10,t:0,max:.5,R:70});}
+    if(u.y>H+20)u.dead=true;
+  }
   for(const m of G.msl){
     m.t+=dt;let tgt=null,bd=1e9;
     for(const e of G.en){if(e.dead||e.y<0)continue;const d=(e.x-m.x)**2+(e.y-m.y)**2;if(d<bd){bd=d;tgt=e}}
@@ -362,6 +395,7 @@ function update(dt){
   G.eb=G.eb.filter(b=>!b.dead&&b.y>-20&&b.y<H+20&&b.x>-20&&b.x<W+20);
   G.en=G.en.filter(e=>!e.dead);
   G.pk=G.pk.filter(k=>!k.dead);
+  G.pu=G.pu.filter(u=>!u.dead);
   G.fx=G.fx.filter(f=>f.t<f.max);
   G.banner.t-=dt;G.shake=Math.max(0,G.shake-30*dt);
   for(const s of G.stars){s.y+=s.s*60*dt;if(s.y>H){s.y=0;s.x=rand(0,W)}}
@@ -385,6 +419,13 @@ function draw(){
   // pickups
   for(const k of G.pk){ctx.save();ctx.translate(k.x,k.y);ctx.rotate(G.t*3);
     ctx.fillStyle='#c6f';ctx.shadowColor='#a4f';ctx.shadowBlur=10;ctx.fillRect(-4,-4,8,8);ctx.restore()}
+  // power-up pickups
+  for(const u of G.pu){const d=PU[u.t];ctx.save();ctx.translate(u.x,u.y+Math.sin(u.ph*4)*3);
+    ctx.shadowColor=d.col;ctx.shadowBlur=16;ctx.strokeStyle=d.col;ctx.lineWidth=3;ctx.fillStyle='#0a1230';
+    ctx.beginPath();ctx.arc(0,0,14,0,6.283);ctx.fill();ctx.stroke();
+    ctx.shadowBlur=0;ctx.fillStyle=d.col;ctx.font='bold 16px system-ui';ctx.textAlign='center';ctx.textBaseline='middle';
+    ctx.fillText(d.letter,0,1);ctx.restore()}
+  ctx.textBaseline='alphabetic';
   // enemies
   for(const e of G.en){
     ctx.save();ctx.translate(e.x,e.y);
@@ -402,7 +443,8 @@ function draw(){
   }
   // bullets
   ctx.shadowBlur=0;
-  ctx.fillStyle='#7ff';for(const b of G.bullets)ctx.fillRect(b.x-2,b.y-8,4,14);
+  for(const b of G.bullets){ctx.fillStyle=(b.w||4)>=8?'#f98':b.life!==undefined?'#fc6':'#7ff';
+    const w=b.w||4,h=b.h||14;ctx.fillRect(b.x-w/2,b.y-h/2,w,h)}
   ctx.fillStyle='#fb6';for(const m of G.msl){ctx.beginPath();ctx.arc(m.x,m.y,4,0,6.283);ctx.fill()}
   ctx.fillStyle='#f55';for(const b of G.eb){ctx.beginPath();ctx.arc(b.x,b.y,b.r,0,6.283);ctx.fill()}
   // player
@@ -432,6 +474,10 @@ function draw(){
   ctx.fillText('◆ '+Math.floor(G.shards)+' Quantum Shards',W-12,24);
   ctx.fillStyle='#9bd';ctx.font='14px system-ui';ctx.fillText('Wave '+G.wave+'   Best '+save.best,W-12,44);
   ctx.textAlign='left';
+  let by=50;
+  for(const k of PU_KEYS){const t=G.buf[k];if(t>0){
+    const d=PU[k];ctx.globalAlpha=t<3&&Math.floor(t*6)%2?.4:1;
+    bar(12,by,200,12,t/PU_TIME,d.col,d.name+' '+Math.ceil(t)+'s');ctx.globalAlpha=1;by+=16}}
   if(p.dashCd>0){ctx.fillStyle='#678';ctx.fillText('Dash '+p.dashCd.toFixed(1)+'s',12,H-12)}else{ctx.fillStyle='#8cf';ctx.fillText('Dash ready [Shift]',12,H-12)}
   if(S.novaCd){ctx.fillStyle=p.novaT<=0?'#fd6':'#678';ctx.fillText(p.novaT<=0?'Nova armed':'Nova '+Math.ceil(p.novaT)+'s',140,H-12)}
   if(G.enemyBoss&&G.en.includes(G.enemyBoss)){const b=G.enemyBoss;bar(W/2-150,H-40,300,10,Math.max(0,b.hp/b.maxhp),'#f3f','BOSS')}
