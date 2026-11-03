@@ -446,7 +446,11 @@ const AD_URL='https://youtu.be/dQw4w9WgXcQ?is=qeRJLms0_TRcFrWE';
 function showAd(){state='ad';G.adClicked=false;$('adStep1').style.display='block';$('adStep2').style.display='none';show('adPanel')}
 function resumeFromAd(rick){
   if(state!=='ad')return;G.adClicked=false;show(null);state='play';
-  if(rick){G.slowT=30;G.banner={text:'🎵 RICKROLLED! 🎵',t:2.4};sfx('news')}
+  if(rick){
+    const lost=G.shards/2;G.shards-=lost;   // the "ad" costs you half of this run's barrels
+    G.slowT=30;G.banner={text:'🎵 RICKROLLED! 🎵',t:2.4};sfx('news');
+    if(lost>=.5)G.txt.push({x:G.p.x,y:G.p.y-40,t:0,w:'-'+Math.ceil(lost)+' 🛢',c:'#ff6b6b',rot:0,big:true});
+  }
 }
 function openPerks(title){
   $('perkTitle').textContent=title||'CHOOSE A PERK';
