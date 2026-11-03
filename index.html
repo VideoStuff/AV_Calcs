@@ -30,6 +30,12 @@
   .pips{letter-spacing:2px;color:#8ff0ff}
   .up button{padding:6px 14px;font-size:15px;margin:0;box-shadow:0 3px 0 var(--ink)}
   .stats{color:#e4d8ff;margin:6px 0;font-size:17px}
+  #newsCard{width:min(420px,100%);box-sizing:border-box;background:#fff8e6;color:#1b1340;border:4px solid var(--ink);border-radius:16px;padding:18px 12px 10px;margin:16px 0 4px;position:relative;box-shadow:0 5px 0 var(--ink);text-align:left}
+  #newsCard .chip{position:absolute;top:-14px;left:12px;background:#e8483f;color:#fff;border:3px solid var(--ink);border-radius:12px;padding:1px 10px;font-weight:700;font-size:13px}
+  #newsCard .nrow{display:flex;gap:10px;align-items:center}
+  #newsCard canvas{flex:none;width:90px;height:100px;background:none;cursor:default}
+  #newsText{font-weight:700;font-size:15px;line-height:1.25}
+  #newsCard .nfoot{color:#d92b2b;font-weight:700;font-size:13px;margin-top:6px}
   #perks{display:flex;flex-direction:column;gap:12px;width:min(420px,100%);margin:12px 0}
   #perks button{text-align:left;padding:14px 18px;margin:0;font-size:20px;background:#2bb3c0}
   #perks button:nth-child(2){background:#a5e84f}
@@ -67,6 +73,11 @@
   <div id="perkPanel" class="panel">
     <h2 id="perkTitle">CHOOSE A PERK</h2>
     <div class="small">Perks last for this run only — build your ship as you go.</div>
+    <div id="newsCard" style="display:none">
+      <div class="chip">📺 BREAKING NEWS</div>
+      <div class="nrow"><canvas id="newsIcon" width="90" height="100"></canvas>
+        <div><div id="newsText"></div><div class="nfoot">US ships are FURIOUS — 2× tougher for 30s!</div></div></div>
+    </div>
     <div id="perks"></div>
   </div>
 
@@ -305,14 +316,11 @@ const NEWS=[
   {text:'"We\'re building a wall… in the water! And Iran is paying for it!"'},
   {text:'"I just had a great call with the strait. The strait says I\'m winning. Bigly."'},
 ];
-function triggerNews(){
-  let i;do{i=Math.floor(Math.random()*NEWS.length)}while(i===G.lastNews&&NEWS.length>1);G.lastNews=i;
-  G.news={t:0,dur:6.5,sc:NEWS[i]};G.usT=30;
-  for(const e of G.en)if(e.fac==='us'&&!e.fury){e.fury=true;e.hp*=2;e.maxhp*=2;e.dmg*=2}
-  sfx('news');
+function pickNews(){let i;do{i=Math.floor(Math.random()*NEWS.length)}while(i===G.lastNews&&NEWS.length>1);G.lastNews=i;return NEWS[i]}
+function startFury(){ // after the news: US ships are twice as tough for 30s
+  G.usT=30;for(const e of G.en)if(e.fac==='us'&&!e.fury){e.fury=true;e.hp*=2;e.maxhp*=2;e.dmg*=2}
 }
-function wrapText(text,maxW){const out=[];let line='';for(const w of text.split(' ')){const t=line?line+' '+w:w;if(ctx.measureText(t).width>maxW&&line){out.push(line);line=w}else line=t}if(line)out.push(line);return out}
-function cheeto(x,y,s,t){ // a crunchy cheese snack in a bad blond wig. no face.
+function cheeto(ctx,x,y,s,t){ // a crunchy cheese snack in a bad blond wig. no face.
   ctx.save();ctx.translate(x,y);ctx.scale(s,s);ctx.rotate(Math.sin(t*3)*.05);ctx.lineCap='round';ctx.lineJoin='round';
   ctx.beginPath();ctx.moveTo(-6,26);ctx.bezierCurveTo(-22,8,14,4,2,-10);
   ctx.lineWidth=27;ctx.strokeStyle=OUT;ctx.stroke();ctx.lineWidth=21;ctx.strokeStyle='#ff9a1f';ctx.stroke();
@@ -322,18 +330,6 @@ function cheeto(x,y,s,t){ // a crunchy cheese snack in a bad blond wig. no face.
   ctx.beginPath();ctx.moveTo(-14,-9);ctx.bezierCurveTo(-22,-28,6,-40,26,-26);ctx.bezierCurveTo(33,-21,30,-12,21,-13);ctx.bezierCurveTo(10,-21,-2,-13,-14,-9);ctx.closePath();
   ctx.fillStyle='#ffe066';ctx.fill();ctx.lineWidth=3;ctx.strokeStyle=OUT;ctx.stroke();
   ctx.strokeStyle='#d9a900';ctx.lineWidth=1.8;ctx.beginPath();ctx.moveTo(-10,-13);ctx.quadraticCurveTo(0,-31,19,-26);ctx.moveTo(-6,-11);ctx.quadraticCurveTo(7,-24,24,-19);ctx.stroke();
-  ctx.restore();
-}
-function drawNews(){
-  const n=G.news;if(!n||state!=='play')return;
-  const t=n.t,k=Math.max(0,Math.min(1,t/.35,(n.dur-t)/.35)),ease=1-Math.pow(1-k,3),cx=20,cw=W-40,ch=116,y=100-(1-ease)*(ch+140);
-  ctx.save();
-  rrect(cx,y,cw,ch,16);ctx.fillStyle='#fff8e6';ctx.fill();ctx.lineWidth=4;ctx.strokeStyle=OUT;ctx.stroke();
-  rrect(cx+12,y-12,168,25,12);outlineFill('#e8483f',3);txt('📺 BREAKING NEWS',cx+24,y+6,13,'#fff','left',3);
-  cheeto(cx+50,y+72,1.3,t);
-  ctx.font='700 15px '+FONT;ctx.textAlign='left';ctx.textBaseline='alphabetic';ctx.fillStyle=OUT;
-  wrapText(n.sc.text,cw-112).slice(0,3).forEach((l,i)=>ctx.fillText(l,cx+96,y+38+i*19));
-  ctx.font='700 13px '+FONT;ctx.fillStyle='#d92b2b';ctx.fillText('US ships are FURIOUS — 2× tougher for 30s!',cx+96,y+ch-10);
   ctx.restore();
 }
 // ---------- Game state ----------
@@ -356,13 +352,19 @@ const SECTOR=15,BOSS_NAMES=['Mega Destroyer','Missile Cruiser','Aircraft Carrier
 const tierOf=w=>Math.floor((w-1)/SECTOR);
 function openPerks(title){
   $('perkTitle').textContent=title||'CHOOSE A PERK';
+  $('newsCard').style.display='none';G.newsShown=false;
+  if(!(G.bonus>0)){ // last perk screen before a leg starts: show the breaking news
+    const sc=pickNews();$('newsText').textContent=sc.text;
+    const nc=$('newsIcon').getContext('2d');nc.clearRect(0,0,90,100);cheeto(nc,45,62,1.3,0);
+    $('newsCard').style.display='block';G.newsShown=true;sfx('news');
+  }
   state='perk';G.vac=false;
   const pool=PERKS.filter(p=>!p.ok||p.ok(G.S));
   const picks=[];while(picks.length<3&&pool.length)picks.push(pool.splice(Math.floor(Math.random()*pool.length),1)[0]);
   const box=$('perks');box.innerHTML='';
   for(const pk of picks){
     const b=document.createElement('button');b.innerHTML=`<b>${pk.name}</b><small>${pk.desc}</small>`;
-    b.onclick=()=>{pk.fn(G.S,G);sfx('perk');if(G.bonus>0){G.bonus--;openPerks('CHECKPOINT BONUS PERK!');return}show(null);state='play';nextWave()};
+    b.onclick=()=>{pk.fn(G.S,G);sfx('perk');if(G.bonus>0){G.bonus--;openPerks('CHECKPOINT BONUS PERK!');return}show(null);state='play';nextWave();if(G.newsShown){G.newsShown=false;startFury()}};
     box.appendChild(b);
   }
   show('perkPanel');
@@ -442,7 +444,6 @@ function nextWave(){
   }
   if(w>=4){const k=Math.min(1+((w-4)/4|0),5);for(let i=0;i<k;i++)G.spawnQ.push({t:2+i*5,type:'a10'});G.spawnQ.sort((a,b)=>a.t-b.t)}
   G.spawnT=0;G.waveClear=false;G.vac=false;
-  triggerNews();   // a breaking-news popup opens every leg
   G.banner={text:w%5===0?'⚠ '+BOSS_NAMES[(w/5-1)%3]+'!':'LEG '+w,t:2.2};
 }
 function spawn(type){
@@ -786,7 +787,6 @@ function update(dt){
   G.txt=G.txt.filter(w=>w.t<.8);
   for(const pl of G.planets){pl.y+=pl.v*dt;if(pl.y>H+90){pl.y=-90-rand(0,260);pl.x=rand(90,W-90)}}
   if(G.usT>0)G.usT-=dt;
-  if(G.news){G.news.t+=dt;if(G.news.t>=G.news.dur)G.news=null}
   G.comboT-=dt;if(G.comboT<=0)G.combo=0;
   G.banner.t-=dt;G.shake=Math.max(0,G.shake-30*dt);
   for(const s of G.stars){s.y+=s.s*60*dt;if(s.y>H){s.y=0;s.x=rand(0,W)}}
@@ -1061,7 +1061,6 @@ function draw(){
   if(S.novaCd)txt(p.novaT<=0?'🎆 Flares ready':'Flares '+Math.ceil(p.novaT)+'s',12,H-14,14,p.novaT<=0?'#ffe45c':'#cfc4ff','left',4);
   if(G.enemyBoss&&G.en.includes(G.enemyBoss)){const b=G.enemyBoss;bar(W/2-150,H-40,300,18,Math.max(0,b.hp/b.maxhp),b.col,b.name)}
   if(S.revives>0)txt('💖×'+S.revives,218,26,15,'#fff','left',4);
-  drawNews();
   if(G.banner.t>0){ctx.save();ctx.globalAlpha=Math.min(1,G.banner.t);ctx.translate(W/2,H/2-60);ctx.rotate(-.05);const sc=1+.06*Math.sin(G.t*10);ctx.scale(sc,sc);
     txt(G.banner.text,0,0,40,'#ffe45c','center',9);ctx.restore()}
 }
