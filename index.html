@@ -306,7 +306,7 @@ const NEWS=[
 ];
 function triggerNews(){
   let i;do{i=Math.floor(Math.random()*NEWS.length)}while(i===G.lastNews&&NEWS.length>1);G.lastNews=i;
-  G.news={t:0,dur:6.5,sc:NEWS[i]};G.usT=30;G.nextNews=G.t+rand(40,60);
+  G.news={t:0,dur:6.5,sc:NEWS[i]};G.usT=30;
   for(const e of G.en)if(e.fac==='us'&&!e.fury){e.fury=true;e.hp*=2;e.maxhp*=2;e.dmg*=2}
   sfx('news');
 }
@@ -439,6 +439,7 @@ function nextWave(){
     }
   }
   G.spawnT=0;G.waveClear=false;G.vac=false;
+  if((w-1)%SECTOR===0)triggerNews();   // a breaking-news popup opens every new stretch of sea
   G.banner={text:w%5===0?'⚠ '+BOSS_NAMES[(w/5-1)%3]+'!':'LEG '+w,t:2.2};
 }
 function spawn(type){
@@ -773,7 +774,6 @@ function update(dt){
   for(const pl of G.planets){pl.y+=pl.v*dt;if(pl.y>H+90){pl.y=-90-rand(0,260);pl.x=rand(90,W-90)}}
   if(G.usT>0)G.usT-=dt;
   if(G.news){G.news.t+=dt;if(G.news.t>=G.news.dur)G.news=null}
-  else if(G.t>=G.nextNews&&state==='play')triggerNews();
   G.comboT-=dt;if(G.comboT<=0)G.combo=0;
   G.banner.t-=dt;G.shake=Math.max(0,G.shake-30*dt);
   for(const s of G.stars){s.y+=s.s*60*dt;if(s.y>H){s.y=0;s.x=rand(0,W)}}
