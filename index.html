@@ -304,19 +304,49 @@ const PERKS=[
 
 // ---------- Breaking-news popups: the Cheeto-in-Chief stirs up the US fleet ----------
 const NEWS=[
-  {text:'"TARIFFS! 200% on EVERYTHING! Yes, even tankers. Especially tankers!"'},
-  {text:'Reporter: "Sir, about the Epstein files…" — "LOOK OVER THERE! A TANKER! Fire everything!"'},
-  {text:'3 AM tweet: "NOBODY has ever sailed a strait like me. Believe me. TREMENDOUS strait!"'},
-  {text:'"Iran will pay for the strait. Big beautiful strait. They\'ll pay, and they\'ll LOVE it."'},
-  {text:'"Fake news says my ratings are down. Send the fleet. Send ALL the fleet."'},
-  {text:'Sharpie map: "As you can clearly see, the strait goes RIGHT THROUGH Florida."'},
-  {text:'"I know more about oil tankers than the tanker people. Nobody knows tankers like me."'},
-  {text:'New tariff on barrels! "Very expensive now. Very, very expensive. Sad!"'},
-  {text:'Golf trip cancelled. The fleet is in a MOOD.'},
-  {text:'"We\'re building a wall… in the water! And Iran is paying for it!"'},
-  {text:'"I just had a great call with the strait. The strait says I\'m winning. Bigly."'},
+  {text:`3 AM tweet: "NOBODY has ever sailed a strait like me. Believe me. TREMENDOUS strait!"`},
+  {text:`"TARIFFS! 200% on EVERYTHING! Yes, even tankers. Especially tankers!"`},
+  {text:`Reporter: "Sir, about the Epstein files…" — "LOOK OVER THERE! A TANKER! Fire everything!"`},
+  {text:`"Iran will pay for the strait. Big beautiful strait. They'll pay, and they'll LOVE it."`},
+  {text:`"Fake news says my ratings are down. Send the fleet. Send ALL the fleet."`},
+  {text:`Sharpie map: "As you can clearly see, the strait goes RIGHT THROUGH Florida."`},
+  {text:`"I know more about oil tankers than the tanker people. Nobody knows tankers like me."`},
+  {text:`New tariff on barrels! "Very expensive now. Very, very expensive. Sad!"`},
+  {text:`Golf trip cancelled. The fleet is in a MOOD.`},
+  {text:`"We're building a wall… in the water! And Iran is paying for it!"`},
+  {text:`"I just had a great call with the strait. The strait says I'm winning. Bigly."`},
+  {text:`Reporter: "Is it true there are Epstein files?" — "Next question! Navy, open fire on the next question!"`},
+  {text:`Truth post, all caps: "THE TANKER IS A DISASTER. A TOTAL AND COMPLETE DISASTER. ATTACK!"`},
+  {text:`"I have the best admirals. Everybody says so. They're crying, they're so good. Fire!"`},
+  {text:`"Many people are saying oil should be orange. Like me. Very orange. Paint the tanker!"`},
+  {text:`"Tariff on water! Why is the ocean allowed to be wet for free? Nobody asked me!"`},
+  {text:`Press briefing: "Nobody has ever asked the Epstein question this nicely. Anyway — torpedoes!"`},
+  {text:`"I will make the Persian Gulf great again. Actually, I'll rename it. Gulf of Cheeto-ica!"`},
+  {text:`"My fleet is so big, you'd need a bigger ocean. I'm getting a bigger ocean. Tariffs on the old one!"`},
+  {text:`3 AM tweet: "Covfefe. Also: fire at will. Also: covfefe."`},
+  {text:`"This tanker is the worst deal in history. Worse than my last deal. And my last deal was perfect."`},
+  {text:`"I'm not saying the tanker is guilty. I'm just saying it looks guilty. Very guilty. Blast it!"`},
+  {text:`"They told me it was impossible to tariff a sunset. I tariffed the sunset. Sad for them."`},
+  {text:`Ribbon-cutting: "Ocean is open! Best ocean. Tanker not invited."`},
+  {text:`"Windmills cause tanker cancer. Everyone knows. Sink the tanker for its own good."`},
+  {text:`Reporter: "Sir, the Epstein files—" "Sorry, can't hear you, I'm on a very important boat call!"`},
+  {text:`"Very stable genius move: if the tanker can't reach port, the oil price goes up. Perfect. Fire!"`},
+  {text:`"I've been told I'm the greatest sailor in history. By me. A very reliable source."`},
+  {text:`"We have a deal with a country. I forgot which. Could be this one. Open fire to confirm."`},
+  {text:`"Tariffs on barrels! Tariffs on bottles! Tariffs on the letter B!"`},
+  {text:`Rally speech: "The strait used to be narrow. Now it's even more narrow. I did that. Look at it!"`},
+  {text:`"Fire the fleet! No, not that fleet — the OTHER fleet! Whatever, all of them!"`},
+  {text:`"Many sources say the tanker is a ten out of ten. Terrible. A ten out of ten terrible. Attack!"`},
+  {text:`Reporter: "Sir, will you release the Epstein files?" — "I'm releasing something else: 40 missiles."`},
+  {text:`Breaking: Cheeto-in-Chief declares the tanker "low energy". Fleet instructed to bring the energy.`},
+  {text:`"I wrote the book on tankers. Great book. Huge. Nobody has read it, but it's a very good book."`},
+  {text:`"It's a beautiful tariff. Soon there'll be tariffs on your tariffs. Nobody's ever seen tariffs like it."`},
+  {text:`"Make the strait small again! Make it big again! Whatever the people want. Both. At the same time."`},
 ];
-function pickNews(){let i;do{i=Math.floor(Math.random()*NEWS.length)}while(i===G.lastNews&&NEWS.length>1);G.lastNews=i;return NEWS[i]}
+function pickNews(){ // shuffled bag: every scenario shows once before any repeats
+  if(!G.newsBag||!G.newsBag.length){G.newsBag=NEWS.map((_,i)=>i);for(let i=G.newsBag.length-1;i>0;i--){const j=Math.floor(Math.random()*(i+1));[G.newsBag[i],G.newsBag[j]]=[G.newsBag[j],G.newsBag[i]]}}
+  return NEWS[G.newsBag.pop()];
+}
 function startFury(){ // after the news: US ships are twice as tough for 30s
   G.usT=30;for(const e of G.en)if(e.fac==='us'&&!e.fury){e.fury=true;e.hp*=2;e.maxhp*=2;e.dmg*=2}
 }
