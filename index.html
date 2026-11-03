@@ -235,8 +235,13 @@ function damageEnemy(e,d){
   e.hp-=d;e.flash=.08;
   if(e.hp<=0&&!e.dead){
     e.dead=true;G.kills++;
-    const dc=e.boss?1:(e.val>=5?0.3:0.07);
-    for(let i=0;i<(e.boss?2:1);i++)if(Math.random()<dc)G.pu.push({x:e.x+(i?30:0),y:e.y,t:PU_KEYS[Math.floor(Math.random()*PU_KEYS.length)],ph:0});
+    // drop chance: 18% (45% tanks), guaranteed once 8 kills pass without a drop; bosses drop two
+    G.sinceDrop=(G.sinceDrop||0)+1;
+    const dc=e.boss?1:(e.val>=5?0.45:0.18);
+    if(e.boss||G.sinceDrop>=8||Math.random()<dc){
+      G.sinceDrop=0;
+      for(let i=0;i<(e.boss?2:1);i++)G.pu.push({x:e.x+(i?30:0),y:e.y,t:PU_KEYS[Math.floor(Math.random()*PU_KEYS.length)],ph:0});
+    }
     boom(e.x,e.y,e.boss?60:12,e.col);G.shake=Math.max(G.shake,e.boss?14:2);
     const n=e.boss?14:(e.val>=5?3:1);
     for(let i=0;i<n;i++)G.pk.push({x:e.x+rand(-8,8),y:e.y+rand(-8,8),vx:rand(-60,60),vy:rand(-60,40),v:Math.max(1,e.val/n)*G.S.yield*(1+G.wave*0.05)});
