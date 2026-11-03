@@ -171,6 +171,7 @@ const SF={
   bossalert:()=>[0,.38].forEach(d=>tone(135,90,.32,'sawtooth',.12,d)),
   die:()=>[[392,0],[370,.4],[349,.8],[330,1.2]].forEach(([f,d],i)=>tone(f,f*.97,i===3?1.0:.38,'sawtooth',.07,d,i===3?6:0)),
   buy:()=>{tone(1200,1200,.08,'square',.045);tone(1600,1600,.28,'square',.045,.08)},
+  news:()=>{[784,988,784,1175].forEach((f,i)=>tone(f,f,.12,'square',.05,i*.1));tone(220,110,.55,'sawtooth',.06,.5)},
   click:()=>tone(600,950,.05,'sine',.07),
   horn:()=>{[0,.55].forEach(d=>tone(98,92,.5,'sawtooth',.07,d));[523,659,784,1047].forEach((f,i)=>tone(f,f,.2,'triangle',.07,1.2+i*.12))},
   wh:()=>{tone(90,1800,2.2,'sawtooth',.05);tone(140,2600,2.2,'sine',.06,.15);noise(.6,.15,300,5000);[0,.5,1,1.5,2].forEach(d=>tone(600,1200,.2,'square',.03,d))},
@@ -289,6 +290,51 @@ const PERKS=[
   {name:'Reactive Armor',desc:'-12% damage taken',fn:(S)=>S.armor*=0.88},
 ];
 
+// ---------- Breaking-news popups: the Cheeto-in-Chief stirs up the US fleet ----------
+const NEWS=[
+  {text:'"TARIFFS! 200% on EVERYTHING! Yes, even tankers. Especially tankers!"'},
+  {text:'Reporter: "Sir, about the Epstein files…" — "LOOK OVER THERE! A TANKER! Fire everything!"'},
+  {text:'3 AM tweet: "NOBODY has ever sailed a strait like me. Believe me. TREMENDOUS strait!"'},
+  {text:'"Iran will pay for the strait. Big beautiful strait. They\'ll pay, and they\'ll LOVE it."'},
+  {text:'"Fake news says my ratings are down. Send the fleet. Send ALL the fleet."'},
+  {text:'Sharpie map: "As you can clearly see, the strait goes RIGHT THROUGH Florida."'},
+  {text:'"I know more about oil tankers than the tanker people. Nobody knows tankers like me."'},
+  {text:'New tariff on barrels! "Very expensive now. Very, very expensive. Sad!"'},
+  {text:'Golf trip cancelled. The fleet is in a MOOD.'},
+  {text:'"We\'re building a wall… in the water! And Iran is paying for it!"'},
+  {text:'"I just had a great call with the strait. The strait says I\'m winning. Bigly."'},
+];
+function triggerNews(){
+  let i;do{i=Math.floor(Math.random()*NEWS.length)}while(i===G.lastNews&&NEWS.length>1);G.lastNews=i;
+  G.news={t:0,dur:6.5,sc:NEWS[i]};G.usT=30;G.nextNews=G.t+rand(40,60);
+  for(const e of G.en)if(e.fac==='us'&&!e.fury){e.fury=true;e.hp*=2;e.maxhp*=2;e.dmg*=2}
+  sfx('news');
+}
+function wrapText(text,maxW){const out=[];let line='';for(const w of text.split(' ')){const t=line?line+' '+w:w;if(ctx.measureText(t).width>maxW&&line){out.push(line);line=w}else line=t}if(line)out.push(line);return out}
+function cheeto(x,y,s,t){ // a crunchy cheese snack in a bad blond wig. no face.
+  ctx.save();ctx.translate(x,y);ctx.scale(s,s);ctx.rotate(Math.sin(t*3)*.05);ctx.lineCap='round';ctx.lineJoin='round';
+  ctx.beginPath();ctx.moveTo(-6,26);ctx.bezierCurveTo(-22,8,14,4,2,-10);
+  ctx.lineWidth=27;ctx.strokeStyle=OUT;ctx.stroke();ctx.lineWidth=21;ctx.strokeStyle='#ff9a1f';ctx.stroke();
+  ctx.beginPath();ctx.moveTo(-10,22);ctx.bezierCurveTo(-24,8,8,2,-4,-10);ctx.lineWidth=4;ctx.strokeStyle='#ffc25e';ctx.stroke();
+  ctx.fillStyle='#e56a00';for(const[dx,dy]of[[-8,16],[5,12],[-3,3],[8,-2],[-10,6]]){ctx.beginPath();ctx.arc(dx,dy,2,0,TAU);ctx.fill()}
+  ctx.fillStyle='#ffd27a';for(const[dx,dy]of[[0,20],[4,6],[-6,10],[6,-8]]){ctx.beginPath();ctx.arc(dx,dy,1.4,0,TAU);ctx.fill()}
+  ctx.beginPath();ctx.moveTo(-14,-9);ctx.bezierCurveTo(-22,-28,6,-40,26,-26);ctx.bezierCurveTo(33,-21,30,-12,21,-13);ctx.bezierCurveTo(10,-21,-2,-13,-14,-9);ctx.closePath();
+  ctx.fillStyle='#ffe066';ctx.fill();ctx.lineWidth=3;ctx.strokeStyle=OUT;ctx.stroke();
+  ctx.strokeStyle='#d9a900';ctx.lineWidth=1.8;ctx.beginPath();ctx.moveTo(-10,-13);ctx.quadraticCurveTo(0,-31,19,-26);ctx.moveTo(-6,-11);ctx.quadraticCurveTo(7,-24,24,-19);ctx.stroke();
+  ctx.restore();
+}
+function drawNews(){
+  const n=G.news;if(!n||state!=='play')return;
+  const t=n.t,k=Math.max(0,Math.min(1,t/.35,(n.dur-t)/.35)),ease=1-Math.pow(1-k,3),cx=20,cw=W-40,ch=116,y=100-(1-ease)*(ch+140);
+  ctx.save();
+  rrect(cx,y,cw,ch,16);ctx.fillStyle='#fff8e6';ctx.fill();ctx.lineWidth=4;ctx.strokeStyle=OUT;ctx.stroke();
+  rrect(cx+12,y-12,168,25,12);outlineFill('#e8483f',3);txt('📺 BREAKING NEWS',cx+24,y+6,13,'#fff','left',3);
+  cheeto(cx+50,y+72,1.3,t);
+  ctx.font='700 15px '+FONT;ctx.textAlign='left';ctx.textBaseline='alphabetic';ctx.fillStyle=OUT;
+  wrapText(n.sc.text,cw-112).slice(0,3).forEach((l,i)=>ctx.fillText(l,cx+96,y+38+i*19));
+  ctx.font='700 13px '+FONT;ctx.fillStyle='#d92b2b';ctx.fillText('US ships are FURIOUS — 2× tougher for 30s!',cx+96,y+ch-10);
+  ctx.restore();
+}
 // ---------- Game state ----------
 let G=null,state='menu',last=0;
 function newRun(){
@@ -296,7 +342,7 @@ function newRun(){
   const st=Math.min(save.startTier||0,save.maxTier||0);
   G={S,t:0,wave:SECTOR*st,shards:0,kills:0,
     p:{x:W/2,y:H-90,vx:0,vy:0,hull:S.maxHull,shield:S.maxShield,fireT:0,missT:0,dashT:0,dashCd:0,inv:0,shieldT:0,novaT:S.novaCd*0.5,flash:0},
-    bullets:[],eb:[],en:[],pk:[],fx:[],msl:[],pu:[],buf:{},spills:[],leakT:0,crashT:0,txt:[],planets:[{x:110,y:-90,r:42,v:35},{x:330,y:-340,r:30,v:35},{x:200,y:-620,r:34,v:35,ring:true},{x:360,y:-900,r:38,v:35},{x:90,y:-1180,r:30,v:35,ring:true}],combo:0,comboT:0,vac:false,droneT:0,leech:0,
+    bullets:[],eb:[],en:[],pk:[],fx:[],msl:[],pu:[],buf:{},spills:[],leakT:0,crashT:0,usT:0,news:null,lastNews:-1,nextNews:rand(28,40),txt:[],planets:[{x:110,y:-90,r:42,v:35},{x:330,y:-340,r:30,v:35},{x:200,y:-620,r:34,v:35,ring:true},{x:360,y:-900,r:38,v:35},{x:90,y:-1180,r:30,v:35,ring:true}],combo:0,comboT:0,vac:false,droneT:0,leech:0,
     spawnQ:[],spawnT:0,waveClear:false,banner:{text:'',t:0},shake:0,
     stars:Array.from({length:90},()=>({x:rand(0,W),y:rand(0,H),s:rand(.3,1.4)}))};
   // diving into a deeper sector gives free random perks to help you survive
@@ -366,7 +412,7 @@ function enemyDef(type,w){
     swift: {hp:16*hpS,r:10,spd:170+w*4,col:'#4fd',val:2,fire:w>=3?Math.max(.9,2.4-w*.05):0,dmg:13*dmgS,dive:true},
   };
   const o=Object.assign({type},D[type]);
-  o.spd*=1+.1*T;for(const k of['fire','sfire','lfire'])if(o[k])o[k]*=Math.pow(.9,T);
+  o.spd*=1+.1*T;for(const k of['fire','sfire','lfire'])if(o[k])o[k]*=Math.pow(.9,T)*.7;
   return o;
 }
 function nextWave(){
@@ -402,11 +448,13 @@ function spawn(type){
     const hp=1600*Math.pow(1.35,w/5-1)*(1+0.12*w)*Math.pow(2,T);
     e={type:'boss',hp,r:46,spd:40,col:['#4f7fe8','#2fb35f','#7f93b5'][bt],fac:['us','ir','us'][bt],val:40+w*4,fire:1.1,dmg:(14+w)*(1+.5*T),boss:true,x:W/2,y:-60,ph:0,bt,name:BOSS_NAMES[bt]};
     e.maxhp=hp;e.fireT=1.5;G.enemyBoss=e;sfx('bossalert');
+    if(G.usT>0&&e.fac==='us'){e.fury=true;e.hp*=2;e.maxhp=e.hp;e.dmg*=2}
   }else{
     e=enemyDef(type,w);e.maxhp=e.hp;e.x=rand(30,W-30);e.y=-30;e.fireT=rand(.5,e.fire||1);
     // elites: tougher, tankier, worth more, always drop a power-up
     if(type==='rock')e.vx=rand(-50,50);
     if(!['healer','layer','rock'].includes(type)){e.fac=Math.random()<.5?'ir':'us';e.col=e.fac==='ir'?'#2fb35f':'#4f7fe8'}
+    if(G.usT>0&&e.fac==='us'){e.fury=true;e.hp*=2;e.maxhp=e.hp;e.dmg*=2}
     if(w>=3&&Math.random()<Math.min(.08+.02*w,.4)){e.elite=true;e.hp*=3;e.maxhp=e.hp;e.r*=1.25;e.val*=3;e.dmg*=1.3}
   }
   e.ph=rand(0,6.28);e.flash=0;G.en.push(e);
@@ -571,6 +619,7 @@ function update(dt){
   // enemies
   for(const e of G.en){
     e.ph+=dt;e.flash-=dt;
+    if(e.fury&&G.usT>0)e.fireT-=dt*.8;   // furious US ships shoot almost twice as often
     if(e.boss){
       if(e.y<110)e.y+=60*dt;
       e.x=W/2+Math.sin(e.ph*.6)*(W/2-100);
@@ -587,7 +636,7 @@ function update(dt){
           boom(e.x,e.y,10,'#7be06b')}
       }
       if(e.fireT<=0){
-        e.fireT=Math.max(.3,.8-G.wave*.01);e.atk=(e.atk||0)+1;
+        e.fireT=Math.max(.22,.6-G.wave*.01);e.atk=(e.atk||0)+1;
         const n=10+Math.min(14,G.wave|0);
         if(e.atk%3===0){for(const sx of[-1,1])ebullet(e.x+sx*30,e.y+20,sx*40,150,e.dmg,'m')}
         if(e.bt!==1&&e.atk%2){for(let i=0;i<n;i++){const a=i/n*6.283+e.ph;ebullet(e.x,e.y,Math.cos(a)*150,Math.sin(a)*150,e.dmg)}}
@@ -722,6 +771,9 @@ function update(dt){
   for(const w of G.txt)w.t+=dt;
   G.txt=G.txt.filter(w=>w.t<.8);
   for(const pl of G.planets){pl.y+=pl.v*dt;if(pl.y>H+90){pl.y=-90-rand(0,260);pl.x=rand(90,W-90)}}
+  if(G.usT>0)G.usT-=dt;
+  if(G.news){G.news.t+=dt;if(G.news.t>=G.news.dur)G.news=null}
+  else if(G.t>=G.nextNews&&state==='play')triggerNews();
   G.comboT-=dt;if(G.comboT<=0)G.combo=0;
   G.banner.t-=dt;G.shake=Math.max(0,G.shake-30*dt);
   for(const s of G.stars){s.y+=s.s*60*dt;if(s.y>H){s.y=0;s.x=rand(0,W)}}
@@ -823,6 +875,7 @@ function monster(e){
   e.hh=(air||crate)?r*1.3:L/2;
   const fill=e.flash>0?'#fff':e.col,light=e.flash>0?'#fff':'#eef3fb';
   ctx.save();ctx.translate(e.x,e.y);ctx.lineJoin='round';ctx.lineCap='round';
+  if(e.fury&&G.usT>0){ctx.beginPath();ctx.arc(0,0,e.hh+6+Math.sin(G.t*10)*2,0,TAU);ctx.fillStyle='rgba(255,50,50,.3)';ctx.fill()}
   if(e.elite){ctx.beginPath();ctx.arc(0,0,e.hh+8,0,TAU);ctx.fillStyle='rgba(255,225,90,'+(.25+.1*Math.sin(G.t*8))+')';ctx.fill()}
   if(air){ctx.save();ctx.translate(10,16);ctx.globalAlpha=.22;ctx.fillStyle=OUT;ctx.beginPath();ctx.ellipse(0,0,r*1.2,r,0,0,TAU);ctx.fill();ctx.restore()}
   else if(!crate){ctx.fillStyle='rgba(255,255,255,.6)';
@@ -970,6 +1023,7 @@ function draw(){
   for(const k of PU_KEYS){const t=G.buf[k];if(t>0){
     const d=PU[k];ctx.globalAlpha=t<3&&Math.floor(t*6)%2?.4:1;
     bar(12,by,200,15,t/G.S.puTime,d.col,d.name+' '+Math.ceil(t)+'s');ctx.globalAlpha=1;by+=19}}
+  if(G.usT>0){bar(12,by,200,15,G.usT/30,'#ff4f4f','US FURY ×2 '+Math.ceil(G.usT)+'s');by+=19}
   if(G.combo>=3){ctx.globalAlpha=Math.min(1,G.comboT+.3);const sc=1+Math.min(.3,G.combo*.01);
     txt('COMBO ×'+G.combo+'  (+'+Math.round(Math.min(G.combo,50)*2)+'%)',W-12,70,15*sc,'#ffe45c','right',4);ctx.globalAlpha=1}
   if(state==='play'){ctx.save();ctx.translate(DASH_BTN.x,DASH_BTN.y);
@@ -979,6 +1033,7 @@ function draw(){
   if(S.novaCd)txt(p.novaT<=0?'🎆 Flares ready':'Flares '+Math.ceil(p.novaT)+'s',12,H-14,14,p.novaT<=0?'#ffe45c':'#cfc4ff','left',4);
   if(G.enemyBoss&&G.en.includes(G.enemyBoss)){const b=G.enemyBoss;bar(W/2-150,H-40,300,18,Math.max(0,b.hp/b.maxhp),b.col,b.name)}
   if(S.revives>0)txt('💖×'+S.revives,218,26,15,'#fff','left',4);
+  drawNews();
   if(G.banner.t>0){ctx.save();ctx.globalAlpha=Math.min(1,G.banner.t);ctx.translate(W/2,H/2-60);ctx.rotate(-.05);const sc=1+.06*Math.sin(G.t*10);ctx.scale(sc,sc);
     txt(G.banner.text,0,0,40,'#ffe45c','center',9);ctx.restore()}
 }
