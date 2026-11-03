@@ -76,7 +76,7 @@
     <div id="newsCard" style="display:none">
       <div class="chip">📺 BREAKING NEWS</div>
       <div class="nrow"><canvas id="newsIcon" width="90" height="100"></canvas>
-        <div><div id="newsText"></div><div class="nfoot">US ships are FURIOUS — 2× tougher for 30s!</div></div></div>
+        <div><div id="newsText"></div><div class="nfoot" id="newsFoot"></div></div></div>
     </div>
     <div id="perks"></div>
   </div>
@@ -303,52 +303,89 @@ const PERKS=[
 ];
 
 // ---------- Breaking-news popups: the Cheeto-in-Chief stirs up the US fleet ----------
+const BUFFS={ // what the US fleet gets for 30s after each tweet
+  fury:{name:'US FURY ×2',col:'#ff4f4f',aura:'rgba(255,50,50,.3)',desc:'US ships are FURIOUS — 2× health, damage & fire rate for 30s!'},
+  rapid:{name:'TRIGGER HAPPY',col:'#ffd23f',aura:'rgba(255,210,60,.32)',desc:'US ships are trigger-happy — they fire 2.5× as often for 30s!'},
+  armor:{name:'TARIFF ARMOR',col:'#9fb4d8',aura:'rgba(160,185,230,.38)',desc:'Tariff armor! US ships have 3× health for 30s!'},
+  speed:{name:'FULL THROTTLE',col:'#5fe08a',aura:'rgba(80,230,130,.3)',desc:'Full throttle! US ships move much faster for 30s!'},
+  missiles:{name:'MISSILE MADNESS',col:'#ff9a3c',aura:'rgba(255,150,50,.32)',desc:'Missile madness! US ships fire homing missiles for 30s!'},
+  swarm:{name:'REINFORCEMENTS',col:'#c58bff',aura:'rgba(190,130,255,.3)',desc:'Reinforcements! 8 extra US ships join in, firing faster for 30s!'},
+  air:{name:'AIR SUPPORT',col:'#e8f0ff',aura:'rgba(230,240,255,.4)',desc:'Air support! Two Warthogs and three jets are called in!'},
+};
 const NEWS=[
-  {text:`3 AM tweet: "NOBODY has ever sailed a strait like me. Believe me. TREMENDOUS strait!"`},
-  {text:`"TARIFFS! 200% on EVERYTHING! Yes, even tankers. Especially tankers!"`},
-  {text:`Reporter: "Sir, about the Epstein files…" — "LOOK OVER THERE! A TANKER! Fire everything!"`},
-  {text:`"Iran will pay for the strait. Big beautiful strait. They'll pay, and they'll LOVE it."`},
-  {text:`"Fake news says my ratings are down. Send the fleet. Send ALL the fleet."`},
-  {text:`Sharpie map: "As you can clearly see, the strait goes RIGHT THROUGH Florida."`},
-  {text:`"I know more about oil tankers than the tanker people. Nobody knows tankers like me."`},
-  {text:`New tariff on barrels! "Very expensive now. Very, very expensive. Sad!"`},
-  {text:`Golf trip cancelled. The fleet is in a MOOD.`},
-  {text:`"We're building a wall… in the water! And Iran is paying for it!"`},
-  {text:`"I just had a great call with the strait. The strait says I'm winning. Bigly."`},
-  {text:`Reporter: "Is it true there are Epstein files?" — "Next question! Navy, open fire on the next question!"`},
-  {text:`Truth post, all caps: "THE TANKER IS A DISASTER. A TOTAL AND COMPLETE DISASTER. ATTACK!"`},
-  {text:`"I have the best admirals. Everybody says so. They're crying, they're so good. Fire!"`},
-  {text:`"Many people are saying oil should be orange. Like me. Very orange. Paint the tanker!"`},
-  {text:`"Tariff on water! Why is the ocean allowed to be wet for free? Nobody asked me!"`},
-  {text:`Press briefing: "Nobody has ever asked the Epstein question this nicely. Anyway — torpedoes!"`},
-  {text:`"I will make the Persian Gulf great again. Actually, I'll rename it. Gulf of Cheeto-ica!"`},
-  {text:`"My fleet is so big, you'd need a bigger ocean. I'm getting a bigger ocean. Tariffs on the old one!"`},
-  {text:`3 AM tweet: "Covfefe. Also: fire at will. Also: covfefe."`},
-  {text:`"This tanker is the worst deal in history. Worse than my last deal. And my last deal was perfect."`},
-  {text:`"I'm not saying the tanker is guilty. I'm just saying it looks guilty. Very guilty. Blast it!"`},
-  {text:`"They told me it was impossible to tariff a sunset. I tariffed the sunset. Sad for them."`},
-  {text:`Ribbon-cutting: "Ocean is open! Best ocean. Tanker not invited."`},
-  {text:`"Windmills cause tanker cancer. Everyone knows. Sink the tanker for its own good."`},
-  {text:`Reporter: "Sir, the Epstein files—" "Sorry, can't hear you, I'm on a very important boat call!"`},
-  {text:`"Very stable genius move: if the tanker can't reach port, the oil price goes up. Perfect. Fire!"`},
-  {text:`"I've been told I'm the greatest sailor in history. By me. A very reliable source."`},
-  {text:`"We have a deal with a country. I forgot which. Could be this one. Open fire to confirm."`},
-  {text:`"Tariffs on barrels! Tariffs on bottles! Tariffs on the letter B!"`},
-  {text:`Rally speech: "The strait used to be narrow. Now it's even more narrow. I did that. Look at it!"`},
-  {text:`"Fire the fleet! No, not that fleet — the OTHER fleet! Whatever, all of them!"`},
-  {text:`"Many sources say the tanker is a ten out of ten. Terrible. A ten out of ten terrible. Attack!"`},
-  {text:`Reporter: "Sir, will you release the Epstein files?" — "I'm releasing something else: 40 missiles."`},
-  {text:`Breaking: Cheeto-in-Chief declares the tanker "low energy". Fleet instructed to bring the energy.`},
-  {text:`"I wrote the book on tankers. Great book. Huge. Nobody has read it, but it's a very good book."`},
-  {text:`"It's a beautiful tariff. Soon there'll be tariffs on your tariffs. Nobody's ever seen tariffs like it."`},
-  {text:`"Make the strait small again! Make it big again! Whatever the people want. Both. At the same time."`},
+  {text:`3 AM tweet: "NOBODY has ever sailed a strait like me. Believe me. TREMENDOUS strait!"`,buff:'fury'},
+  {text:`"TARIFFS! 200% on EVERYTHING! Yes, even tankers. Especially tankers!"`,buff:'rapid'},
+  {text:`Reporter: "Sir, about the Epstein files…" — "LOOK OVER THERE! A TANKER! Fire everything!"`,buff:'rapid'},
+  {text:`"Iran will pay for the strait. Big beautiful strait. They'll pay, and they'll LOVE it."`,buff:'speed'},
+  {text:`"Fake news says my ratings are down. Send the fleet. Send ALL the fleet."`,buff:'swarm'},
+  {text:`Sharpie map: "As you can clearly see, the strait goes RIGHT THROUGH Florida."`,buff:'swarm'},
+  {text:`"I know more about oil tankers than the tanker people. Nobody knows tankers like me."`,buff:'air'},
+  {text:`New tariff on barrels! "Very expensive now. Very, very expensive. Sad!"`,buff:'armor'},
+  {text:`Golf trip cancelled. The fleet is in a MOOD.`,buff:'speed'},
+  {text:`"We're building a wall… in the water! And Iran is paying for it!"`,buff:'armor'},
+  {text:`"I just had a great call with the strait. The strait says I'm winning. Bigly."`,buff:'speed'},
+  {text:`Reporter: "Is it true there are Epstein files?" — "Next question! Navy, open fire on the next question!"`,buff:'rapid'},
+  {text:`Truth post, all caps: "THE TANKER IS A DISASTER. A TOTAL AND COMPLETE DISASTER. ATTACK!"`,buff:'swarm'},
+  {text:`"I have the best admirals. Everybody says so. They're crying, they're so good. Fire!"`,buff:'air'},
+  {text:`"Many people are saying oil should be orange. Like me. Very orange. Paint the tanker!"`,buff:'fury'},
+  {text:`"Tariff on water! Why is the ocean allowed to be wet for free? Nobody asked me!"`,buff:'armor'},
+  {text:`Press briefing: "Nobody has ever asked the Epstein question this nicely. Anyway — torpedoes!"`,buff:'rapid'},
+  {text:`"I will make the Persian Gulf great again. Actually, I'll rename it. Gulf of Cheeto-ica!"`,buff:'speed'},
+  {text:`"My fleet is so big, you'd need a bigger ocean. I'm getting a bigger ocean. Tariffs on the old one!"`,buff:'armor'},
+  {text:`3 AM tweet: "Covfefe. Also: fire at will. Also: covfefe."`,buff:'swarm'},
+  {text:`"This tanker is the worst deal in history. Worse than my last deal. And my last deal was perfect."`,buff:'air'},
+  {text:`"I'm not saying the tanker is guilty. I'm just saying it looks guilty. Very guilty. Blast it!"`,buff:'fury'},
+  {text:`"They told me it was impossible to tariff a sunset. I tariffed the sunset. Sad for them."`,buff:'armor'},
+  {text:`Ribbon-cutting: "Ocean is open! Best ocean. Tanker not invited."`,buff:'armor'},
+  {text:`"Windmills cause tanker cancer. Everyone knows. Sink the tanker for its own good."`,buff:'speed'},
+  {text:`Reporter: "Sir, the Epstein files—" "Sorry, can't hear you, I'm on a very important boat call!"`,buff:'rapid'},
+  {text:`"Very stable genius move: if the tanker can't reach port, the oil price goes up. Perfect. Fire!"`,buff:'swarm'},
+  {text:`"I've been told I'm the greatest sailor in history. By me. A very reliable source."`,buff:'air'},
+  {text:`"We have a deal with a country. I forgot which. Could be this one. Open fire to confirm."`,buff:'fury'},
+  {text:`"Tariffs on barrels! Tariffs on bottles! Tariffs on the letter B!"`,buff:'armor'},
+  {text:`Rally speech: "The strait used to be narrow. Now it's even more narrow. I did that. Look at it!"`,buff:'armor'},
+  {text:`"Fire the fleet! No, not that fleet — the OTHER fleet! Whatever, all of them!"`,buff:'swarm'},
+  {text:`"Many sources say the tanker is a ten out of ten. Terrible. A ten out of ten terrible. Attack!"`,buff:'missiles'},
+  {text:`Reporter: "Sir, will you release the Epstein files?" — "I'm releasing something else: 40 missiles."`,buff:'rapid'},
+  {text:`Breaking: Cheeto-in-Chief declares the tanker "low energy". Fleet instructed to bring the energy.`,buff:'swarm'},
+  {text:`"I wrote the book on tankers. Great book. Huge. Nobody has read it, but it's a very good book."`,buff:'fury'},
+  {text:`"It's a beautiful tariff. Soon there'll be tariffs on your tariffs. Nobody's ever seen tariffs like it."`,buff:'armor'},
+  {text:`"Make the strait small again! Make it big again! Whatever the people want. Both. At the same time."`,buff:'armor'},
+  {text:`Truth post: "The strait is rigged. The tide? Rigged. Sand? Very sandy. Sad!"`,buff:'speed'},
+  {text:`"Our ships are so fast, they arrive before they leave. Science can't explain it. I can."`,buff:'speed'},
+  {text:`"I'm told the tanker has a lot of oil. I want some. Not buy. Just… some. Fire!"`,buff:'missiles'},
+  {text:`Reporter: "Sir, the Epstein—" "Is that a boat? It's a boat! BOAT! Everyone to the boats!"`,buff:'swarm'},
+  {text:`"Nobody builds hulls like I build hulls. Thick. Beautiful. Tariffs on thin hulls!"`,buff:'armor'},
+  {text:`"I'm very good at war. I've never done it, but I'd be great. Starting now."`,buff:'fury'},
+  {text:`Breaking: the fleet receives a thumbs-up emoji. Admirals say morale is "extremely thumbs-up".`,buff:'rapid'},
+  {text:`"They say the tanker is a huge threat. I say it's a huge floating gas station. Bomb it anyway."`,buff:'missiles'},
+  {text:`"I've signed a very big executive order. Everyone must say 'Tremendous' before shooting."`,buff:'rapid'},
+  {text:`"Tariff on seagulls! They've been getting a free ride on our ships for years!"`,buff:'armor'},
+  {text:`Reporter: "Mr. President, the Epstein files?" — "I love the Navy. Navy, I love you. FIRE!"`,buff:'rapid'},
+  {text:`"My doctor says I'm the healthiest tanker-hater ever. A record! Believe it."`,buff:'fury'},
+  {text:`"Why is it called an oil TANKER? Why not oil BIGGER? Very unfair. Attack the name!"`,buff:'fury'},
+  {text:`"I called the ocean. It says it's not a Democrat. Good. Deploying the Air Force!"`,buff:'air'},
+  {text:`"Send in the jets! The pretty ones! The ones with the really cool stripes!"`,buff:'air'},
+  {text:`"We're bringing back sailing ships. Cannonballs, wooden hulls, beautiful. And ALSO missiles."`,buff:'missiles'},
+  {text:`3 AM tweet: "WHO TOOK MY SHARPIE?! The map is NOT finished! Send ALL boats!"`,buff:'swarm'},
+  {text:`"I just bought a very expensive yacht. Tariff-free. I made the rule. Then I made an exception."`,buff:'armor'},
+  {text:`"Someone said 'strait' and I heard 'straight'. Now the fleet is going straight. At you."`,buff:'speed'},
+  {text:`"Very big news: I have named the tanker 'Sad!' Fleet, you know what to do."`,buff:'fury'},
 ];
 function pickNews(){ // shuffled bag: every scenario shows once before any repeats
   if(!G.newsBag||!G.newsBag.length){G.newsBag=NEWS.map((_,i)=>i);for(let i=G.newsBag.length-1;i>0;i--){const j=Math.floor(Math.random()*(i+1));[G.newsBag[i],G.newsBag[j]]=[G.newsBag[j],G.newsBag[i]]}}
   return NEWS[G.newsBag.pop()];
 }
-function startFury(){ // after the news: US ships are twice as tough for 30s
-  G.usT=30;for(const e of G.en)if(e.fac==='us'&&!e.fury){e.fury=true;e.hp*=2;e.maxhp*=2;e.dmg*=2}
+function applyBuff(e){ // one-off stat changes for US ships (other buffs act live in the enemy loop)
+  if(e.fury||G.usT<=0)return;e.fury=true;
+  if(G.usType==='fury'){e.hp*=2;e.maxhp*=2;e.dmg*=2}
+  else if(G.usType==='armor'){e.hp*=3;e.maxhp*=3}
+}
+function startFury(type){ // the news gives the US fleet a random 30s buff
+  type=type||'fury';G.usType=type;G.usT=30;
+  for(const e of G.en)if(e.fac==='us')applyBuff(e);
+  if(type==='swarm'){G.forceUS=true;for(let i=0;i<8;i++)spawn(['drone','drone','zig','swift'][i%4]);G.forceUS=false}
+  if(type==='air'){G.forceUS=true;spawn('a10');spawn('a10');for(let i=0;i<3;i++)spawn('swift');G.forceUS=false}
 }
 function cheeto(ctx,x,y,s,t){ // a crunchy cheese snack in a bad blond wig. no face.
   ctx.save();ctx.translate(x,y);ctx.scale(s,s);ctx.rotate(Math.sin(t*3)*.05);ctx.lineCap='round';ctx.lineJoin='round';
@@ -384,7 +421,7 @@ function openPerks(title){
   $('perkTitle').textContent=title||'CHOOSE A PERK';
   $('newsCard').style.display='none';G.newsShown=false;
   if(!(G.bonus>0)){ // last perk screen before a leg starts: show the breaking news
-    const sc=pickNews();$('newsText').textContent=sc.text;
+    const sc=pickNews();$('newsText').textContent=sc.text;G.pendingBuff=sc.buff;$('newsFoot').textContent=BUFFS[sc.buff].desc;
     const nc=$('newsIcon').getContext('2d');nc.clearRect(0,0,90,100);cheeto(nc,45,62,1.3,0);
     $('newsCard').style.display='block';G.newsShown=true;sfx('news');
   }
@@ -394,7 +431,7 @@ function openPerks(title){
   const box=$('perks');box.innerHTML='';
   for(const pk of picks){
     const b=document.createElement('button');b.innerHTML=`<b>${pk.name}</b><small>${pk.desc}</small>`;
-    b.onclick=()=>{pk.fn(G.S,G);sfx('perk');if(G.bonus>0){G.bonus--;openPerks('CHECKPOINT BONUS PERK!');return}show(null);state='play';nextWave();if(G.newsShown){G.newsShown=false;startFury()}};
+    b.onclick=()=>{pk.fn(G.S,G);sfx('perk');if(G.bonus>0){G.bonus--;openPerks('CHECKPOINT BONUS PERK!');return}show(null);state='play';nextWave();if(G.newsShown){G.newsShown=false;startFury(G.pendingBuff)}};
     box.appendChild(b);
   }
   show('perkPanel');
@@ -483,14 +520,15 @@ function spawn(type){
     const hp=1600*Math.pow(1.35,w/5-1)*(1+0.12*w)*Math.pow(2,T);
     e={type:'boss',hp,r:46,spd:40,col:['#4f7fe8','#2fb35f','#7f93b5'][bt],fac:['us','ir','us'][bt],val:40+w*4,fire:1.1,dmg:(14+w)*(1+.5*T),boss:true,x:W/2,y:-60,ph:0,bt,name:BOSS_NAMES[bt]};
     e.maxhp=hp;e.fireT=1.5;G.enemyBoss=e;sfx('bossalert');
-    if(G.usT>0&&e.fac==='us'){e.fury=true;e.hp*=2;e.maxhp=e.hp;e.dmg*=2}
+    applyBuff(e);
   }else{
     e=enemyDef(type,w);e.maxhp=e.hp;e.x=rand(30,W-30);e.y=-30;e.fireT=rand(.5,e.fire||1);
     // elites: tougher, tankier, worth more, always drop a power-up
     if(type==='rock')e.vx=rand(-50,50);
     if(!['healer','layer','rock'].includes(type)){e.fac=Math.random()<.5?'ir':'us';e.col=e.fac==='ir'?'#2fb35f':'#4f7fe8'}
+    if(G.forceUS){e.fac='us';e.col='#4f7fe8'}
     if(type==='a10'){const L=Math.random()<.5;e.fac='us';e.col='#4f7fe8';e.x=L?-55:W+55;e.y=rand(90,340);e.vx=(L?1:-1)*(150+w*2)}
-    if(G.usT>0&&e.fac==='us'){e.fury=true;e.hp*=2;e.maxhp=e.hp;e.dmg*=2}
+    applyBuff(e);
     if(w>=3&&Math.random()<Math.min(.08+.02*w,.4)){e.elite=true;e.hp*=3;e.maxhp=e.hp;e.r*=1.25;e.val*=3;e.dmg*=1.3}
   }
   e.ph=rand(0,6.28);e.flash=0;G.en.push(e);
@@ -655,7 +693,10 @@ function update(dt){
   // enemies
   for(const e of G.en){
     e.ph+=dt;e.flash-=dt;
-    if(e.fury&&G.usT>0)e.fireT-=dt*.8;   // furious US ships shoot almost twice as often
+    if(e.fac==='us'&&G.usT>0){
+      const k={fury:.8,rapid:1.5,swarm:.5}[G.usType];if(k)e.fireT-=dt*k;   // faster firing
+      if(G.usType==='speed'&&!e.boss&&!e.sniper&&!e.layer){if(e.a10)e.x+=e.vx*dt*.8;else e.y+=(e.spd||0)*dt*.8}   // faster ships
+    }
     if(e.boss){
       if(e.y<110)e.y+=60*dt;
       e.x=W/2+Math.sin(e.ph*.6)*(W/2-100);
@@ -715,7 +756,8 @@ function update(dt){
       if(e.fire){e.fireT-=dt;if(e.fireT<=0&&e.y>0&&e.y<H-150){
         e.fireT=e.fire;const a=Math.atan2(p.y-e.y,p.x-e.x);
         e.sh=(e.sh||0)+1;
-        if(e.spread&&e.sh%2===0){ebullet(e.x,e.y,Math.cos(a)*150,Math.sin(a)*150,e.dmg,'m')}
+        if(e.fac==='us'&&G.usT>0&&G.usType==='missiles'){ebullet(e.x,e.y,Math.cos(a)*150,Math.sin(a)*150,e.dmg,'m')}
+        else if(e.spread&&e.sh%2===0){ebullet(e.x,e.y,Math.cos(a)*150,Math.sin(a)*150,e.dmg,'m')}
         else if(e.spread){const m=G.wave>=10?2:1;for(let i=-m;i<=m;i++)ebullet(e.x,e.y,Math.cos(a+i*.22)*200,Math.sin(a+i*.22)*200,e.dmg)}
         else if(e.type==='gun'&&G.wave>=6&&e.sh%4===0){ebullet(e.x,e.y,Math.cos(a)*150,Math.sin(a)*150,e.dmg,'m')}
         else if((e.type==='drone'&&G.wave>=7)||(e.type==='swift'&&G.wave>=6)){for(let i=-1;i<=1;i+=2)ebullet(e.x,e.y,Math.cos(a+i*.14)*230,Math.sin(a+i*.14)*230,e.dmg)}
@@ -919,7 +961,7 @@ function monster(e){
   e.hh=(air||crate)?r*1.3:L/2;
   const fill=e.flash>0?'#fff':e.col,light=e.flash>0?'#fff':'#eef3fb';
   ctx.save();ctx.translate(e.x,e.y);ctx.lineJoin='round';ctx.lineCap='round';
-  if(e.fury&&G.usT>0){ctx.beginPath();ctx.arc(0,0,e.hh+6+Math.sin(G.t*10)*2,0,TAU);ctx.fillStyle='rgba(255,50,50,.3)';ctx.fill()}
+  if(e.fac==='us'&&G.usT>0){ctx.beginPath();ctx.arc(0,0,e.hh+6+Math.sin(G.t*10)*2,0,TAU);ctx.fillStyle=BUFFS[G.usType||'fury'].aura;ctx.fill()}
   if(e.elite){ctx.beginPath();ctx.arc(0,0,e.hh+8,0,TAU);ctx.fillStyle='rgba(255,225,90,'+(.25+.1*Math.sin(G.t*8))+')';ctx.fill()}
   if(air){ctx.save();ctx.translate(10,16);ctx.globalAlpha=.22;ctx.fillStyle=OUT;ctx.beginPath();ctx.ellipse(0,0,r*1.2,r,0,0,TAU);ctx.fill();ctx.restore()}
   else if(!crate){ctx.fillStyle='rgba(255,255,255,.6)';
@@ -1098,7 +1140,7 @@ function draw(){
   for(const k of PU_KEYS){const t=G.buf[k];if(t>0){
     const d=PU[k];ctx.globalAlpha=t<3&&Math.floor(t*6)%2?.4:1;
     bar(12,by,200,15,t/G.S.puTime,d.col,d.name+' '+Math.ceil(t)+'s');ctx.globalAlpha=1;by+=19}}
-  if(G.usT>0){bar(12,by,200,15,G.usT/30,'#ff4f4f','US FURY ×2 '+Math.ceil(G.usT)+'s');by+=19}
+  if(G.usT>0){bar(12,by,200,15,G.usT/30,BUFFS[G.usType||'fury'].col,BUFFS[G.usType||'fury'].name+' '+Math.ceil(G.usT)+'s');by+=19}
   if(G.combo>=3){ctx.globalAlpha=Math.min(1,G.comboT+.3);const sc=1+Math.min(.3,G.combo*.01);
     txt('COMBO ×'+G.combo+'  (+'+Math.round(Math.min(G.combo,50)*2)+'%)',W-12,70,15*sc,'#ffe45c','right',4);ctx.globalAlpha=1}
   if(state==='play'){ctx.save();ctx.translate(DASH_BTN.x,DASH_BTN.y);
