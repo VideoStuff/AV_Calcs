@@ -948,22 +948,39 @@ function playerShip(p){
   p.tilt=(p.tilt||0)*.8+Math.max(-.4,Math.min(.4,(p.x-(p.px??p.x))*.06))*.2;p.px=p.x;
   ctx.save();ctx.translate(p.x,p.y+Math.sin(G.t*4)*1.2);ctx.rotate(p.tilt*.6);ctx.scale(.85,.85);ctx.lineJoin='round';
   if(p.inv>0&&Math.floor(G.t*30)%2)ctx.globalAlpha=.45;
-  // foamy wake
-  for(let i=0;i<4;i++){const y=30+i*11+((G.t*45)%11);ctx.beginPath();ctx.ellipse(0,y,9+i*3.5,3.5,0,0,TAU);ctx.fillStyle='rgba(255,255,255,'+(.6-i*.14)+')';ctx.fill()}
-  const hull=()=>{ctx.beginPath();ctx.moveTo(0,-32);ctx.bezierCurveTo(14,-14,14,16,11,29);ctx.lineTo(-11,29);ctx.bezierCurveTo(-14,16,-14,-14,0,-32)};
-  hull();outlineFill(p.flash>0?'#fff':'#2f4163',3.5);
-  ctx.save();ctx.scale(.78,.86);ctx.translate(0,-1);hull();ctx.fillStyle=p.flash>0?'#fff':'#e8553f';ctx.fill();ctx.lineWidth=2;ctx.strokeStyle=OUT;ctx.stroke();ctx.restore();
-  ctx.beginPath();ctx.moveTo(0,-22);ctx.lineTo(0,10);ctx.lineWidth=2.5;ctx.strokeStyle='#ffd23f';ctx.stroke();
-  for(const y of[-17,-6,5]){ctx.beginPath();ctx.arc(0,y,6,0,TAU);outlineFill('#dfe6f3',2.2);ctx.beginPath();ctx.ellipse(-1.8,y-2,2,1.2,-.6,0,TAU);ctx.fillStyle='rgba(255,255,255,.8)';ctx.fill()}
-  rrect(-8.5,14,17,12,3);outlineFill('#f4f8ff',2.5);
-  eye(-3.4,19.5,2.8,0,-1);eye(3.4,19.5,2.8,0,-1);
-  ctx.beginPath();ctx.arc(0,22.5,2.2,.15*Math.PI,.85*Math.PI);ctx.lineWidth=1.3;ctx.strokeStyle=OUT;ctx.stroke();
-  ctx.beginPath();ctx.arc(-9,5,2.8,0,TAU);ctx.arc(9,5,2.8,0,TAU);ctx.fillStyle='#8a97b4';ctx.fill();   // life boats
-  ctx.save();ctx.translate(0,-24);ctx.rotate((p.aim??-Math.PI/2)+Math.PI/2-p.tilt*.6);     // point-defence turret tracks the nearest threat
-  rrect(-2.2,-13,4.4,13,1.5);outlineFill('#9aa0b8',2);ctx.beginPath();ctx.arc(0,0,5,0,TAU);outlineFill('#c8cfdf',2.5);ctx.restore();
-  if(p.shield>0){const a=.25+.35*p.shield/G.S.maxShield;ctx.beginPath();ctx.arc(0,0,40,0,TAU);ctx.fillStyle='rgba(120,210,255,'+a*.5+')';ctx.fill();
+  const fl=p.flash>0;
+  // foamy wake + bow wave
+  for(let i=0;i<4;i++){const y=34+i*11+((G.t*45)%11);ctx.beginPath();ctx.ellipse(0,y,10+i*3.5,3.5,0,0,TAU);ctx.fillStyle='rgba(255,255,255,'+(.6-i*.14)+')';ctx.fill()}
+  ctx.strokeStyle='rgba(255,255,255,.85)';ctx.lineWidth=3;ctx.lineCap='round';ctx.beginPath();
+  ctx.moveTo(-9,-33);ctx.quadraticCurveTo(-18,-27,-17,-12);ctx.moveTo(9,-33);ctx.quadraticCurveTo(18,-27,17,-12);ctx.stroke();
+  // long, blunt-nosed supertanker hull
+  ctx.beginPath();ctx.moveTo(-13,-22);ctx.quadraticCurveTo(-13,-34,0,-35);ctx.quadraticCurveTo(13,-34,13,-22);ctx.lineTo(13,26);ctx.quadraticCurveTo(13,32,7,32);ctx.lineTo(-7,32);ctx.quadraticCurveTo(-13,32,-13,26);ctx.closePath();
+  outlineFill(fl?'#fff':'#232d48',3.5);
+  // rust-red deck
+  rrect(-10,-29,20,46,5);outlineFill(fl?'#fff':'#c7432f',2);
+  // cargo tank hatches in two columns
+  for(let r=0;r<4;r++)for(const sx of[-1,1]){rrect(sx*5.4-3,-26+r*10.8,6,7.4,1.6);outlineFill('#aeb7c9',1.6)}
+  // yellow pipeline with cross-manifolds
+  ctx.lineCap='round';
+  for(const[x1,y1,x2,y2,w]of[[0,-30,0,15,3],[-9,-15,9,-15,2.4],[-9,-4.5,9,-4.5,2.4],[-9,6.5,9,6.5,2.4]]){
+    ctx.beginPath();ctx.moveTo(x1,y1);ctx.lineTo(x2,y2);ctx.lineWidth=w+2.2;ctx.strokeStyle=OUT;ctx.stroke();
+    ctx.lineWidth=w;ctx.strokeStyle='#ffd23f';ctx.stroke()}
+  // stern accommodation block, funnel and lifeboats
+  for(const sx of[-1,1]){rrect(sx*14.6-1.8,20,3.6,8,1.5);outlineFill('#ff9a3c',1.6)}
+  rrect(-11,16,22,15,3);outlineFill(fl?'#fff':'#f4f8ff',2.8);
+  rrect(-13.5,18,27,5.5,2);outlineFill(fl?'#fff':'#dfe6f3',2);
+  eye(-3.4,20.8,2.8,0,-1);eye(3.4,20.8,2.8,0,-1);
+  ctx.beginPath();ctx.arc(0,24.2,2.2,.15*Math.PI,.85*Math.PI);ctx.lineWidth=1.3;ctx.strokeStyle=OUT;ctx.stroke();
+  ctx.fillStyle='#2b3b66';for(let x=-7;x<=7;x+=3.5){ctx.beginPath();ctx.arc(x,27.4,.9,0,TAU);ctx.fill()}
+  ctx.beginPath();ctx.arc(0,29.6,0.1,0,TAU);
+  rrect(-3.4,25.4,6.8,5,2);outlineFill('#e8483f',1.8);ctx.fillStyle=OUT;ctx.fillRect(-3.4,27,6.8,1.4);
+  // small anchor winch + the weak point-defence gun on the forecastle
+  ctx.beginPath();ctx.arc(0,-31,3.2,0,TAU);outlineFill('#8a97b4',1.8);
+  ctx.save();ctx.translate(0,-30);ctx.rotate((p.aim??-Math.PI/2)+Math.PI/2-p.tilt*.6);
+  rrect(-1.8,-11,3.6,11,1.4);outlineFill('#9aa0b8',1.8);ctx.beginPath();ctx.arc(0,0,3.6,0,TAU);outlineFill('#c8cfdf',2);ctx.restore();
+  if(p.shield>0){const a=.25+.35*p.shield/G.S.maxShield;ctx.beginPath();ctx.arc(0,0,42,0,TAU);ctx.fillStyle='rgba(120,210,255,'+a*.5+')';ctx.fill();
     ctx.lineWidth=2.5;ctx.strokeStyle='rgba(255,255,255,'+(a+.2)+')';ctx.stroke();
-    ctx.beginPath();ctx.arc(0,0,33,-2.5,-1.7);ctx.lineWidth=3;ctx.strokeStyle='rgba(255,255,255,.8)';ctx.stroke()}
+    ctx.beginPath();ctx.arc(0,0,35,-2.5,-1.7);ctx.lineWidth=3;ctx.strokeStyle='rgba(255,255,255,.8)';ctx.stroke()}
   ctx.restore();
 }
 function draw(){
