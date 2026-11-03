@@ -34,7 +34,7 @@
     <h1>STARFORGE</h1>
     <div style="color:#89a;letter-spacing:3px">ENDLESS VOID</div>
     <p class="small">Blast the endless swarm to harvest <span class="shard">Quantum Shards</span>.<br>When your ship is destroyed, forge your wreckage into stronger hulls, shields and weapons. Then dive back in and go further.</p>
-    <p class="small"><b>Move:</b> WASD / arrows / mouse / touch &nbsp; <b>Fire:</b> automatic (hold Space or click for rapid focus) &nbsp; <b>Dash:</b> Shift</p>
+    <p class="small"><b>Move:</b> drag with finger/mouse (1:1) or WASD / arrows &nbsp; <b>Fire:</b> automatic — tap / click / Space repeatedly to fire faster &nbsp; <b>Dash:</b> Shift</p>
     <button id="startBtn">Launch</button>
     <button id="shopBtn0">Hangar</button>
   </div>
@@ -112,10 +112,28 @@ function buildStats(){
 const keys={};let mouse={x:W/2,y:H-100,active:false,down:false};
 addEventListener('keydown',e=>{keys[e.code]=true;if(['Space','ArrowUp','ArrowDown','ArrowLeft','ArrowRight'].includes(e.code))e.preventDefault()});
 addEventListener('keyup',e=>keys[e.code]=false);
-function setPtr(e){const r=cv.getBoundingClientRect();mouse.x=(e.clientX-r.left)*W/r.width;mouse.y=(e.clientY-r.top)*H/r.height;mouse.active=true}
-cv.addEventListener('pointermove',setPtr);
-cv.addEventListener('pointerdown',e=>{setPtr(e);mouse.down=true;});
-addEventListener('pointerup',()=>mouse.down=false);
+// Drag control: the ship moves exactly as far as the finger/mouse drags (1:1). Each tap fires an extra volley.
+let drag=null,lastTap=0;
+function ptr(e){const r=cv.getBoundingClientRect();return{x:(e.clientX-r.left)*W/r.width,y:(e.clientY-r.top)*H/r.height}}
+function tapFire(){
+  if(!G||state!=='play')return;
+  const now=performance.now();if(now-lastTap<40)return;lastTap=now;
+  fire();G.p.fireT=Math.max(G.p.fireT,G.S.fireDelay*0.5);
+}
+cv.addEventListener('pointerdown',e=>{
+  drag=ptr(e);mouse.down=true;try{cv.setPointerCapture(e.pointerId)}catch(_){}
+  tapFire();
+});
+cv.addEventListener('pointermove',e=>{
+  if(!drag||!G||state!=='play')return;
+  const q=ptr(e),p=G.p;
+  p.x=Math.max(16,Math.min(W-16,p.x+q.x-drag.x));
+  p.y=Math.max(30,Math.min(H-24,p.y+q.y-drag.y));
+  drag=q;
+});
+const endDrag=()=>{drag=null;mouse.down=false};
+addEventListener('pointerup',endDrag);addEventListener('pointercancel',endDrag);
+addEventListener('keydown',e=>{if(e.code==='Space'&&!e.repeat)tapFire()});
 
 // ---------- Game state ----------
 let G=null,state='menu',last=0;
@@ -231,9 +249,7 @@ function update(dt){
   if(keys.KeyA||keys.ArrowLeft)ax-=1;if(keys.KeyD||keys.ArrowRight)ax+=1;
   if(keys.KeyW||keys.ArrowUp)ay-=1;if(keys.KeyS||keys.ArrowDown)ay+=1;
   if(ax||ay){const l=Math.hypot(ax,ay);p.vx=ax/l*S.speed;p.vy=ay/l*S.speed;mouse.active=false}
-  else if(mouse.active){const dx=mouse.x-p.x,dy=mouse.y-p.y-30,d=Math.hypot(dx,dy);
-    const sp=Math.min(S.speed,d*8);p.vx=d>2?dx/d*sp:0;p.vy=d>2?dy/d*sp:0}
-  else{p.vx*=.8;p.vy*=.8}
+  else{p.vx=0;p.vy=0}
   p.dashCd-=dt;
   if((keys.ShiftLeft||keys.ShiftRight)&&p.dashCd<=0&&(p.vx||p.vy)){
     const l=Math.hypot(p.vx,p.vy);p.x+=p.vx/l*130;p.y+=p.vy/l*130;p.dashCd=S.dashCd;p.inv=.4;
@@ -245,8 +261,7 @@ function update(dt){
   p.shieldT-=dt;if(p.shieldT<=0&&p.shield<S.maxShield)p.shield=Math.min(S.maxShield,p.shield+S.shieldRegen*dt);
   // weapons
   p.fireT-=dt;
-  const focus=keys.Space||mouse.down;
-  if(p.fireT<=0){fire();p.fireT=S.fireDelay*(focus?0.85:1);}
+  if(p.fireT<=0){fire();p.fireT=S.fireDelay;}
   if(S.missiles){p.missT-=dt;if(p.missT<=0){fireMissiles();p.missT=2.2;}}
   // spawning
   G.spawnT+=dt;
