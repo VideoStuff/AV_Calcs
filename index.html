@@ -46,7 +46,7 @@
     <h1>🛢️ TANKER RUN</h1>
     <div class="sub">STRAIT OF HORMUZ</div>
     <p class="small">You're a big, slow oil tanker trying to sail through the Strait of Hormuz — and Iranian and US ships and planes are firing missiles and bullets at you from every side!<br>Your point-defense guns are weak, but they can <b>shoot incoming missiles and bullets out of the air</b>. Scoop up <span class="shard">Barrels</span> of crude from the wreckage. When you're sunk, spend them at the shipyard on a tougher tanker, then sail again to get further.</p>
-    <p class="small"><b>Steer:</b> drag with finger/mouse (1:1) or WASD / arrows &nbsp; <b>Guns:</b> auto-aim at the nearest missile, bullet or ship inside your dotted range ring (short range!) — tap / click / Space repeatedly to shoot faster &nbsp; <b>Turbo:</b> TURBO button / Shift &nbsp; <b>Perks:</b> pick 1 of 3 after every leg &nbsp; <b>Checkpoints:</b> every 15 legs you reach a new stretch of sea — enemies get 2× tougher, and you can restart from there after you sink &nbsp; <b>Combos:</b> chain kills for bonus barrels &nbsp; <b>Power-ups:</b> grab floating orbs (S/P/R/L) for timed ammo upgrades</p>
+    <p class="small"><b>Steer:</b> drag with finger/mouse (1:1) or WASD / arrows — islands and oil rigs are solid, ramming one wrecks your hull and you must back off &nbsp; <b>Guns:</b> auto-aim at the nearest missile, bullet or ship inside your dotted range ring (short range!) — tap / click / Space repeatedly to shoot faster &nbsp; <b>Turbo:</b> TURBO button / Shift &nbsp; <b>Perks:</b> pick 1 of 3 after every leg &nbsp; <b>Checkpoints:</b> every 15 legs you reach a new stretch of sea — enemies get 2× tougher, and you can restart from there after you sink &nbsp; <b>Combos:</b> chain kills for bonus barrels &nbsp; <b>Power-ups:</b> grab floating orbs (S/P/R/L) for timed ammo upgrades</p>
     <button id="startBtn">Set Sail ⚓</button>
     <button id="tierBtn" class="alt" style="display:none"></button>
     <button id="shopBtn0" class="alt">Shipyard</button>
@@ -209,6 +209,29 @@ function tapFire(){
   const now=performance.now();if(now-lastTap<40)return;lastTap=now;
   if(fire())G.p.fireT=Math.max(G.p.fireT,G.S.fireDelay*(G.buf.rapid>0?0.25:0.5));
 }
+// ---- islands & rigs are solid: you can't sail through them, and ramming one wrecks the hull ----
+const ISL_CIRCLES=[[0,0,14],[0,-16,10]];   // midship + bow
+function islR(pl){return pl.r*(pl.ring?.9:.95)}
+function hitIsland(x,y){for(const pl of G.planets)for(const[ox,oy,pr]of ISL_CIRCLES)if(Math.hypot(x+ox-pl.x,y+oy-pl.y)<islR(pl)+pr)return pl;return null}
+function resolveIslands(){
+  const p=G.p;
+  for(const pl of G.planets){
+    for(const[ox,oy,pr]of ISL_CIRCLES){
+      const dx=p.x+ox-pl.x,dy=p.y+oy-pl.y,d=Math.hypot(dx,dy),min=islR(pl)+pr;
+      if(d<min){
+        const nx=d?dx/d:0,ny=d?dy/d:1;p.x+=nx*(min-d);p.y+=ny*(min-d);
+        if(G.crashT<=0){ // CRASH: big damage, then you have to back off
+          G.crashT=1;p.inv=0;G.shake=Math.max(G.shake,14);sfx('boom');
+          boom(p.x-nx*12,p.y-ny*12,14,'#f6d48f');
+          G.txt.push({x:p.x,y:p.y-44,t:0,w:'CRASH!',c:'#ff6b6b',rot:-.1,big:true});
+          hitPlayer(G.S.maxHull*.25);
+          if(state!=='play')return;
+        }
+      }
+    }
+  }
+  p.x=Math.max(16,Math.min(W-16,p.x));p.y=Math.max(30,Math.min(H-36,p.y));
+}
 function doDash(){
   if(!G||state!=='play')return;const p=G.p;if(p.dashCd>0)return;
   let dx=0,dy=0;
@@ -216,7 +239,7 @@ function doDash(){
   if(keys.KeyW||keys.ArrowUp)dy--;if(keys.KeyS||keys.ArrowDown)dy++;
   if(!dx&&!dy){dx=lastDir.x;dy=lastDir.y}
   const l=Math.hypot(dx,dy)||1;
-  p.x=Math.max(16,Math.min(W-16,p.x+dx/l*140));p.y=Math.max(30,Math.min(H-36,p.y+dy/l*140));
+  for(let i=0;i<14;i++){const nx=Math.max(16,Math.min(W-16,p.x+dx/l*10)),ny=Math.max(30,Math.min(H-36,p.y+dy/l*10));if(hitIsland(nx,ny))break;p.x=nx;p.y=ny}
   p.dashCd=G.S.dashCd;p.inv=.45;sfx('dash');
   for(let i=0;i<12;i++)G.fx.push({k:'p',x:p.x,y:p.y,vx:rand(-90,90),vy:rand(-90,90),t:0,max:.4,col:'#8cf'});
 }
@@ -273,7 +296,7 @@ function newRun(){
   const st=Math.min(save.startTier||0,save.maxTier||0);
   G={S,t:0,wave:SECTOR*st,shards:0,kills:0,
     p:{x:W/2,y:H-90,vx:0,vy:0,hull:S.maxHull,shield:S.maxShield,fireT:0,missT:0,dashT:0,dashCd:0,inv:0,shieldT:0,novaT:S.novaCd*0.5,flash:0},
-    bullets:[],eb:[],en:[],pk:[],fx:[],msl:[],pu:[],buf:{},spills:[],leakT:0,txt:[],planets:[{x:90,y:150,r:42,v:14},{x:360,y:470,r:28,v:14},{x:210,y:700,r:34,v:14,ring:true}],combo:0,comboT:0,vac:false,droneT:0,leech:0,
+    bullets:[],eb:[],en:[],pk:[],fx:[],msl:[],pu:[],buf:{},spills:[],leakT:0,crashT:0,txt:[],planets:[{x:110,y:-90,r:42,v:35},{x:330,y:-340,r:30,v:35},{x:200,y:-620,r:34,v:35,ring:true},{x:360,y:-900,r:38,v:35},{x:90,y:-1180,r:30,v:35,ring:true}],combo:0,comboT:0,vac:false,droneT:0,leech:0,
     spawnQ:[],spawnT:0,waveClear:false,banner:{text:'',t:0},shake:0,
     stars:Array.from({length:90},()=>({x:rand(0,W),y:rand(0,H),s:rand(.3,1.4)}))};
   // diving into a deeper sector gives free random perks to help you survive
@@ -495,6 +518,7 @@ function update(dt){
   p.dashCd-=dt;
   if(keys.ShiftLeft||keys.ShiftRight)doDash();
   p.x=Math.max(16,Math.min(W-16,p.x+p.vx*dt));p.y=Math.max(30,Math.min(H-36,p.y+p.vy*dt));
+  G.crashT-=dt;resolveIslands();
   p.inv-=dt;p.flash-=dt;p.novaT-=dt;
   // shield regen
   p.shieldT-=dt;if(p.shieldT<=0&&p.shield<S.maxShield)p.shield=Math.min(S.maxShield,p.shield+S.shieldRegen*dt);
@@ -691,7 +715,7 @@ function update(dt){
   if(p.hull<S.maxHull*.35){G.leakT-=dt;if(G.leakT<=0){G.leakT=.7;G.spills.push({x:p.x+rand(-6,6),y:p.y+24,r:rand(12,20),t:0,max:rand(5,7),ph:rand(0,6)})}}
   for(const w of G.txt)w.t+=dt;
   G.txt=G.txt.filter(w=>w.t<.8);
-  for(const pl of G.planets){pl.y+=pl.v*dt;if(pl.y>H+90){pl.y=-90;pl.x=rand(90,W-90)}}
+  for(const pl of G.planets){pl.y+=pl.v*dt;if(pl.y>H+90){pl.y=-90-rand(0,260);pl.x=rand(90,W-90)}}
   G.comboT-=dt;if(G.comboT<=0)G.combo=0;
   G.banner.t-=dt;G.shake=Math.max(0,G.shake-30*dt);
   for(const s of G.stars){s.y+=s.s*60*dt;if(s.y>H){s.y=0;s.x=rand(0,W)}}
