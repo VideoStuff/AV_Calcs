@@ -30,6 +30,13 @@
   .pips{letter-spacing:2px;color:#8ff0ff}
   .up button{padding:6px 14px;font-size:15px;margin:0;box-shadow:0 3px 0 var(--ink)}
   .stats{color:#e4d8ff;margin:6px 0;font-size:17px}
+  #adCard{position:relative;width:min(380px,100%);box-sizing:border-box;background:#fff8e6;color:#1b1340;border:4px solid var(--ink);border-radius:20px;padding:20px 16px 14px;box-shadow:0 6px 0 var(--ink)}
+  #adCard h2{color:#e8483f}#adCard .small{color:#3a2f6b}
+  .adbadge{position:absolute;top:-14px;left:14px;background:#ffd23f;color:var(--ink);border:3px solid var(--ink);border-radius:10px;padding:0 10px;font-weight:700}
+  .adbig{font-size:24px;font-weight:700;line-height:1.25;margin:10px 0 14px}
+  #adCard .shard{color:#d9760b;font-size:30px;text-shadow:none}
+  .adbtn{font-size:24px !important;padding:14px 26px !important;background:#3ccf5a !important;animation:adpulse 1s infinite}
+  @keyframes adpulse{50%{transform:scale(1.06)}}
   #newsCard{width:min(420px,100%);box-sizing:border-box;background:#fff8e6;color:#1b1340;border:4px solid var(--ink);border-radius:16px;padding:18px 12px 10px;margin:16px 0 4px;position:relative;box-shadow:0 5px 0 var(--ink);text-align:left}
   #newsCard .chip{position:absolute;top:-14px;left:12px;background:#e8483f;color:#fff;border:3px solid var(--ink);border-radius:12px;padding:1px 10px;font-weight:700;font-size:13px}
   #newsCard .nrow{display:flex;gap:10px;align-items:center}
@@ -79,6 +86,23 @@
         <div><div id="newsText"></div><div class="nfoot" id="newsFoot"></div></div></div>
     </div>
     <div id="perks"></div>
+  </div>
+
+  <div id="adPanel" class="panel">
+    <div id="adCard">
+      <div class="adbadge">AD</div>
+      <div id="adStep1">
+        <h2>📺 SPECIAL OFFER!</h2>
+        <div class="adbig">Watch ad to get<br><span class="shard">5000 🛢 barrels!</span></div>
+        <button id="adGo" class="adbtn">▶ WATCH AD</button><br>
+        <button id="adNo" class="bad">No thanks</button>
+      </div>
+      <div id="adStep2" style="display:none">
+        <h2>Enjoy the ad! 🎶</h2>
+        <div class="small">Come back to the game when you're done watching…</div>
+        <button id="adBack" class="alt">I'm back!</button>
+      </div>
+    </div>
   </div>
 
   <div id="over" class="panel">
@@ -265,8 +289,9 @@ cv.addEventListener('pointerdown',e=>{
 cv.addEventListener('pointermove',e=>{
   if(e.pointerId!==dragId||!drag||!G||state!=='play')return;
   const q=ptr(e),p=G.p,dx=q.x-drag.x,dy=q.y-drag.y,l=Math.hypot(dx,dy);
-  p.x=Math.max(16,Math.min(W-16,p.x+dx));
-  p.y=Math.max(30,Math.min(H-36,p.y+dy));
+  const sk=G.slowT>0?.5:1;
+  p.x=Math.max(16,Math.min(W-16,p.x+dx*sk));
+  p.y=Math.max(30,Math.min(H-36,p.y+dy*sk));
   if(l>.8)lastDir={x:dx/l*.4+lastDir.x*.6,y:dy/l*.4+lastDir.y*.6};
   drag=q;
 });
@@ -406,7 +431,7 @@ function newRun(){
   const st=Math.min(save.startTier||0,save.maxTier||0);
   G={S,t:0,wave:SECTOR*st,shards:0,kills:0,
     p:{x:W/2,y:H-90,vx:0,vy:0,hull:S.maxHull,shield:S.maxShield,fireT:0,missT:0,dashT:0,dashCd:0,inv:0,shieldT:0,novaT:S.novaCd*0.5,flash:0},
-    bullets:[],eb:[],en:[],pk:[],fx:[],msl:[],pu:[],buf:{},spills:[],leakT:0,crashT:0,usT:0,news:null,lastNews:-1,nextNews:rand(28,40),txt:[],planets:[{x:110,y:-90,r:42,v:35},{x:330,y:-340,r:30,v:35},{x:200,y:-620,r:34,v:35,ring:true},{x:360,y:-900,r:38,v:35},{x:90,y:-1180,r:30,v:35,ring:true}],combo:0,comboT:0,vac:false,droneT:0,leech:0,
+    bullets:[],eb:[],en:[],pk:[],fx:[],msl:[],pu:[],buf:{},spills:[],leakT:0,crashT:0,slowT:0,usT:0,news:null,lastNews:-1,nextNews:rand(28,40),txt:[],planets:[{x:110,y:-90,r:42,v:35},{x:330,y:-340,r:30,v:35},{x:200,y:-620,r:34,v:35,ring:true},{x:360,y:-900,r:38,v:35},{x:90,y:-1180,r:30,v:35,ring:true}],combo:0,comboT:0,vac:false,droneT:0,leech:0,
     spawnQ:[],spawnT:0,waveClear:false,banner:{text:'',t:0},shake:0,
     stars:Array.from({length:90},()=>({x:rand(0,W),y:rand(0,H),s:rand(.3,1.4)}))};
   // diving into a deeper sector gives free random perks to help you survive
@@ -417,6 +442,12 @@ function newRun(){
 const SECTOR=15,BOSS_NAMES=['Mega Destroyer','Missile Cruiser','Aircraft Carrier'],
   REGIONS=['Strait of Hormuz','Gulf of Oman','Arabian Sea','Indian Ocean','Cape Waters','Atlantic Ocean'];
 const tierOf=w=>Math.floor((w-1)/SECTOR);
+const AD_URL='https://youtu.be/dQw4w9WgXcQ?is=qeRJLms0_TRcFrWE';
+function showAd(){state='ad';G.adClicked=false;$('adStep1').style.display='block';$('adStep2').style.display='none';show('adPanel')}
+function resumeFromAd(rick){
+  if(state!=='ad')return;G.adClicked=false;show(null);state='play';
+  if(rick){G.slowT=30;G.banner={text:'🎵 RICKROLLED! 🎵',t:2.4};sfx('news')}
+}
 function openPerks(title){
   $('perkTitle').textContent=title||'CHOOSE A PERK';
   $('newsCard').style.display='none';G.newsShown=false;
@@ -431,7 +462,7 @@ function openPerks(title){
   const box=$('perks');box.innerHTML='';
   for(const pk of picks){
     const b=document.createElement('button');b.innerHTML=`<b>${pk.name}</b><small>${pk.desc}</small>`;
-    b.onclick=()=>{pk.fn(G.S,G);sfx('perk');if(G.bonus>0){G.bonus--;openPerks('CHECKPOINT BONUS PERK!');return}show(null);state='play';nextWave();if(G.newsShown){G.newsShown=false;startFury(G.pendingBuff)}};
+    b.onclick=()=>{pk.fn(G.S,G);sfx('perk');if(G.bonus>0){G.bonus--;openPerks('CHECKPOINT BONUS PERK!');return}show(null);state='play';nextWave();if(G.newsShown){G.newsShown=false;startFury(G.pendingBuff)}if(G.wave===3&&!G.adShown){G.adShown=true;showAd()}};
     box.appendChild(b);
   }
   show('perkPanel');
@@ -635,7 +666,7 @@ function update(dt){
   let ax=0,ay=0;
   if(keys.KeyA||keys.ArrowLeft)ax-=1;if(keys.KeyD||keys.ArrowRight)ax+=1;
   if(keys.KeyW||keys.ArrowUp)ay-=1;if(keys.KeyS||keys.ArrowDown)ay+=1;
-  if(ax||ay){const l=Math.hypot(ax,ay);p.vx=ax/l*S.speed;p.vy=ay/l*S.speed;mouse.active=false}
+  if(ax||ay){const l=Math.hypot(ax,ay);p.vx=ax/l*S.speed*(G.slowT>0?.5:1);p.vy=ay/l*S.speed*(G.slowT>0?.5:1);mouse.active=false}
   else{p.vx=0;p.vy=0}
   p.dashCd-=dt;
   if(keys.ShiftLeft||keys.ShiftRight)doDash();
@@ -859,6 +890,7 @@ function update(dt){
   G.txt=G.txt.filter(w=>w.t<.8);
   for(const pl of G.planets){pl.y+=pl.v*dt;if(pl.y>H+90){pl.y=-90-rand(0,260);pl.x=rand(90,W-90)}}
   if(G.usT>0)G.usT-=dt;
+  if(G.slowT>0)G.slowT-=dt;
   G.comboT-=dt;if(G.comboT<=0)G.combo=0;
   G.banner.t-=dt;G.shake=Math.max(0,G.shake-30*dt);
   for(const s of G.stars){s.y+=s.s*60*dt;if(s.y>H){s.y=0;s.x=rand(0,W)}}
@@ -1140,6 +1172,7 @@ function draw(){
   for(const k of PU_KEYS){const t=G.buf[k];if(t>0){
     const d=PU[k];ctx.globalAlpha=t<3&&Math.floor(t*6)%2?.4:1;
     bar(12,by,200,15,t/G.S.puTime,d.col,d.name+' '+Math.ceil(t)+'s');ctx.globalAlpha=1;by+=19}}
+  if(G.slowT>0){bar(12,by,200,15,G.slowT/30,'#8a8aa8','🐌 SLOWED '+Math.ceil(G.slowT)+'s');by+=19}
   if(G.usT>0){bar(12,by,200,15,G.usT/30,BUFFS[G.usType||'fury'].col,BUFFS[G.usType||'fury'].name+' '+Math.ceil(G.usT)+'s');by+=19}
   if(G.combo>=3){ctx.globalAlpha=Math.min(1,G.comboT+.3);const sc=1+Math.min(.3,G.combo*.01);
     txt('COMBO ×'+G.combo+'  (+'+Math.round(Math.min(G.combo,50)*2)+'%)',W-12,70,15*sc,'#ffe45c','right',4);ctx.globalAlpha=1}
@@ -1204,6 +1237,11 @@ addEventListener('keydown',e=>{if(e.code==='Enter'&&state==='menu')launch()});
 document.addEventListener('click',e=>{if(e.target.closest&&e.target.closest('button'))sfx('click')});
 refreshTier();
 const muteLabel=()=>$('muteBtn').textContent='Sound: '+(save.sound===false?'Off':'On');
+$('adGo').onclick=()=>{G.adClicked=true;$('adStep1').style.display='none';$('adStep2').style.display='block';
+  try{const w=window.open(AD_URL,'_blank');if(w)w.opener=null}catch(e){}};
+$('adNo').onclick=()=>resumeFromAd(false);
+$('adBack').onclick=()=>resumeFromAd(true);
+document.addEventListener('visibilitychange',()=>{if(document.visibilityState==='visible'&&G&&G.adClicked)resumeFromAd(true)});
 $('muteBtn').onclick=()=>{save.sound=save.sound===false;persist();muteLabel();sfx('perk')};muteLabel();
 requestAnimationFrame(frame);
 })();
