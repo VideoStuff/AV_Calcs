@@ -439,7 +439,7 @@ function nextWave(){
     }
   }
   G.spawnT=0;G.waveClear=false;G.vac=false;
-  if((w-1)%SECTOR===0)triggerNews();   // a breaking-news popup opens every new stretch of sea
+  triggerNews();   // a breaking-news popup opens every leg
   G.banner={text:w%5===0?'⚠ '+BOSS_NAMES[(w/5-1)%3]+'!':'LEG '+w,t:2.2};
 }
 function spawn(type){
