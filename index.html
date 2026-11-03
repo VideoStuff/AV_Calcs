@@ -331,12 +331,12 @@ function drawWormhole(){
 }
 function enemyDef(type,w){
   const T=tierOf(w);   // each wormhole sector doubles enemy health and adds 50% damage
-  const hpS=Math.pow(1.14,w-1)*(1+0.03*w)*Math.pow(2,T), dmgS=(1+0.06*(w-1))*(1+.5*T);
+  const hpS=Math.pow(1.16,w-1)*(1+0.04*w)*1.25*Math.pow(2,T), dmgS=(1+0.08*(w-1))*(1+.5*T);
   const D={
-    drone: {hp:18*hpS,r:13,spd:70+w*3,col:'#f66',val:1,fire:0,dmg:12*dmgS},
-    zig:   {hp:24*hpS,r:13,spd:80+w*3,col:'#fa4',val:2,fire:0,dmg:12*dmgS,zig:true},
-    gun:   {hp:40*hpS,r:16,spd:45+w*2,col:'#f6c',val:3,fire:Math.max(.7,2.2-w*.05),dmg:10*dmgS},
-    tank:  {hp:130*hpS,r:24,spd:35+w,col:'#9a6',val:7,fire:Math.max(1,2.8-w*.04),dmg:14*dmgS,spread:true},
+    drone: {hp:18*hpS,r:13,spd:70+w*3,col:'#f66',val:1,fire:w>=3?Math.max(2,4.5-w*.1):0,dmg:11*dmgS},
+    zig:   {hp:24*hpS,r:13,spd:80+w*3,col:'#fa4',val:2,fire:w>=4?Math.max(1.8,4-w*.08):0,dmg:11*dmgS,zig:true},
+    gun:   {hp:40*hpS,r:16,spd:45+w*2,col:'#f6c',val:3,fire:Math.max(.55,1.9-w*.05),dmg:10*dmgS},
+    tank:  {hp:130*hpS,r:24,spd:35+w,col:'#9a6',val:7,fire:Math.max(.8,2.4-w*.04),dmg:14*dmgS,spread:true},
     split: {hp:70*hpS,r:20,spd:50+w*2,col:'#c8f',val:4,fire:0,dmg:13*dmgS,split:true},
     sniper:{hp:34*hpS,r:14,spd:60,col:'#6bd3ff',val:4,fire:0,sfire:Math.max(1.6,3.2-w*.05),dmg:18*dmgS,sniper:true},
     layer: {hp:70*hpS,r:18,spd:45,col:'#ffd23f',val:5,fire:0,lfire:Math.max(1.5,2.8-w*.04),dmg:12*dmgS,layer:true},
@@ -353,9 +353,9 @@ function nextWave(){
   G.spawnQ=[];
   if(w%5===0){
     G.spawnQ.push({t:0,type:'boss'});
-    for(let i=0;i<Math.min(2+w/2,12);i++)G.spawnQ.push({t:1+i*1.2,type:'drone'});
+    for(let i=0;i<Math.min(4+w,24);i++)G.spawnQ.push({t:1+i*.8,type:i%4===3?'gun':'drone'});
   }else{
-    const n=Math.min(70,Math.round((5+w*2.2)*(1+.25*tierOf(w))));
+    const n=Math.min(110,Math.round((8+w*3.2)*(1+.3*tierOf(w))));
     const pool=['drone'];
     if(w>=2)pool.push('zig');
     if(w>=3)pool.push('gun');
@@ -368,7 +368,7 @@ function nextWave(){
     for(let i=0;i<n;i++){
       let type=pool[Math.floor(Math.random()*pool.length)];
       if(w>=6&&i%8===7)type='tank';
-      G.spawnQ.push({t:i*Math.max(.25,.9-w*.02),type});
+      G.spawnQ.push({t:i*Math.max(.17,.7-w*.02),type});
     }
   }
   G.spawnT=0;G.waveClear=false;G.vac=false;
@@ -385,7 +385,7 @@ function spawn(type){
     e=enemyDef(type,w);e.maxhp=e.hp;e.x=rand(30,W-30);e.y=-30;e.fireT=rand(.5,e.fire||1);
     // elites: tougher, tankier, worth more, always drop a power-up
     if(type==='rock')e.vx=rand(-50,50);
-    if(w>=3&&Math.random()<Math.min(.04+.012*w,.25)){e.elite=true;e.hp*=3;e.maxhp=e.hp;e.r*=1.25;e.val*=3;e.dmg*=1.3}
+    if(w>=3&&Math.random()<Math.min(.06+.015*w,.3)){e.elite=true;e.hp*=3;e.maxhp=e.hp;e.r*=1.25;e.val*=3;e.dmg*=1.3}
   }
   e.ph=rand(0,6.28);e.flash=0;G.en.push(e);
 }
@@ -546,8 +546,8 @@ function update(dt){
           boom(e.x,e.y,10,'#7be06b')}
       }
       if(e.fireT<=0){
-        e.fireT=Math.max(.5,1.3-G.wave*.01);e.atk=(e.atk||0)+1;
-        const n=8+Math.min(10,G.wave/2|0);
+        e.fireT=Math.max(.4,1.0-G.wave*.01);e.atk=(e.atk||0)+1;
+        const n=10+Math.min(14,G.wave|0);
         if(e.bt!==1&&e.atk%2){for(let i=0;i<n;i++){const a=i/n*6.283+e.ph;ebullet(e.x,e.y,Math.cos(a)*150,Math.sin(a)*150,e.dmg)}}
         else{const a=Math.atan2(p.y-e.y,p.x-e.x);for(let i=-2;i<=2;i++)ebullet(e.x,e.y,Math.cos(a+i*.15)*260,Math.sin(a+i*.15)*260,e.dmg)}
       }
@@ -578,7 +578,8 @@ function update(dt){
       }
       if(e.fire){e.fireT-=dt;if(e.fireT<=0&&e.y>0&&e.y<H-150){
         e.fireT=e.fire;const a=Math.atan2(p.y-e.y,p.x-e.x);
-        if(e.spread){for(let i=-1;i<=1;i++)ebullet(e.x,e.y,Math.cos(a+i*.25)*200,Math.sin(a+i*.25)*200,e.dmg)}
+        if(e.spread){const m=G.wave>=10?2:1;for(let i=-m;i<=m;i++)ebullet(e.x,e.y,Math.cos(a+i*.22)*200,Math.sin(a+i*.22)*200,e.dmg)}
+        else if(e.type==='gun'&&G.wave>=8){for(let i=-1;i<=1;i+=2)ebullet(e.x,e.y,Math.cos(a+i*.12)*220,Math.sin(a+i*.12)*220,e.dmg)}
         else ebullet(e.x,e.y,Math.cos(a)*210,Math.sin(a)*210,e.dmg);
       }}
     }
@@ -644,7 +645,7 @@ function update(dt){
   for(const s of G.stars){s.y+=s.s*60*dt;if(s.y>H){s.y=0;s.x=rand(0,W)}}
 }
 function dronePos(i){const n=G.S.drones,a=G.t*2.2+i*6.283/n;return{x:G.p.x+Math.cos(a)*38,y:G.p.y+Math.sin(a)*38}}
-function ebullet(x,y,vx,vy,d){G.eb.push({x,y,vx,vy,d,r:5})}
+function ebullet(x,y,vx,vy,d){const k=Math.min(1.5,1+G.wave*.012);G.eb.push({x,y,vx:vx*k,vy:vy*k,d,r:5})}
 
 // ---------- Render ----------
 const OUT='#1b1340',TAU=6.283185;
