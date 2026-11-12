@@ -281,7 +281,7 @@ details.fold>summary:hover{border-color:var(--muted)}
 <!-- ============ POWER ============ -->
 <section class="view" id="v-power" hidden>
   <div class="view-head"><span class="eyebrow">Distro</span><h2>3-Phase Power</h2>
-    <p class="lede">Amps per phase on a 208V three-phase service, by department. 208V loads divide by √3 (1.732); 120V loads spread across three legs.</p></div>
+    <p class="lede">Amps per phase on a 208V three-phase service, by department. Items are spread across the legs as evenly as their quantities allow, and the busiest leg sets the rating.</p></div>
   <div class="stack">
     <div class="panel">
       <div class="panel-head">
@@ -290,8 +290,9 @@ details.fold>summary:hover{border-color:var(--muted)}
         </div>
       </div>
       <div class="readouts" style="margin-bottom:16px">
-        <div class="ro hero"><span class="lbl" id="pw-dname">Video · service rating per phase</span><span class="val" id="pw-svc20">—</span><span class="sub">Includes 20% overhead</span></div>
-        <div class="ro wide"><span class="lbl">For reference</span><span class="sub" style="font-size:.92rem">Actual load <b id="pw-svc" style="font-family:var(--f-mono)">—</b> per phase · total <b id="pw-wall" style="font-family:var(--f-mono)">—</b></span></div>
+        <div class="ro hero"><span class="lbl" id="pw-dname">Video · service rating per phase</span><span class="val" id="pw-svc20">—</span><span class="sub">Busiest leg ÷ 0.8 (load at 80% of rating, NEC continuous)</span></div>
+        <div class="ro wide"><span class="lbl">Load per leg</span><span class="sub" style="font-size:.92rem">A <b id="pw-la" style="font-family:var(--f-mono)">—</b> · B <b id="pw-lb" style="font-family:var(--f-mono)">—</b> · C <b id="pw-lc" style="font-family:var(--f-mono)">—</b></span>
+          <span class="sub" style="font-size:.92rem">Perfectly balanced <b id="pw-svc" style="font-family:var(--f-mono)">—</b> per phase · total <b id="pw-wall" style="font-family:var(--f-mono)">—</b></span></div>
       </div>
 
       <h3>208V loads</h3>
@@ -307,7 +308,8 @@ details.fold>summary:hover{border-color:var(--muted)}
       <p class="note" id="pw-e120" style="margin:0">No 120V items yet.</p>
       <div class="subtot"><span>Total watts<b id="pw-w120">0</b></span><span>Amps per phase<b id="pw-a120">0</b></span></div>
       <div class="btn-row"><button class="btn" id="pw-add120">+ Add 120V item</button><button class="btn danger" id="pw-reset">Clear all</button></div>
-      <p class="note">Typing a model from the device list fills in its wattage. Power factor of 1 is the default.</p>
+      <p class="note">Typing a model from the device list fills in its wattage. Power factor of 1 is the default. Device wattages are maximum ratings.</p>
+      <p class="note">Leg loads assume each item is plugged in to keep the legs as even as possible: 120V items go on one leg (A, B or C), 208V items across a pair (A–B, B–C or C–A). A few large items can't be split evenly, so the busiest leg can be well above the balanced figure. Spread gear the same way on site, or the busiest leg will be higher still.</p>
 
       <details>
         <summary>Device wattage list</summary>
@@ -716,7 +718,7 @@ const LIB120G=[
  ['Converters',[['Decimator','MD-HX',3.6],['Decimator','MD-LX',3.6]]],
  ['Laptops',[['Lenovo','Lenovo',130],['Dell','Dell',180]]],
  ['Cameras',[['Panasonic','UCU600',500]]],
- ['Misc',[['','20 amp circuit',2400]]]
+ ['Misc',[['','20 amp circuit',1920]]]
 ];
 const LIB120=LIB120G.flatMap(g=>g[1]);
 $('lib208').innerHTML=LIB208.map(d=>`<option value="${esc(d[1])}">${esc(d[0])} · ${d[2]} W</option>`).join('');
@@ -745,6 +747,25 @@ function deptTotals(d){
   const w208=p.r208.reduce((s,r)=>s+(+r.q||0)*(+r.w||0),0), w120=p.r120.reduce((s,r)=>s+(+r.q||0)*(+r.w||0),0);
   const a208=p.r208.reduce((s,r)=>s+rowAmps(r,208),0)/1.732, a120=p.r120.reduce((s,r)=>s+rowAmps(r,120),0)/3;
   return {w208,w120,a208,a120,svc:a208+a120};
+}
+/* place each unit on a leg (120V) or leg pair (208V) to keep the busiest leg as low as possible.
+   Leg current = its 120V current + the two pair currents at ±30° (delta line current), treated as in phase. */
+const COS30=Math.sqrt(3)/2;
+function legLoads(d){
+  const p=power[d], ln=[0,0,0], pr=[0,0,0]; /* pr: 0=AB 1=BC 2=CA */
+  const legsOf=()=>[0,1,2].map(L=>{const p1=pr[L], p2=pr[(L+2)%3];return Math.hypot(ln[L]+(p1+p2)*COS30,(p1-p2)/2)});
+  const units=[];
+  const add=(rows,volts,kind)=>rows.forEach(r=>{const pf=+r.pf||0, q=+r.q||0, w=+r.w||0;if(!pf||q<=0||w<=0)return;
+    const I=w/(volts*pf), base=Math.floor(q/3), rem=q-base*3;
+    for(let j=0;j<3;j++)(kind?pr:ln)[j]+=base*I;
+    for(let j=0;j<Math.floor(rem);j++)units.push([kind,I]);
+    if(rem%1>1e-9)units.push([kind,I*(rem%1)])});
+  add(p.r208,208,1);add(p.r120,120,0);
+  units.sort((a,b)=>b[1]-a[1]);
+  for(const [kind,I] of units){let best=0,bm=Infinity;
+    for(let j=0;j<3;j++){(kind?pr:ln)[j]+=I;const m=Math.max(...legsOf());(kind?pr:ln)[j]-=I;if(m<bm-1e-9){bm=m;best=j}}
+    (kind?pr:ln)[best]+=I}
+  return legsOf();
 }
 function rowEl(k,r,i){
   const el=document.createElement('div');el.className='prow';
@@ -776,7 +797,9 @@ function calcPower(){
   $('pw-w208').textContent=fa(t.w208,1)+' W';$('pw-a208').textContent=fx(t.a208,2)+' A';
   $('pw-w120').textContent=fa(t.w120,1)+' W';$('pw-a120').textContent=fx(t.a120,2)+' A';
   $('pw-dname').textContent=DEPTS[dept]+' · service rating per phase';
-  $('pw-svc20').innerHTML=unit(fx(t.svc*1.2,2),'A');
+  const legs=legLoads(dept), worst=Math.max(...legs);
+  ['la','lb','lc'].forEach((id,j)=>{$('pw-'+id).textContent=fx(legs[j],2)+' A'});
+  $('pw-svc20').innerHTML=unit(fx(worst/0.8,2),'A');
   $('pw-svc').textContent=fx(t.svc,2)+' A';
   $('pw-wall').textContent=fa(t.w208+t.w120,1)+' W';
 }
