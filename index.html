@@ -269,6 +269,7 @@ details.fold>summary:hover{border-color:var(--muted)}
         <div class="ro"><span class="lbl">Bitrate with headroom</span><span class="val" id="st-rate">—</span></div>
       </div>
       <p class="note">Tap a row to switch codec. Sizes cover the full duration and number of records.</p>
+      <p class="note">GB and TB are decimal (1 GB = 1,000,000,000 bytes), as printed on drive labels; Windows and some apps show about 7% less. ProRes rates follow Apple's targets plus 15% headroom and 24-bit stereo audio. H.264 and H.265 scale with pixel count; doubling the frame rate adds about 50% bitrate. H.265 is half the H.264 (Pearl Mini) video rate.</p>
       <div class="tbl-wrap"><table>
         <thead><tr><th>Codec</th><th class="num">Mbps</th><th class="num">Per record</th><th class="num">Total</th></tr></thead>
         <tbody id="st-table"></tbody>
@@ -674,8 +675,8 @@ function twoTap(btn,action){
 
 /* ---------------- STORAGE ---------------- */
 const CODECS=[
-  {n:'ProRes 422',base:147,add:2.304,pad:1.15},
-  {n:'ProRes 422 LT',base:102,add:2.304,pad:1.15},
+  {n:'ProRes 422',base:147,add:2.304,pad:1.15,intra:true},
+  {n:'ProRes 422 LT',base:102,add:2.304,pad:1.15,intra:true},
   {n:'H.264 (Pearl Mini)',base:5.32,add:0,pad:1.1},
   {n:'H.264 Medium',base:7.5,add:.32,pad:1.025},
   {n:'H.264 Medium-High',base:10,add:.32,pad:1.025},
@@ -683,15 +684,20 @@ const CODECS=[
   {n:'H.265',half:true}
 ];
 $('st-codec').innerHTML=CODECS.map((c,i)=>`<option value="${i}"${i===1?' selected':''}>${c.n}</option>`).join('');
-function codecRate(c,scale){
-  if(c.half){const p=CODECS[2];return (scale*p.base+p.add)*p.pad/2}
-  return (scale*c.base+c.add)*c.pad;
+/* base rates are at 1920x1080 29.97, video in Mbps; add = audio Mbps; pad = headroom/container overhead.
+   ProRes (intra-frame) scales linearly with pixels and frame rate, matching Apple's published rates.
+   Long-GOP codecs need less per extra frame: doubling frame rate costs about 1.5x the bitrate (exponent log2 1.5). */
+const GOP_FPS_EXP=Math.log2(1.5);
+function codecRate(c,px,fr){
+  if(c.half){const p=CODECS[2];return (px*Math.pow(fr,GOP_FPS_EXP)*p.base/2+p.add)*p.pad}
+  return (px*(c.intra?fr:Math.pow(fr,GOP_FPS_EXP))*c.base+c.add)*c.pad;
 }
 function calcStorage(){
   const [w,h]=$('st-res').value.split('x').map(s=>parseFloat(s));
   const fps=parseFloat($('st-fps').value), hrs=num('st-hrs'), rec=num('st-rec'), sel=+$('st-codec').value;
-  const scale=(w*h)/(1920*1080)*(fps/29.97);
-  const rows=CODECS.map((c,i)=>{const r=codecRate(c,scale);const per=r*hrs*3600/8/1024;return {i,n:c.n,r,per,tot:per*rec}});
+  const px=(w*h)/(1920*1080), fr=fps/29.97;
+  /* Mbps × seconds ÷ 8 = MB; ÷ 1000 = GB (decimal, as printed on drives) */
+  const rows=CODECS.map((c,i)=>{const r=codecRate(c,px,fr);const per=r*hrs*3600/8/1000;return {i,n:c.n,r,per,tot:per*rec}});
   const s=rows[sel];
   $('st-gb').innerHTML=unit(fx(s.tot,1),'GB');
   $('st-tb').textContent=`${fx(s.tot/1000,2)} TB · ${fa(rec,0)} record${rec===1?'':'s'} × ${fa(hrs,2)} hrs`;
