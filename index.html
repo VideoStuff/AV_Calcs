@@ -4,7 +4,7 @@
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
 <title>AV Show Calculators</title>
-<meta name="description" content="Field calculators for live AV shows: storage, power, projection, LED pixels, camera lenses, scaling and switchers.">
+<meta name="description" content="Field calculators for live AV shows: storage, power, projection, LED pixels, camera lenses and resolution scaling.">
 <meta name="theme-color" content="#FFFFFF" media="(prefers-color-scheme: light)">
 <meta name="theme-color" content="#171E26" media="(prefers-color-scheme: dark)">
 <meta name="apple-mobile-web-app-capable" content="yes">
@@ -236,7 +236,6 @@ details.fold>summary:hover{border-color:var(--muted)}
       <button class="tab" role="tab" data-v="pixels">Pixel Density</button>
       <button class="tab" role="tab" data-v="camera">Camera Lens</button>
       <button class="tab" role="tab" data-v="scaling">Res Scaling</button>
-      <button class="tab" role="tab" data-v="switchers">Switchers</button>
       <button class="tab" role="tab" data-v="cables">Cabling</button>
     </nav>
   </div>
@@ -550,53 +549,6 @@ details.fold>summary:hover{border-color:var(--muted)}
         <tbody id="sc-table"></tbody>
       </table></div>
     </div>
-  </div>
-</section>
-
-<!-- ============ SWITCHERS ============ -->
-<section class="view" id="v-switchers" hidden>
-  <div class="view-head"><span class="eyebrow">Processing</span><h2>Switcher Comparison</h2>
-    <p class="lede">Add up the output canvas in megapixels and check it against each switcher's capacity.</p></div>
-  <div class="layout">
-    <div class="panel">
-      <h3>Outputs <span class="tag">example values</span></h3>
-      <div class="fields">
-        <label class="field"><span>4K outs (4096 × 2160)</span><input id="sw-4k" type="number" inputmode="numeric" min="0" step="1" value="0" data-p></label>
-        <label class="field"><span>3:1 screens (3240 × 1080)</span><input id="sw-31" type="number" inputmode="numeric" min="0" step="1" value="1" data-p></label>
-        <label class="field"><span>16:9 screens (1920 × 1080)</span><input id="sw-169" type="number" inputmode="numeric" min="0" step="1" value="2" data-p></label>
-        <label class="field"><span>Aux screens (1920 × 1080)</span><input id="sw-aux" type="number" inputmode="numeric" min="0" step="1" value="2" data-p></label>
-        <label class="field"><span>LED wall width (px)</span><input id="sw-lw" type="number" inputmode="numeric" min="0" step="1" value="0" data-p></label>
-        <label class="field"><span>LED wall height (px)</span><input id="sw-lh" type="number" inputmode="numeric" min="0" step="1" value="0" data-p></label>
-      </div>
-    </div>
-    <div class="panel">
-      <h3>Megapixel check</h3>
-      <div class="readouts" style="margin-bottom:12px">
-        <div class="ro hero"><span class="lbl">Screen canvas</span><span class="val" id="sw-mp">—</span><span class="sub" id="sw-mpnote"></span></div>
-      </div>
-      <div class="tbl-wrap"><table>
-        <thead><tr><th>Switcher</th><th class="num">Canvas</th><th class="num">Used</th><th></th></tr></thead>
-        <tbody id="sw-fit"></tbody>
-      </table></div>
-      <p class="note">Screen outputs, 4K outs and LED walls count toward the canvas. Aux outputs are scaled separately and don't use canvas megapixels; each of these switchers has 4 aux outputs. E2 canvas is 20 MP with Preview running, or 40 MP Program only.</p>
-    </div>
-  </div>
-  <div class="panel" style="margin-top:16px">
-    <h3>Specs</h3>
-    <div class="tbl-wrap"><table>
-      <thead><tr><th></th><th>E2 Gen 1</th><th>E2 Gen 2</th><th>Aquilon RS2</th><th>Aquilon RS4</th></tr></thead>
-      <tbody>
-        <tr><td><b>Input cards</b></td><td>8</td><td>8</td><td>4</td><td>6</td></tr>
-        <tr><td><b>Per input card</b></td><td>1× 4K60 (4L)</td><td>2× 4K60 (8L)</td><td>4× 4K60</td><td>4× 4K60</td></tr>
-        <tr><td><b>Output cards</b></td><td>3 + MV card</td><td>3 + MV card</td><td>3</td><td>4</td></tr>
-        <tr><td><b>Per output card</b></td><td>1× 4K60 (4L)</td><td>2× 4K60 (8L)</td><td>4× 4K60</td><td>4× 4K60</td></tr>
-        <tr><td><b>Max destination outputs</b></td><td>2× 4K60 (8L)</td><td>2× 4K60 (8L)</td><td>8× 4K PGM + 4 Aux</td><td>12× 4K PGM + 4 Aux</td></tr>
-        <tr><td><b>Canvas megapixels</b></td><td>20 PVW/PGM · 40 PGM only</td><td>20 PVW/PGM · 40 PGM only</td><td>80 (Program)</td><td>120 (Program)</td></tr>
-        <tr><td><b>Max 4K mixing layers</b></td><td>4</td><td>4</td><td>8</td><td>12</td></tr>
-        <tr><td><b>Max DL mixing layers</b></td><td>8</td><td>8</td><td>16</td><td>24</td></tr>
-        <tr><td><b>Max SL mixing layers</b></td><td>16</td><td>16</td><td>—</td><td>—</td></tr>
-      </tbody>
-    </table></div>
   </div>
 </section>
 
@@ -1127,22 +1079,8 @@ function calcScaling(){
   $('sc-table').innerHTML=shown.length?shown.map(([h,v])=>{const p=h*v, clk=pixelClock(h,v,hz,timing);return `<tr>${cell(h)}${cell(v)}<td class="num">${fa(Math.round(p),0)}</td><td class="num">${fclk(clk)}</td><td>${aquilonCap(clk)}</td><td>${p>LIM?'<span class="pill warn">Over 4K</span>':''}</td></tr>`}).join(''):'<tr><td colspan="6">No exact matches at this aspect ratio. Try “Every step”.</td></tr>';
 }
 
-/* ---------------- SWITCHERS ---------------- */
-const SWITCHERS=[['E2 Gen 1 / Gen 2','with Preview',20],['E2 Gen 1 / Gen 2','Program only',40],['Aquilon RS2','Program',80],['Aquilon RS4','Program',120]];
-const AUX_MAX=4;
-function calcSwitchers(){
-  /* screen canvas only: aux outputs are scaled separately and don't use canvas megapixels */
-  const mp=(num('sw-4k')*4096*2160+num('sw-31')*3240*1080+num('sw-169')*1920*1080+num('sw-lw')*num('sw-lh'))/1e6;
-  const aux=num('sw-aux');
-  $('sw-mp').innerHTML=unit(fx(mp,2),'MP');
-  $('sw-mpnote').innerHTML=`Plus ${fa(aux,0)} aux output${aux===1?'':'s'} ${aux>AUX_MAX?`<span class="pill bad">More than ${AUX_MAX} aux</span>`:'(not counted)'}`;
-  $('sw-fit').innerHTML=SWITCHERS.map(([n,mode,c])=>{const u=mp/c*100;const cls=u>100?'bad':u>85?'warn':'good';const lab=u>100?'Over':u>85?'Tight':'Fits';
-    return `<tr><td>${n}<div class="note" style="margin:0">${mode}</div></td><td class="num">${c} MP</td><td class="num">${fx(u,0)}%</td><td><span class="pill ${cls}">${lab}</span></td></tr>`}).join('');
-
-}
-
 /* ---------------- shared wiring ---------------- */
-const CALC={storage:calcStorage,projector:calcProjector,camera:calcCamera,scaling:calcScaling,switchers:calcSwitchers,pixels:calcPixels};
+const CALC={storage:calcStorage,projector:calcProjector,camera:calcCamera,scaling:calcScaling,pixels:calcPixels};
 const persisted=[...document.querySelectorAll('[data-p]')];
 let saved=store.get('inputs',{});
 persisted.forEach(el=>{if(saved[el.id]!=null){if(el.tagName==='SELECT'&&![...el.options].some(o=>o.value===saved[el.id]))return;el.value=saved[el.id]}});
@@ -1153,7 +1091,7 @@ persisted.forEach(el=>{
   el.addEventListener(el.tagName==='SELECT'?'change':'input',()=>{fn&&fn();saveInputs()});
 });
 
-const VIEWS=['storage','power','projector','pixels','camera','scaling','switchers','cables'];
+const VIEWS=['storage','power','projector','pixels','camera','scaling','cables'];
 function show(v){
   if(!VIEWS.includes(v))v='storage';
   VIEWS.forEach(x=>{$('v-'+x).hidden=x!==v});
@@ -1166,7 +1104,7 @@ $('tabs').addEventListener('click',e=>{const t=e.target.closest('.tab');if(!t)re
 $('cam-d2').value=$('cam-d').value;
 $('pj-le-box').open=!!store.get('leOpen',false);
 $('pj-le-box').addEventListener('toggle',()=>store.set('leOpen',$('pj-le-box').open));
-calcStorage();renderPower();calcProjector();renderPixels();calcCamera();calcScaling();calcSwitchers();
+calcStorage();renderPower();calcProjector();renderPixels();calcCamera();calcScaling();
 window.addEventListener('hashchange',()=>{const x=location.hash.slice(1);if(VIEWS.includes(x))show(x)});
 const h=(location.hash||'').slice(1);
 show(VIEWS.includes(h)?h:store.get('tab','storage'));
