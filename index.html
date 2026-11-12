@@ -272,10 +272,11 @@ details.fold>summary:hover{border-color:var(--muted)}
 <div class="toast" id="toast" role="status" aria-live="polite"></div>
 <dialog class="sheet" id="shows-dlg" aria-labelledby="shows-title"><div class="sheet-in">
   <div class="sheet-head"><h3 id="shows-title">Saved shows</h3><button class="btn" type="button" data-close>Close</button></div>
-  <p class="note" style="margin:0">A show saves every tab's inputs, including the power lists for all departments. Shows are kept on this device; use Share to send one to someone else.</p>
+  <p class="note" style="margin:0">A show saves every tab's inputs, including the power lists for all departments. Shows are kept on this device; use Share or Download to move one to another device.</p>
   <div class="show-save"><input type="text" id="show-name" placeholder="Show name, e.g. Hilton Ballroom – Oct" maxlength="80" aria-label="Show name" autocomplete="off"><button class="btn primary" type="button" id="show-save">Save</button></div>
   <div class="show-list" id="show-list"></div>
   <p class="note" id="show-empty" style="margin:0">No saved shows yet.</p>
+  <div class="btn-row" style="margin-top:0"><label class="btn" id="show-upload-l">Upload show file<input type="file" id="show-upload" accept=".json,.avshow,application/json" multiple hidden></label><button class="btn" type="button" id="show-dl-all">Download all</button></div>
 </div></dialog>
 <dialog class="sheet" id="share-dlg" aria-labelledby="share-title"><div class="sheet-in">
   <div class="sheet-head"><h3 id="share-title">Share</h3><button class="btn" type="button" data-close>Close</button></div>
@@ -287,7 +288,7 @@ details.fold>summary:hover{border-color:var(--muted)}
   <div class="wrap">
     <div class="top-in">
       <div class="bars" aria-hidden="true"><i></i><i></i><i></i><i></i><i></i><i></i><i></i></div>
-      <div><h1>AV Show Calculators</h1><p id="app-ver">v1.8 · Nov 12, 2026</p></div>
+      <div><h1>AV Show Calculators</h1><p id="app-ver">v1.9 · Nov 12, 2026</p></div>
       <div class="top-act">
         <button class="btn" id="show-btn" type="button">Shows</button>
         <button class="btn icon-btn" id="theme-btn" type="button" aria-pressed="false"><span aria-hidden="true" id="theme-ico">☾</span> <span id="theme-lbl">Dark</span></button>
@@ -722,6 +723,7 @@ const clone=o=>JSON.parse(JSON.stringify(o));
 /* ---------------- shows, share links ---------------- */
 /* keys that are per-device preferences or bookkeeping, not part of a show */
 const NOT_SHOW=['theme','tab','shows','show'];
+const APP_VERSION='1.9';
 function snapshot(){const o={};try{Object.keys(localStorage).forEach(k=>{if(!k.startsWith('avcalc:'))return;const n=k.slice(7);if(NOT_SHOW.includes(n))return;try{o[n]=JSON.parse(localStorage.getItem(k))}catch(e){}})}catch(e){}return o}
 function clearShowState(){try{Object.keys(localStorage).filter(k=>k.startsWith('avcalc:')&&!NOT_SHOW.includes(k.slice(7))).forEach(k=>localStorage.removeItem(k))}catch(e){}}
 function writeState(o){for(const k in o)if(!NOT_SHOW.includes(k))store.set(k,o[k])}
@@ -1303,9 +1305,10 @@ function renderShows(){
   $('show-list').innerHTML='';
   names.forEach(n=>{
     const row=document.createElement('div');row.className='show-item'+(n===cur?' cur':'');
-    row.innerHTML=`<div class="nm"><b>${esc(n)}</b><span>Saved ${new Date(shows[n].t).toLocaleString(undefined,{month:'short',day:'numeric',hour:'numeric',minute:'2-digit'})}</span></div><button class="btn primary" type="button" data-a="load">Open</button><button class="btn" type="button" data-a="share">Share</button><button class="btn danger" type="button" data-a="del">Delete</button>`;
+    row.innerHTML=`<div class="nm"><b>${esc(n)}</b><span>Saved ${new Date(shows[n].t).toLocaleString(undefined,{month:'short',day:'numeric',hour:'numeric',minute:'2-digit'})}</span></div><button class="btn primary" type="button" data-a="load">Open</button><button class="btn" type="button" data-a="share">Share</button><button class="btn" type="button" data-a="dl">Download</button><button class="btn danger" type="button" data-a="del">Delete</button>`;
     row.querySelector('[data-a="load"]').addEventListener('click',()=>{clearShowState();writeState(shows[n].d);store.set('show',n);location.reload()});
     row.querySelector('[data-a="share"]').addEventListener('click',()=>{shareOut(n,`AV Show Calculators — show “${n}”. Open the link to load every tab's inputs.`,linkFor({k:'show',n,d:shows[n].d}))});
+    row.querySelector('[data-a="dl"]').addEventListener('click',()=>downloadShows([n]));
     twoTap(row.querySelector('[data-a="del"]'),()=>{const sh=store.get('shows',{});delete sh[n];store.set('shows',sh);if(store.get('show','')===n){store.set('show','');paintShowBtn()}renderShows()});
     $('show-list').appendChild(row);
   });
@@ -1319,6 +1322,41 @@ function saveShow(){
   paintShowBtn();renderShows();toast(`Saved “${n}”`);
 }
 $('show-save').addEventListener('click',saveShow);
+
+/* show files: {app, type:'shows', version, shows:[{name, saved, data}]} */
+const fileSafe=n=>n.replace(/[\\/:*?"<>|]+/g,'-').replace(/\s+/g,' ').trim().slice(0,60)||'show';
+function downloadShows(names){
+  const shows=store.get('shows',{});names=names.filter(n=>shows[n]);
+  if(!names.length){toast('No saved shows to download');return}
+  const body={app:'AV Show Calculators',type:'shows',version:APP_VERSION,shows:names.map(n=>({name:n,saved:shows[n].t,data:shows[n].d}))};
+  const blob=new Blob([JSON.stringify(body,null,1)],{type:'application/json'});
+  const a=document.createElement('a');a.href=URL.createObjectURL(blob);
+  a.download=(names.length===1?fileSafe(names[0]):'AV shows '+new Date().toISOString().slice(0,10))+'.avshow.json';
+  document.body.appendChild(a);a.click();a.remove();setTimeout(()=>URL.revokeObjectURL(a.href),4000);
+}
+$('show-dl-all').addEventListener('click',()=>downloadShows(Object.keys(store.get('shows',{}))));
+$('show-upload').addEventListener('change',async e=>{
+  const files=[...e.target.files];e.target.value='';
+  const shows=store.get('shows',{});let added=0,same=0,bad=0;
+  for(const f of files){
+    try{
+      if(f.size>5e6)throw 0;
+      const j=JSON.parse(await f.text());
+      const list=Array.isArray(j.shows)?j.shows:(j.data?[j]:null);
+      if(!list||j.app!=='AV Show Calculators')throw 0;
+      for(const x of list){
+        if(!x||typeof x.data!=='object'||!x.data){bad++;continue}
+        const data={};for(const k in x.data)if(!NOT_SHOW.includes(k))data[k]=x.data[k];
+        let n=String(x.name||f.name.replace(/\.avshow\.json$|\.json$/i,'')).trim().slice(0,80)||'Imported show';
+        if(shows[n]&&JSON.stringify(shows[n].d)===JSON.stringify(data)){same++;continue}
+        if(shows[n]){let i=2;while(shows[`${n} (${i})`])i++;n=`${n} (${i})`}
+        shows[n]={t:+x.saved||Date.now(),d:data};added++;
+      }
+    }catch(err){bad++}
+  }
+  store.set('shows',shows);renderShows();
+  toast([added&&`Added ${added} show${added===1?'':'s'}`,same&&`${same} already saved`,bad&&`${bad} file${bad===1?'':'s'} not readable`].filter(Boolean).join(' · ')||'Nothing to add');
+});
 $('show-name').addEventListener('keydown',e=>{if(e.key==='Enter'){e.preventDefault();saveShow()}});
 paintShowBtn();
 
