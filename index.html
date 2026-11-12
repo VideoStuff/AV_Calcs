@@ -11,6 +11,7 @@
 <meta name="mobile-web-app-capable" content="yes">
 <meta name="apple-mobile-web-app-status-bar-style" content="default">
 <meta name="apple-mobile-web-app-title" content="AV Calcs">
+<script>try{var t=JSON.parse(localStorage.getItem('avcalc:theme'));if(t==='dark'||t==='light')document.documentElement.dataset.theme=t}catch(e){}</script>
 <link rel="manifest" href="manifest.webmanifest">
 <link rel="icon" href="icon.svg" type="image/svg+xml">
 <link rel="apple-touch-icon" href="icon-180.png">
@@ -54,6 +55,8 @@ body::before{content:"";position:fixed;inset:0 0 auto;height:env(safe-area-inset
 .bars i{display:block}
 .bars i:nth-child(1){background:#C0C0C0}.bars i:nth-child(2){background:#C0C000}.bars i:nth-child(3){background:#00C0C0}.bars i:nth-child(4){background:#00C000}.bars i:nth-child(5){background:#C000C0}.bars i:nth-child(6){background:#C00000}.bars i:nth-child(7){background:#0000C0}
 h1{font-family:var(--f-display);font-weight:700;font-size:1.35rem;letter-spacing:.01em;margin:0;line-height:1.1}
+.top-act{margin-left:auto;display:flex;gap:6px;flex-wrap:wrap;justify-content:flex-end}
+.top-act .btn{padding:6px 11px;font-size:.88rem}
 .top-in p{margin:0;font-size:.74rem;color:var(--muted);letter-spacing:.08em;text-transform:uppercase}
 .tabs{display:flex;gap:6px;overflow-x:auto;padding-block:8px 10px;scrollbar-width:none;-webkit-overflow-scrolling:touch}
 .tabs::-webkit-scrollbar{display:none}
@@ -228,6 +231,10 @@ details.fold>summary:hover{border-color:var(--muted)}
     <div class="top-in">
       <div class="bars" aria-hidden="true"><i></i><i></i><i></i><i></i><i></i><i></i><i></i></div>
       <div><h1>AV Show Calculators</h1><p>From Calculators v3.3</p></div>
+      <div class="top-act">
+        <button class="btn icon-btn" id="theme-btn" type="button" aria-pressed="false"><span aria-hidden="true" id="theme-ico">☾</span> <span id="theme-lbl">Dark</span></button>
+        <button class="btn danger" id="reset-all" type="button">Reset</button>
+      </div>
     </div>
     <nav class="tabs" id="tabs" role="tablist" aria-label="Calculators">
       <button class="tab" role="tab" data-v="storage">Storage</button>
@@ -649,6 +656,14 @@ const store={
 const clone=o=>JSON.parse(JSON.stringify(o));
 
 /* two-tap confirm for destructive buttons (the viewer has no confirm dialog) */
+/* theme: follows the device until the button is used, then sticks */
+function isDark(){const t=document.documentElement.dataset.theme;return t?t==='dark':matchMedia('(prefers-color-scheme: dark)').matches}
+function paintThemeBtn(){const d=isDark();$('theme-btn').setAttribute('aria-pressed',d);$('theme-lbl').textContent=d?'Light':'Dark';$('theme-ico').textContent=d?'☀':'☾';
+  document.querySelectorAll('meta[name="theme-color"]').forEach(m=>{m.removeAttribute('media');m.content=d?'#171E26':'#FFFFFF'})}
+$('theme-btn').addEventListener('click',()=>{const t=isDark()?'light':'dark';document.documentElement.dataset.theme=t;store.set('theme',t);paintThemeBtn()});
+matchMedia('(prefers-color-scheme: dark)').addEventListener('change',paintThemeBtn);
+paintThemeBtn();
+
 function twoTap(btn,action){
   const label=btn.textContent;let t=null;
   btn.addEventListener('click',()=>{
@@ -657,6 +672,11 @@ function twoTap(btn,action){
     t=setTimeout(()=>{delete btn.dataset.armed;btn.textContent=label},3000);
   });
 }
+/* reset everything (inputs, power lists, tab, theme) back to defaults */
+twoTap($('reset-all'),()=>{
+  try{Object.keys(localStorage).filter(k=>k.startsWith('avcalc:')).forEach(k=>localStorage.removeItem(k))}catch(e){}
+  location.replace(location.pathname);
+});
 
 /* ---------------- STORAGE ---------------- */
 const CODECS=[
