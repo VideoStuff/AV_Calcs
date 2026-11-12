@@ -1,0 +1,1117 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
+<title>AV Show Calculators</title>
+<meta name="description" content="Field calculators for live AV shows: storage, power, projection, LED pixels, camera lenses, scaling and switchers.">
+<meta name="theme-color" content="#FFFFFF" media="(prefers-color-scheme: light)">
+<meta name="theme-color" content="#171E26" media="(prefers-color-scheme: dark)">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="default">
+<meta name="apple-mobile-web-app-title" content="AV Calcs">
+<link rel="manifest" href="manifest.webmanifest">
+<link rel="icon" href="icon.svg" type="image/svg+xml">
+<link rel="apple-touch-icon" href="icon-180.png">
+<style>:root{color-scheme:light;box-sizing:border-box;padding-top:env(safe-area-inset-top,0px);padding-bottom:env(safe-area-inset-bottom,0px)}html{scroll-padding-top:env(safe-area-inset-top,0px)}body{margin:0;padding:0;font:14px -apple-system,BlinkMacSystemFont,sans-serif;background:#fff;color:#000}img{max-width:100%}[hidden]:not([hidden=until-found i]){display:none!important}</style>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Barlow:wght@400;500;600&family=Barlow+Condensed:wght@500;600;700&family=JetBrains+Mono:wght@400;600&display=swap">
+<style>
+/* Layout: sticky header with a scrolling row of tool tabs; one centred column per tool, inputs beside readouts on wide screens and stacked on phones */
+:root{
+  --bg:#EDF0F3; --surface:#FFFFFF; --surface-2:#E5EAEF; --ink:#16202A; --muted:#566370; --line:#CDD5DD;
+  --accent:#B86A00; --accent-ink:#8A4F00; --accent-soft:rgba(184,106,0,.13); --on-accent:#1A1205;
+  --good:#1F7144; --good-soft:rgba(31,113,68,.13); --warn:#8E5C00; --warn-soft:rgba(214,150,0,.18); --bad:#B0302A; --bad-soft:rgba(176,48,42,.12);
+  --f-display:"Barlow Condensed","Arial Narrow","Roboto Condensed",system-ui,sans-serif;
+  --f-body:"Barlow",system-ui,-apple-system,"Segoe UI",Roboto,sans-serif;
+  --f-mono:"JetBrains Mono",ui-monospace,SFMono-Regular,Consolas,monospace;
+  --r:10px;
+}
+@media (prefers-color-scheme: dark){:root:not([data-theme="light"]){
+  --bg:#10151B; --surface:#171E26; --surface-2:#1F2832; --ink:#E3E8EE; --muted:#97A3AF; --line:#2D3843;
+  --accent:#F0A43A; --accent-ink:#F5B663; --accent-soft:rgba(240,164,58,.15);
+  --good:#5BC287; --good-soft:rgba(91,194,135,.15); --warn:#E9B44C; --warn-soft:rgba(233,180,76,.16); --bad:#F07167; --bad-soft:rgba(240,113,103,.15);
+  color-scheme:dark}}
+:root[data-theme="dark"]{
+  --bg:#10151B; --surface:#171E26; --surface-2:#1F2832; --ink:#E3E8EE; --muted:#97A3AF; --line:#2D3843;
+  --accent:#F0A43A; --accent-ink:#F5B663; --accent-soft:rgba(240,164,58,.15);
+  --good:#5BC287; --good-soft:rgba(91,194,135,.15); --warn:#E9B44C; --warn-soft:rgba(233,180,76,.16); --bad:#F07167; --bad-soft:rgba(240,113,103,.15);
+  color-scheme:dark}
+
+html{background:var(--bg)}
+body{background:var(--bg);color:var(--ink);font-family:var(--f-body);font-size:16px;line-height:1.45;-webkit-text-size-adjust:100%}
+*,*::before,*::after{box-sizing:border-box}
+[hidden]{display:none!important}
+body::before{content:"";position:fixed;inset:0 0 auto;height:env(safe-area-inset-top,0px);z-index:10;background:var(--surface)}
+.wrap{max-width:1080px;margin:0 auto;padding-left:max(16px,env(safe-area-inset-left,0px));padding-right:max(16px,env(safe-area-inset-right,0px))}
+
+/* header */
+.top{position:sticky;top:env(safe-area-inset-top,0px);z-index:5;background:var(--surface);border-bottom:1px solid var(--line)}
+.top-in{display:flex;align-items:center;gap:12px;padding-block:12px 4px}
+.bars{flex:none;width:30px;height:24px;border-radius:4px;overflow:hidden;display:grid;grid-template-columns:repeat(7,1fr);box-shadow:0 0 0 1px var(--line)}
+.bars i{display:block}
+.bars i:nth-child(1){background:#C0C0C0}.bars i:nth-child(2){background:#C0C000}.bars i:nth-child(3){background:#00C0C0}.bars i:nth-child(4){background:#00C000}.bars i:nth-child(5){background:#C000C0}.bars i:nth-child(6){background:#C00000}.bars i:nth-child(7){background:#0000C0}
+h1{font-family:var(--f-display);font-weight:700;font-size:1.35rem;letter-spacing:.01em;margin:0;line-height:1.1}
+.top-in p{margin:0;font-size:.74rem;color:var(--muted);letter-spacing:.08em;text-transform:uppercase}
+.tabs{display:flex;gap:6px;overflow-x:auto;padding-block:8px 10px;scrollbar-width:none;-webkit-overflow-scrolling:touch}
+.tabs::-webkit-scrollbar{display:none}
+.tab{flex:none;font-family:var(--f-display);font-weight:600;font-size:1rem;letter-spacing:.03em;padding:6px 14px;border-radius:999px;border:1px solid var(--line);background:var(--surface);color:var(--muted);cursor:pointer}
+.tab:hover{color:var(--ink)}
+.tab[aria-selected="true"]{background:var(--ink);color:var(--bg);border-color:var(--ink)}
+
+main{padding-block:20px 56px}
+.view-head{display:flex;flex-direction:column;gap:2px;margin-bottom:16px}
+.eyebrow{font-family:var(--f-display);font-weight:600;font-size:.8rem;letter-spacing:.14em;text-transform:uppercase;color:var(--accent-ink)}
+h2{font-family:var(--f-display);font-weight:700;font-size:2rem;margin:0;line-height:1.05;text-wrap:balance}
+.lede{color:var(--muted);margin:4px 0 0;max-width:62ch}
+
+.layout{display:grid;gap:16px;grid-template-columns:minmax(0,1fr)}
+@media (min-width:820px){.layout{grid-template-columns:minmax(0,5fr) minmax(0,7fr)}.layout.even{grid-template-columns:minmax(0,1fr) minmax(0,1fr)}}
+.stack{display:flex;flex-direction:column;gap:16px;min-width:0}
+.panel{background:var(--surface);border:1px solid var(--line);border-radius:var(--r);padding:16px;min-width:0}
+.panel h3{font-family:var(--f-display);font-weight:600;font-size:1rem;letter-spacing:.08em;text-transform:uppercase;color:var(--muted);margin:0 0 12px;text-wrap:balance}
+.panel h3 .tag{color:var(--accent-ink);margin-left:6px}
+.panel-head{display:flex;justify-content:space-between;align-items:center;gap:10px;flex-wrap:wrap;margin-bottom:12px}
+.panel-head h3{margin:0}
+
+.fields{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:12px}
+.fields.three{grid-template-columns:repeat(3,minmax(0,1fr))}
+.field{display:flex;flex-direction:column;gap:4px;min-width:0}
+.field.full{grid-column:1/-1}
+.field>span{font-size:.84rem;color:var(--muted);font-weight:500}
+input,select{font-size:16px;width:100%;padding:9px 10px;border:1px solid var(--line);border-radius:8px;background:var(--bg);color:var(--ink);min-width:0}
+input{font-family:var(--f-mono);font-variant-numeric:tabular-nums}
+input[type="text"],input:not([type]){font-family:var(--f-body)}
+select{font-family:var(--f-body);appearance:auto}
+input:focus-visible,select:focus-visible,button:focus-visible,.tab:focus-visible{outline:2px solid var(--accent);outline-offset:1px}
+
+.readouts{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:10px}
+.ro{background:var(--surface-2);border-radius:8px;padding:10px 12px;display:flex;flex-direction:column;gap:2px;min-width:0}
+.ro .lbl{font-family:var(--f-display);font-weight:600;font-size:.8rem;letter-spacing:.07em;text-transform:uppercase;color:var(--muted)}
+.ro .val{font-family:var(--f-mono);font-weight:600;font-size:1.3rem;font-variant-numeric:tabular-nums;overflow-wrap:anywhere;line-height:1.2}
+.ro .val small{font-family:var(--f-display);font-size:.9rem;color:var(--muted);font-weight:600;margin-left:5px;letter-spacing:.03em}
+.ro .sub{font-size:.8rem;color:var(--muted)}
+.ro.hero{grid-column:1/-1;background:var(--accent-soft);box-shadow:inset 0 0 0 1px var(--accent)}
+.ro.hero .val{font-size:2.3rem}
+.ro.wide{grid-column:1/-1}
+
+.tbl-wrap{overflow-x:auto;-webkit-overflow-scrolling:touch;margin-inline:-4px;padding-inline:4px}
+table{width:100%;border-collapse:collapse;font-size:.92rem}
+th{text-align:left;font-family:var(--f-display);font-weight:600;letter-spacing:.05em;text-transform:uppercase;font-size:.78rem;color:var(--muted);padding:8px;border-bottom:1px solid var(--line);white-space:nowrap;vertical-align:bottom}
+td{padding:8px;border-bottom:1px solid var(--line);font-variant-numeric:tabular-nums;vertical-align:middle}
+th.num,td.num{text-align:right}
+td.num{font-family:var(--f-mono);font-size:.88rem;white-space:nowrap}
+tbody tr:last-child td{border-bottom:0}
+tr.sel td{background:var(--accent-soft)}
+tr.click{cursor:pointer}
+tr.click:hover td{background:var(--surface-2)}
+tr.sel.click:hover td{background:var(--accent-soft)}
+tfoot td{font-weight:600;border-top:2px solid var(--line);border-bottom:0}
+td.m8{color:var(--good);font-weight:600}
+
+.pill{display:inline-block;padding:2px 9px;border-radius:999px;font-size:.8rem;font-weight:600;font-family:var(--f-display);letter-spacing:.04em;white-space:nowrap}
+#pj-fit .pill{white-space:normal;line-height:1.35;padding:5px 11px;border-radius:10px}
+.pill.good{background:var(--good-soft);color:var(--good)}
+.pill.warn{background:var(--warn-soft);color:var(--warn)}
+.pill.bad{background:var(--bad-soft);color:var(--bad)}
+.pill.mute{background:var(--surface-2);color:var(--muted)}
+
+.note{font-size:.86rem;color:var(--muted);margin:10px 0 0;max-width:68ch}
+.formula{font-family:var(--f-mono);font-size:.8rem;color:var(--muted);background:var(--surface-2);border-radius:6px;padding:6px 8px;margin-top:10px;overflow-x:auto;white-space:nowrap}
+
+.btn{font-family:var(--f-display);font-weight:600;font-size:.95rem;letter-spacing:.03em;padding:7px 14px;border-radius:8px;border:1px solid var(--line);background:var(--surface);color:var(--ink);cursor:pointer}
+.btn:hover{border-color:var(--muted)}
+.btn.primary{background:var(--accent);border-color:var(--accent);color:var(--on-accent)}
+.btn.danger{border-color:var(--bad);color:var(--bad)}
+.btn-row{display:flex;gap:8px;flex-wrap:wrap;margin-top:12px}
+
+.seg{display:inline-flex;border:1px solid var(--line);border-radius:999px;padding:3px;gap:2px;background:var(--surface-2);flex-wrap:wrap}
+.seg button{font-family:var(--f-display);font-weight:600;font-size:.95rem;letter-spacing:.03em;border:0;background:transparent;color:var(--muted);padding:5px 14px;border-radius:999px;cursor:pointer}
+.seg button[aria-pressed="true"]{background:var(--surface);color:var(--ink);box-shadow:0 1px 2px rgba(0,0,0,.12)}
+
+details{border-top:1px solid var(--line);padding-top:10px;margin-top:14px}
+summary{cursor:pointer;font-family:var(--f-display);font-weight:600;letter-spacing:.05em;text-transform:uppercase;font-size:.9rem;color:var(--muted)}
+details[open] summary{margin-bottom:10px}
+
+/* power rows */
+.prow-head,.prow{display:grid;gap:6px;align-items:end;grid-template-columns:minmax(0,1fr) minmax(0,1fr) minmax(0,.8fr) minmax(0,1fr) 34px;grid-template-areas:"name name name name del" "q w pf a a"}
+.prow{padding-block:10px;border-bottom:1px dashed var(--line)}
+.prow-head{display:none}
+.c-name{grid-area:name}.c-q{grid-area:q}.c-w{grid-area:w}.c-pf{grid-area:pf}.c-a{grid-area:a}.del{grid-area:del}
+.prow label,.prow .c-a{display:flex;flex-direction:column;gap:3px;min-width:0}
+.mini{font-size:.72rem;color:var(--muted);text-transform:uppercase;letter-spacing:.05em;font-family:var(--f-display);font-weight:600}
+.prow input{padding:7px 8px}
+.amps{font-family:var(--f-mono);font-weight:600;font-variant-numeric:tabular-nums;padding:7px 2px;text-align:right}
+.del{align-self:center;width:34px;height:34px;border-radius:8px;border:1px solid var(--line);background:transparent;color:var(--muted);font-size:1.2rem;line-height:1;cursor:pointer}
+.del:hover{color:var(--bad);border-color:var(--bad)}
+@media (min-width:700px){
+  .prow-head,.prow{grid-template-columns:minmax(0,2.4fr) 72px 96px 70px 90px 34px;grid-template-areas:"name q w pf a del";align-items:center}
+  .prow-head{display:grid;padding-bottom:6px;border-bottom:1px solid var(--line)}
+  .prow-head span{font-family:var(--f-display);font-weight:600;font-size:.76rem;letter-spacing:.05em;text-transform:uppercase;color:var(--muted)}
+  .prow-head span.r{text-align:right}
+  .prow .mini{display:none}
+}
+.subtot{display:flex;justify-content:flex-end;gap:18px;flex-wrap:wrap;padding-top:10px;font-size:.9rem;color:var(--muted)}
+.subtot b{font-family:var(--f-mono);color:var(--ink);font-weight:600;margin-left:6px}
+
+/* surfaces */
+.surfs{display:grid;gap:10px;grid-template-columns:minmax(0,1fr)}
+@media (min-width:700px){.surfs{grid-template-columns:repeat(2,minmax(0,1fr))}}
+.surf{border:1px solid var(--line);border-radius:8px;padding:10px;display:flex;flex-direction:column;gap:8px;background:var(--bg);min-width:0}
+.surf.skipped{opacity:.6}
+.surf-top{display:grid;grid-template-columns:minmax(0,1fr) auto 34px;gap:8px;align-items:center}
+.surf-dims{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:8px}
+.surf-dims label{display:flex;flex-direction:column;gap:3px;min-width:0}
+.surf-out{font-family:var(--f-mono);font-size:.86rem;display:flex;flex-wrap:wrap;gap:4px 14px}
+.surf-out span{color:var(--muted)}
+.surf-out b{color:var(--ink);font-weight:600}
+.chk{display:flex;align-items:center;gap:6px;font-size:.85rem;color:var(--muted);cursor:pointer;white-space:nowrap}
+.chk input{width:18px;height:18px;padding:0;accent-color:var(--accent)}
+
+/* meter */
+.meter{position:relative;height:10px;border-radius:999px;background:var(--surface-2);margin-top:8px;overflow:hidden}
+.meter i{position:absolute;inset:0 auto 0 0;border-radius:999px;transition:width .25s ease}
+.meter b{position:absolute;top:0;bottom:0;width:2px;background:var(--bg)}
+.meter-scale{display:flex;justify-content:space-between;font-family:var(--f-mono);font-size:.7rem;color:var(--muted);margin-top:3px}
+
+.dl{display:grid;grid-template-columns:auto minmax(0,1fr);gap:4px 12px;font-size:.88rem;margin:0}
+.dl dt{font-family:var(--f-mono);font-weight:600}
+.dl dd{margin:0;color:var(--muted)}
+
+.lib{columns:2 220px;column-gap:20px;font-size:.88rem}
+.lib div{break-inside:avoid;margin-bottom:10px}
+.lib h4{font-family:var(--f-display);font-weight:600;letter-spacing:.05em;text-transform:uppercase;font-size:.8rem;color:var(--accent-ink);margin:0 0 4px}
+.lib p{margin:0;display:flex;justify-content:space-between;gap:8px;border-bottom:1px dotted var(--line);padding-block:2px}
+.lib p span:last-child{font-family:var(--f-mono)}
+
+/* feet <-> meters converter */
+.cv{display:grid;gap:10px;grid-template-columns:minmax(0,1fr)}
+.cv-group{display:flex;flex-direction:column;gap:10px;background:var(--surface-2);border-radius:8px;padding:12px;min-width:0}
+.cv-row{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:10px}
+.cv-tag{font-family:var(--f-display);font-weight:600;font-size:.78rem;letter-spacing:.1em;text-transform:uppercase;color:var(--accent-ink)}
+.cv-swap{text-align:center;font-size:1.3rem;line-height:1;color:var(--accent-ink);transform:rotate(90deg)}
+@media (min-width:560px) and (max-width:819px){.cv{grid-template-columns:minmax(0,1fr) auto minmax(0,1fr);align-items:center}.cv-swap{transform:none}}
+
+/* collapsible section */
+details.fold{border:0;padding:0;margin-top:16px}
+details.fold>summary{list-style:none;display:grid;grid-template-columns:auto minmax(0,1fr);column-gap:12px;align-items:center;background:var(--surface);border:1px solid var(--line);border-radius:var(--r);padding:14px 16px;text-transform:none;letter-spacing:0;color:var(--ink)}
+details.fold>summary::-webkit-details-marker{display:none}
+details.fold>summary::before{content:"";grid-row:1/3;width:9px;height:9px;border-right:2px solid var(--accent-ink);border-bottom:2px solid var(--accent-ink);transform:rotate(-45deg);transition:transform .2s ease;margin-inline:2px}
+details.fold[open]>summary::before{transform:rotate(45deg)}
+details.fold[open]>summary{margin-bottom:16px}
+details.fold>summary:hover{border-color:var(--muted)}
+.fold-t{font-family:var(--f-display);font-weight:700;font-size:1.15rem;letter-spacing:.02em}
+.fold-s{font-family:var(--f-body);font-size:.85rem;color:var(--muted)}
+
+/* ET-D75LE95 diagram */
+.dia-grid{display:grid;gap:18px;grid-template-columns:minmax(0,1fr)}
+@media (min-width:820px){.dia-grid{grid-template-columns:minmax(0,2fr) minmax(0,3fr);align-items:start}}
+.dia-grid figure{margin:0;display:flex;flex-direction:column;gap:6px;min-width:0}
+.dia-grid figure.span{grid-column:1/-1}
+.dia{width:100%;height:auto;max-width:460px;display:block;margin-inline:auto}
+.dia text{font-family:var(--f-mono);font-size:12px;fill:var(--ink)}
+.dia text.k{font-weight:600;fill:var(--accent-ink)}
+.dia .bg{paint-order:stroke;stroke:var(--surface);stroke-width:4px;stroke-linejoin:round}
+.dia .dim{stroke:var(--muted);stroke-width:1;fill:none}
+.dia .ext{stroke:var(--muted);stroke-width:1;stroke-dasharray:3 3;fill:none;opacity:.7}
+
+@media (max-width:420px){.fields.three{grid-template-columns:repeat(2,minmax(0,1fr))}h2{font-size:1.7rem}.ro.hero .val{font-size:2rem}}
+@media (prefers-reduced-motion:reduce){*{transition:none!important}}
+</style>
+</head>
+<body>
+
+<header class="top">
+  <div class="wrap">
+    <div class="top-in">
+      <div class="bars" aria-hidden="true"><i></i><i></i><i></i><i></i><i></i><i></i><i></i></div>
+      <div><h1>AV Show Calculators</h1><p>From Calculators v3.3</p></div>
+    </div>
+    <nav class="tabs" id="tabs" role="tablist" aria-label="Calculators">
+      <button class="tab" role="tab" data-v="storage">Storage</button>
+      <button class="tab" role="tab" data-v="power">3-Phase Power</button>
+      <button class="tab" role="tab" data-v="projector">Projector</button>
+      <button class="tab" role="tab" data-v="pixels">Pixel Density</button>
+      <button class="tab" role="tab" data-v="camera">Camera Lens</button>
+      <button class="tab" role="tab" data-v="scaling">Res Scaling</button>
+      <button class="tab" role="tab" data-v="switchers">Switchers</button>
+      <button class="tab" role="tab" data-v="cables">Cabling</button>
+    </nav>
+  </div>
+</header>
+
+<main class="wrap">
+
+<!-- ============ STORAGE ============ -->
+<section class="view" id="v-storage" hidden>
+  <div class="view-head"><span class="eyebrow">Recording</span><h2>Storage Calculator</h2>
+    <p class="lede">Drive space for a record, with bitrate headroom built in. Progressive scan assumed.</p></div>
+  <div class="layout">
+    <div class="panel">
+      <h3>Record settings</h3>
+      <div class="fields">
+        <label class="field full"><span>Resolution</span>
+          <select id="st-res" data-p><option>1280 x 720</option><option selected>1920 x 1080</option><option>3840 x 2160</option><option>4096 x 2160</option></select></label>
+        <label class="field"><span>Frame rate</span>
+          <select id="st-fps" data-p><option>23.98</option><option>24</option><option>29.97</option><option>30</option><option selected>59.94</option><option>60</option></select></label>
+        <label class="field"><span>Codec</span><select id="st-codec" data-p></select></label>
+        <label class="field"><span>Duration (hrs)</span><input id="st-hrs" type="number" inputmode="decimal" step="any" min="0" value="2" data-p></label>
+        <label class="field"><span>Number of records</span><input id="st-rec" type="number" inputmode="numeric" step="1" min="0" value="3" data-p></label>
+      </div>
+    </div>
+    <div class="panel">
+      <h3>Storage needed</h3>
+      <div class="readouts">
+        <div class="ro hero"><span class="lbl">All records</span><span class="val" id="st-gb">—</span><span class="sub" id="st-tb"></span></div>
+        <div class="ro"><span class="lbl">Per record</span><span class="val" id="st-per">—</span></div>
+        <div class="ro"><span class="lbl">Bitrate with headroom</span><span class="val" id="st-rate">—</span></div>
+      </div>
+      <p class="note">Tap a row to switch codec. Sizes cover the full duration and number of records.</p>
+      <div class="tbl-wrap"><table>
+        <thead><tr><th>Codec</th><th class="num">Mbps</th><th class="num">Per record</th><th class="num">Total</th></tr></thead>
+        <tbody id="st-table"></tbody>
+      </table></div>
+    </div>
+  </div>
+</section>
+
+<!-- ============ POWER ============ -->
+<section class="view" id="v-power" hidden>
+  <div class="view-head"><span class="eyebrow">Distro</span><h2>3-Phase Power</h2>
+    <p class="lede">Amps per phase on a 208V three-phase service, by department. 208V loads divide by √3 (1.732); 120V loads spread across three legs.</p></div>
+  <div class="stack">
+    <div class="panel">
+      <div class="panel-head">
+        <div class="seg" id="pw-dept" role="group" aria-label="Department">
+          <button data-d="video" aria-pressed="true">Video</button><button data-d="audio" aria-pressed="false">Audio</button><button data-d="lighting" aria-pressed="false">Lighting</button>
+        </div>
+      </div>
+      <div class="readouts" style="margin-bottom:16px">
+        <div class="ro hero"><span class="lbl" id="pw-dname">Video · service rating per phase</span><span class="val" id="pw-svc20">—</span><span class="sub">Includes 20% overhead</span></div>
+        <div class="ro wide"><span class="lbl">For reference</span><span class="sub" style="font-size:.92rem">Actual load <b id="pw-svc" style="font-family:var(--f-mono)">—</b> per phase · total <b id="pw-wall" style="font-family:var(--f-mono)">—</b></span></div>
+      </div>
+
+      <h3>208V loads</h3>
+      <div class="prow-head"><span>Item</span><span>Qty</span><span>Watts each</span><span>PF</span><span class="r">Amps</span><span></span></div>
+      <div id="pw-r208"></div>
+      <p class="note" id="pw-e208" style="margin:0">No 208V items yet.</p>
+      <div class="subtot"><span>Total watts<b id="pw-w208">0</b></span><span>Amps per phase<b id="pw-a208">0</b></span></div>
+      <div class="btn-row"><button class="btn" id="pw-add208">+ Add 208V item</button></div>
+
+      <h3 style="margin-top:22px">120V loads</h3>
+      <div class="prow-head"><span>Item</span><span>Qty</span><span>Watts each</span><span>PF</span><span class="r">Amps</span><span></span></div>
+      <div id="pw-r120"></div>
+      <p class="note" id="pw-e120" style="margin:0">No 120V items yet.</p>
+      <div class="subtot"><span>Total watts<b id="pw-w120">0</b></span><span>Amps per phase<b id="pw-a120">0</b></span></div>
+      <div class="btn-row"><button class="btn" id="pw-add120">+ Add 120V item</button><button class="btn danger" id="pw-reset">Clear all</button></div>
+      <p class="note">Typing a model from the device list fills in its wattage. Power factor of 1 is the default.</p>
+
+      <details>
+        <summary>Device wattage list</summary>
+        <div class="lib" id="pw-lib"></div>
+      </details>
+    </div>
+  </div>
+</section>
+
+<!-- ============ PROJECTOR ============ -->
+<section class="view" id="v-projector" hidden>
+  <div class="view-head"><span class="eyebrow">Projection</span><h2>Projector Calculator</h2>
+    <p class="lede">Image size, brightness, throw and lens shift for Panasonic projectors.</p></div>
+  <div class="layout">
+    <div class="panel">
+      <h3>Screen &amp; projector</h3>
+      <div class="fields">
+        <label class="field"><span>Aspect ratio</span><select id="pj-aspect" data-p><option>16:9</option><option selected>16:10</option></select></label>
+        <label class="field"><span>Image height (ft)</span><input id="pj-h" type="number" inputmode="decimal" step="any" value="17.5" data-p></label>
+        <label class="field full"><span>Projector</span><select id="pj-model" data-p>
+          <option value="custom">Custom lumens</option>
+          <optgroup label="Panasonic">
+            <option value="RZ12K">PT-RZ12K · 12,000 lm</option>
+            <option value="RZ21K">PT-RZ21K · 20,000 lm</option>
+            <option value="RZ31K">PT-RZ31K · 31,000 lm</option>
+            <option value="RQ18K">PT-RQ18K · 16,000 lm</option>
+            <option value="RQ25K">PT-RQ25K · 20,000 lm</option>
+            <option value="RQ35K">PT-RQ35K · 30,500 lm</option>
+            <option value="RQ50K">PT-RQ50K · 50,000 lm</option>
+          </optgroup>
+          <optgroup label="Barco">
+            <option value="UDX">UDX-4K40 · 35,500 lm</option>
+            <option value="UDM">UDM-4K30 · 25,000 lm</option>
+          </optgroup>
+        </select></label>
+        <label class="field"><span>Projector lumens</span><input id="pj-lm" type="number" inputmode="numeric" step="any" value="30000" data-p></label>
+        <label class="field"><span>Screen gain</span><input id="pj-gain" type="number" inputmode="decimal" step="any" value="1" data-p></label>
+        <label class="field"><span>Throw distance (ft)</span><input id="pj-dist" type="number" inputmode="decimal" step="any" value="35" data-p></label>
+        <label class="field"><span>Lens throw ratio</span><input id="pj-ratio" type="number" inputmode="decimal" step="any" value="1.25" data-p></label>
+      </div>
+      <div id="pj-fit" style="margin-top:12px"></div>
+      <p class="note">Throw distance and throw ratio are linked: change either one and the other updates to match the image width. If you change the image size, the box you edited last stays put.</p>
+      <p class="note">Picking a projector fills in its rated lumens (manufacturer ANSI/ISO figure, not centre lumens) and switches the lens table to match. Type your own lumens to use a custom value.</p>
+    </div>
+    <div class="panel">
+      <h3 id="pj-area">Image</h3>
+      <div class="readouts">
+        <div class="ro"><span class="lbl">Image width</span><span class="val" id="pj-w">—</span></div>
+        <div class="ro"><span class="lbl">Diagonal</span><span class="val" id="pj-diag">—</span></div>
+        <div class="ro hero"><span class="lbl">Brightness on screen</span><span class="val" id="pj-ftl">—</span><span class="sub" id="pj-nits"></span>
+          <div class="meter" aria-hidden="true"><i id="pj-meter"></i><b style="left:37.5%"></b><b style="left:50%"></b><b style="left:62.5%"></b></div>
+          <div class="meter-scale" aria-hidden="true"><span>0</span><span>30</span><span>40</span><span>50</span><span>80 ft-L</span></div>
+        </div>
+        <div class="ro"><span class="lbl">Recommended lumens</span><span class="val" id="pj-rec">—</span><span class="sub" id="pj-recnote"></span></div>
+        <div class="ro"><span class="lbl">Lumens per sq ft</span><span class="val" id="pj-lpsf">—</span></div>
+      </div>
+      <p class="note">Recommended lumens use the Encore standard: width × height × 50.</p>
+    </div>
+  </div>
+
+  <div class="panel" style="margin-top:16px">
+    <div class="panel-head"><h3>Lenses &amp; shift</h3>
+      <select id="pj-fam" data-p style="width:auto"><option value="rz">RZ12K / RZ21K / RZ31K</option><option value="rq">RQ18K / RQ25K</option><option value="rq35">RQ35K</option></select></div>
+    <div class="tbl-wrap"><table>
+      <thead><tr><th>Lens</th><th class="num">Throw ratio</th><th class="num">H shift</th><th class="num">V shift</th><th class="num">H shift (ft)</th><th class="num">V shift (ft)</th><th></th></tr></thead>
+      <tbody id="pj-lenses"></tbody>
+    </table></div>
+    <p class="note">Highlighted lenses cover your throw ratio. "Near wide end" or "Near tele end" means you're close to that lens's limit: within 0.15 throw ratio for the ET-D75LE20 and longer lenses, or the outer 10% of the range for shorter zooms. A lens where you sit closer to the middle leaves room to adjust on site. Throw ratios are WUXGA/4K figures from Panasonic. Shift is how far the image centre can move from the lens centre, as a percentage of image width (H) or height (V); the feet columns apply that to your image size. ET-D75LE50 and ET-D3LEW50 have no lens shift.</p>
+  </div>
+
+  <details class="fold" id="pj-le-box">
+  <summary><span class="fold-t">ET-D75LE95 fixed lens</span><span class="fold-s">Placement distances and layout drawing</span></summary>
+  <div class="layout">
+    <div class="panel">
+      <div class="panel-head"><h3>Projector</h3>
+        <select id="pj-le" data-p style="width:auto"><option>RZ21K</option><option>RZ31K</option><option>RQ18K</option><option selected>RQ25K</option><option>RQ35K</option></select></div>
+      <dl class="dl">
+        <dt>SH / SW / SD</dt><dd>Image height, width and diagonal</dd>
+        <dt>L1</dt><dd>Screen to the lens mirror surface</dd>
+        <dt>L2</dt><dd>Screen to the tip of the lens</dd>
+        <dt>L3</dt><dd>Screen to the front of the projector</dd>
+        <dt>L4</dt><dd>Screen to the rear of the projector</dd>
+        <dt>A1</dt><dd>Screen bottom edge to projector top</dd>
+        <dt>A2</dt><dd>Screen bottom edge to projector bottom</dd>
+      </dl>
+      <p class="note">Leave at least 500 mm (about 20 in) behind the projector for ventilation.</p>
+    </div>
+    <div class="panel">
+      <div class="tbl-wrap"><table>
+        <thead><tr><th>Dimension</th><th class="num">Feet</th><th class="num">Meters</th></tr></thead>
+        <tbody id="pj-le-table"></tbody>
+      </table></div>
+    </div>
+  </div>
+
+  <div class="panel" style="margin-top:16px">
+    <h3 id="pj-dia-h">ET-D75LE95 layout</h3>
+    <div class="dia-grid">
+      <figure><figcaption class="mini">Front view · projected image</figcaption><div id="pj-front"></div></figure>
+      <figure><figcaption class="mini">Side view · screen on the left</figcaption><div id="pj-side"></div></figure>    </div>
+    <p class="note">Drawn to scale from the image size above. The projector is shown at the minimum A1/A2 drop below the screen; the labels give the full range.</p>
+  </div>
+  </details>
+
+  <div class="panel" style="margin-top:16px">
+    <h3>Weights</h3>
+    <div class="layout even">
+      <div class="tbl-wrap"><table>
+        <thead><tr><th>Projector</th><th class="num">lb</th><th class="num">kg</th></tr></thead>
+        <tbody><tr><td>RQ25K</td><td class="num">77.2</td><td class="num">35.0</td></tr><tr><td>RQ35K</td><td class="num">153.9</td><td class="num">69.8</td></tr><tr><td>RZ21K</td><td class="num">108.0</td><td class="num">49.0</td></tr><tr><td>RZ31K</td><td class="num">174.2</td><td class="num">79.0</td></tr></tbody>
+      </table></div>
+      <div class="tbl-wrap"><table>
+        <thead><tr><th>Lens</th><th class="num">lb</th><th class="num">kg</th></tr></thead>
+        <tbody><tr><td>Fixed ET-D75LE95</td><td class="num">12.6</td><td class="num">5.7</td></tr><tr><td>Fixed ET-D3LEU100</td><td class="num">17.6</td><td class="num">8.0</td></tr><tr><td>Zoom ET-D3LEW200</td><td class="num">19.8</td><td class="num">9.0</td></tr><tr><td>Zoom ET-D75LE6</td><td class="num">19.2</td><td class="num">8.7</td></tr><tr><td>Zoom ET-D75LE10</td><td class="num">13.4</td><td class="num">6.1</td></tr><tr><td>Zoom ET-D75LE20</td><td class="num">11.5</td><td class="num">5.2</td></tr><tr><td>Zoom ET-D3LES20</td><td class="num">11.5</td><td class="num">5.2</td></tr><tr><td>Zoom ET-D75LE30</td><td class="num">11.5</td><td class="num">5.2</td></tr><tr><td>Zoom ET-D75LE40</td><td class="num">11.0</td><td class="num">5.0</td></tr><tr><td>Zoom ET-D75LE8</td><td class="num">18.7</td><td class="num">8.5</td></tr></tbody>
+      </table></div>
+    </div>
+    <p class="note">Projector weights exclude the lens and cage. Approximate manufacturer figures.</p>
+  </div>
+</section>
+
+<!-- ============ PIXELS ============ -->
+<section class="view" id="v-pixels" hidden>
+  <div class="view-head"><span class="eyebrow">Content creation</span><h2>Pixel Density</h2>
+    <p class="lede">Turn physical surface sizes into canvas pixels from one reference screen, and convert between size and pixels.</p></div>
+  <div style="margin-bottom:14px"><div class="seg" id="px-unit" role="group" aria-label="Units"><button data-u="ft" aria-pressed="true">Feet</button><button data-u="m" aria-pressed="false">Meters</button></div></div>
+  <div class="layout">
+    <div class="stack">
+      <div class="panel">
+        <h3>Reference screen</h3>
+        <div class="fields">
+          <label class="field"><span>Vertical pixels</span><input id="px-refpx" type="number" inputmode="numeric" step="any"></label>
+          <label class="field"><span id="px-refsize-l">Vertical size (ft)</span><input id="px-refsize" type="number" inputmode="decimal" step="any"></label>
+        </div>
+        <div class="readouts" style="margin-top:12px">
+          <div class="ro"><span class="lbl" id="px-dens-l">Pixels per ft</span><span class="val" id="px-dens">—</span></div>
+          <div class="ro"><span class="lbl">Pixel pitch</span><span class="val" id="px-pitch">—</span></div>
+        </div>
+      </div>
+      <div class="panel">
+        <div class="panel-head"><h3>Feet ⇄ meters</h3><button class="btn" id="cv-clear" type="button">Clear</button></div>
+        <div class="cv">
+          <div class="cv-group">
+            <span class="cv-tag">Imperial</span>
+            <div class="cv-row">
+              <label class="field"><span>Feet</span><input id="cv-ft" type="number" inputmode="decimal" step="any"></label>
+              <label class="field"><span>Inches</span><input id="cv-in" type="number" inputmode="decimal" step="any"></label>
+            </div>
+            <label class="field"><span>Decimal feet</span><input id="cv-dec" type="number" inputmode="decimal" step="any"></label>
+          </div>
+          <div class="cv-swap" aria-hidden="true">⇄</div>
+          <div class="cv-group">
+            <span class="cv-tag">Metric</span>
+            <label class="field"><span>Meters</span><input id="cv-m" type="number" inputmode="decimal" step="any"></label>
+            <label class="field"><span>Millimeters</span><input id="cv-mm" type="number" inputmode="decimal" step="any"></label>
+          </div>
+        </div>
+        <p class="note">Type in any box and the rest update.</p>
+      </div>
+    </div>
+    <div class="panel">
+      <div class="panel-head"><h3>Surfaces</h3><span class="pill mute" id="px-total">—</span></div>
+      <p class="note" id="px-empty" style="margin:0 0 4px">No surfaces yet. Add each LED wall, screen or gap with its width and height to get its pixel size.</p>
+      <div class="surfs" id="px-rows"></div>
+      <div class="btn-row"><button class="btn primary" id="px-add">+ Add surface</button><button class="btn danger" id="px-reset">Clear all</button></div>
+      <p class="note">Skipped surfaces are left out of the total canvas width. PPT pixels scale each surface to a 1920-wide slide at 75%, matching the sheet.</p>
+    </div>
+  </div>
+</section>
+
+<!-- ============ CAMERA ============ -->
+<section class="view" id="v-camera" hidden>
+  <div class="view-head"><span class="eyebrow">Image Mag</span><h2>Camera Lensing</h2>
+    <p class="lede">Lens size versus subject distance, and the frame each lens gives you from the camera position.</p></div>
+  <div style="margin-bottom:14px"><div class="seg" id="cam-mode" role="group" aria-label="Calculate from"><button data-m="dist" aria-pressed="true">Distance to subject</button><button data-m="lens" aria-pressed="false">Focal length &amp; sensor</button></div></div>
+  <div class="layout">
+    <div class="panel" id="cam-pA">
+      <h3>Distance to subject</h3>
+      <div class="fields">
+        <label class="field full"><span>Distance to subject (ft)</span><input id="cam-d" type="number" inputmode="decimal" step="any" value="100" data-p></label>
+      </div>
+      <p class="note">The lens table below assumes a 2/3" sensor, which all the listed lenses use.</p>
+    </div>
+    <div class="panel" id="cam-pB" hidden>
+      <h3>Focal length &amp; sensor</h3>
+      <div class="fields">
+        <label class="field full"><span>Distance to subject (ft)</span><input id="cam-d2" type="number" inputmode="decimal" step="any" value="100"></label>
+        <label class="field"><span>Focal length (mm)</span><input id="cam-f" type="number" inputmode="decimal" step="any" value="350" data-p></label>
+        <label class="field"><span>Sensor</span><select id="cam-s" data-p><option value="0">2/3"</option><option value="1">Full Frame</option><option value="2">Super 35</option><option value="3">1.0 type CMOS</option></select></label>
+      </div>
+      <p class="note">Shows the frame size this lens gives at the subject.</p>
+    </div>
+    <div class="panel">
+      <h3>Results</h3>
+      <div class="readouts">
+        <div class="ro onlyB"><span class="lbl">Frame width</span><span class="val" id="cam-hf">—</span><span class="sub" id="cam-ha"></span></div>
+        <div class="ro onlyB"><span class="lbl">Frame height</span><span class="val" id="cam-vf">—</span><span class="sub" id="cam-va"></span></div>
+        <div class="ro hero" id="cam-recbox"><span class="lbl">Encore lens recommendation</span><span class="val" id="cam-rec">—</span><span class="sub" id="cam-recnote">Distance ÷ 2.5</span></div>
+      </div>
+    </div>
+  </div>
+  <div class="panel" style="margin-top:16px">
+    <h3 id="cam-lens-h">Lenses at this distance</h3>
+    <div class="tbl-wrap"><table>
+      <thead><tr><th>Lens</th><th class="num">Zoom</th><th class="num">Focal (mm)</th><th class="num">Widest</th><th class="num">Tightest</th><th class="num">Tightest 2×</th><th></th></tr></thead>
+      <tbody id="cam-lenses"></tbody>
+    </table></div>
+    <p class="note">Widths are the horizontal frame at the subject in feet. 2× uses the lens doubler. UA and XJ series lenses are designed for UHD/4K.</p>
+  </div>
+</section>
+
+<!-- ============ SCALING ============ -->
+<section class="view" id="v-scaling" hidden>
+  <div class="view-head"><span class="eyebrow">Processing</span><h2>Resolution Scaling</h2>
+    <p class="lede">Find smaller resolutions that keep the exact aspect ratio of a canvas, stepping in 8-pixel increments.</p></div>
+  <div class="layout">
+    <div class="panel">
+      <h3>True resolution</h3>
+      <div class="fields">
+        <label class="field"><span>Horizontal</span><input id="sc-h" type="number" inputmode="numeric" step="1" value="7104" data-p></label>
+        <label class="field"><span>Vertical</span><input id="sc-v" type="number" inputmode="numeric" step="1" value="1536" data-p></label>
+        <label class="field"><span>Step by</span><select id="sc-mode" data-p><option value="v">Vertical (height)</option><option value="h">Horizontal (width)</option></select></label>
+        <label class="field"><span>Show</span><select id="sc-filter" data-p><option value="whole">Whole-pixel matches</option><option value="eight">Both multiples of 8</option><option value="all">Every step</option></select></label>
+      </div>
+      <div class="readouts" style="margin-top:12px">
+        <div class="ro"><span class="lbl">Aspect ratio</span><span class="val" id="sc-ar">—</span></div>
+        <div class="ro"><span class="lbl">Total pixels</span><span class="val" id="sc-px">—</span><span class="sub" id="sc-pxnote"></span></div>
+      </div>
+      <p class="note">Green values are multiples of 8. Rows over a 4K pixel count (3840 × 2160 = 8,294,400) are flagged.</p>
+    </div>
+    <div class="panel">
+      <div class="panel-head"><h3>Scaled sizes</h3><span class="pill mute" id="sc-count"></span></div>
+      <div class="tbl-wrap" style="max-height:70vh;overflow-y:auto"><table>
+        <thead><tr><th class="num">H</th><th class="num">V</th><th class="num">Pixels</th><th></th></tr></thead>
+        <tbody id="sc-table"></tbody>
+      </table></div>
+    </div>
+  </div>
+</section>
+
+<!-- ============ SWITCHERS ============ -->
+<section class="view" id="v-switchers" hidden>
+  <div class="view-head"><span class="eyebrow">Processing</span><h2>Switcher Comparison</h2>
+    <p class="lede">Add up the output canvas in megapixels and check it against each switcher's capacity.</p></div>
+  <div class="layout">
+    <div class="panel">
+      <h3>Outputs <span class="tag">example values</span></h3>
+      <div class="fields">
+        <label class="field"><span>4K outs (4096 × 2160)</span><input id="sw-4k" type="number" inputmode="numeric" min="0" step="1" value="0" data-p></label>
+        <label class="field"><span>3:1 screens (3240 × 1080)</span><input id="sw-31" type="number" inputmode="numeric" min="0" step="1" value="1" data-p></label>
+        <label class="field"><span>16:9 screens (1920 × 1080)</span><input id="sw-169" type="number" inputmode="numeric" min="0" step="1" value="2" data-p></label>
+        <label class="field"><span>Aux screens (1920 × 1080)</span><input id="sw-aux" type="number" inputmode="numeric" min="0" step="1" value="2" data-p></label>
+        <label class="field"><span>LED wall width (px)</span><input id="sw-lw" type="number" inputmode="numeric" min="0" step="1" value="0" data-p></label>
+        <label class="field"><span>LED wall height (px)</span><input id="sw-lh" type="number" inputmode="numeric" min="0" step="1" value="0" data-p></label>
+      </div>
+    </div>
+    <div class="panel">
+      <h3>Megapixel check</h3>
+      <div class="readouts" style="margin-bottom:12px">
+        <div class="ro hero"><span class="lbl">Screen canvas</span><span class="val" id="sw-mp">—</span><span class="sub" id="sw-mpnote"></span></div>
+      </div>
+      <div class="tbl-wrap"><table>
+        <thead><tr><th>Switcher</th><th class="num">Canvas</th><th class="num">Used</th><th></th></tr></thead>
+        <tbody id="sw-fit"></tbody>
+      </table></div>
+      <p class="note">Screen outputs, 4K outs and LED walls count toward the canvas. Aux outputs are scaled separately and don't use canvas megapixels; each of these switchers has 4 aux outputs. E2 canvas is 20 MP with Preview running, or 40 MP Program only.</p>
+    </div>
+  </div>
+  <div class="panel" style="margin-top:16px">
+    <h3>Specs</h3>
+    <div class="tbl-wrap"><table>
+      <thead><tr><th></th><th>E2 Gen 1</th><th>E2 Gen 2</th><th>Aquilon RS2</th><th>Aquilon RS4</th></tr></thead>
+      <tbody>
+        <tr><td><b>Input cards</b></td><td>8</td><td>8</td><td>4</td><td>6</td></tr>
+        <tr><td><b>Per input card</b></td><td>1× 4K60 (4L)</td><td>2× 4K60 (8L)</td><td>4× 4K60</td><td>4× 4K60</td></tr>
+        <tr><td><b>Output cards</b></td><td>3 + MV card</td><td>3 + MV card</td><td>3</td><td>4</td></tr>
+        <tr><td><b>Per output card</b></td><td>1× 4K60 (4L)</td><td>2× 4K60 (8L)</td><td>4× 4K60</td><td>4× 4K60</td></tr>
+        <tr><td><b>Max destination outputs</b></td><td>2× 4K60 (8L)</td><td>2× 4K60 (8L)</td><td>8× 4K PGM + 4 Aux</td><td>12× 4K PGM + 4 Aux</td></tr>
+        <tr><td><b>Canvas megapixels</b></td><td>20 PVW/PGM · 40 PGM only</td><td>20 PVW/PGM · 40 PGM only</td><td>80 (Program)</td><td>120 (Program)</td></tr>
+        <tr><td><b>Max 4K mixing layers</b></td><td>4</td><td>4</td><td>8</td><td>12</td></tr>
+        <tr><td><b>Max DL mixing layers</b></td><td>8</td><td>8</td><td>16</td><td>24</td></tr>
+        <tr><td><b>Max SL mixing layers</b></td><td>16</td><td>16</td><td>—</td><td>—</td></tr>
+      </tbody>
+    </table></div>
+  </div>
+</section>
+
+<!-- ============ CABLES ============ -->
+<section class="view" id="v-cables" hidden>
+  <div class="view-head"><span class="eyebrow">Reference</span><h2>Cabling Info</h2>
+    <p class="lede">Bandwidth, top resolution and practical run length by signal type.</p></div>
+  <div class="layout even">
+    <div class="panel">
+      <h3>HDMI &amp; DisplayPort</h3>
+      <div class="tbl-wrap"><table>
+        <thead><tr><th>Type</th><th>Bandwidth</th><th>Max resolution</th><th>Max length</th></tr></thead>
+        <tbody>
+          <tr><td><b>HDMI 1.4</b></td><td class="num" style="text-align:left">8.16 Gbps</td><td>2160p30</td><td>16 ft standard, 49 ft high speed</td></tr>
+          <tr><td><b>HDMI 2.0</b></td><td class="num" style="text-align:left">14.4 Gbps</td><td>2160p60 (8 bpc)</td><td>16 ft</td></tr>
+          <tr><td><b>DisplayPort 1.2</b></td><td class="num" style="text-align:left">17.28 Gbps</td><td>2160p60 (10 bpc)</td><td>Under 15 ft recommended</td></tr>
+        </tbody>
+      </table></div>
+    </div>
+    <div class="panel">
+      <h3>SDI</h3>
+      <div class="tbl-wrap"><table>
+        <thead><tr><th>Type</th><th>Bandwidth</th><th>Max resolution</th><th class="num">Max length</th></tr></thead>
+        <tbody>
+          <tr><td><b>HD-SDI</b></td><td class="num" style="text-align:left">1.485 Gbps</td><td>1080p30</td><td class="num">300 ft</td></tr>
+          <tr><td><b>3G</b></td><td class="num" style="text-align:left">2.97 Gbps</td><td>1080p60</td><td class="num">200 ft</td></tr>
+          <tr><td><b>6G</b></td><td class="num" style="text-align:left">5.94 Gbps</td><td>2160p30</td><td class="num">100 ft</td></tr>
+          <tr><td><b>12G</b></td><td class="num" style="text-align:left">11.88 Gbps</td><td>2160p60</td><td class="num">100 ft</td></tr>
+        </tbody>
+      </table></div>
+      <p class="note">Lengths assume high-quality cable.</p>
+    </div>
+    <div class="panel">
+      <h3>Fiber</h3>
+      <div class="tbl-wrap"><table>
+        <thead><tr><th>Type</th><th>Max length</th></tr></thead>
+        <tbody>
+          <tr><td><b>Single-mode</b></td><td>Further than we need</td></tr>
+          <tr><td><b>Multimode OM3</b></td><td>984 ft (10GbE)</td></tr>
+          <tr><td><b>Multimode OM4</b></td><td>1,312 ft (10GbE)</td></tr>
+        </tbody>
+      </table></div>
+    </div>
+  </div>
+</section>
+
+</main>
+
+<datalist id="lib208"></datalist>
+<datalist id="lib120"></datalist>
+
+<script>
+(function(){
+"use strict";
+const $=id=>document.getElementById(id);
+const num=id=>{const x=parseFloat($(id).value);return Number.isFinite(x)?x:0};
+const fx=(n,d=2)=>Number.isFinite(n)?n.toLocaleString('en-US',{minimumFractionDigits:d,maximumFractionDigits:d}):'—';
+const fa=(n,d=2)=>Number.isFinite(n)?n.toLocaleString('en-US',{maximumFractionDigits:d}):'—';
+const unit=(v,u)=>`${v}<small>${u}</small>`;
+const esc=s=>String(s).replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
+const whole=x=>Math.abs(x-Math.round(x))<1e-6;
+const FT_M=0.3048;
+const store={
+  get(k,d){try{const s=localStorage.getItem('avcalc:'+k);return s?JSON.parse(s):d}catch(e){return d}},
+  set(k,v){try{localStorage.setItem('avcalc:'+k,JSON.stringify(v))}catch(e){}}
+};
+const clone=o=>JSON.parse(JSON.stringify(o));
+
+/* two-tap confirm for destructive buttons (the viewer has no confirm dialog) */
+function twoTap(btn,action){
+  const label=btn.textContent;let t=null;
+  btn.addEventListener('click',()=>{
+    if(btn.dataset.armed){clearTimeout(t);delete btn.dataset.armed;btn.textContent=label;action();return}
+    btn.dataset.armed='1';btn.textContent='Tap again to confirm';
+    t=setTimeout(()=>{delete btn.dataset.armed;btn.textContent=label},3000);
+  });
+}
+
+/* ---------------- STORAGE ---------------- */
+const CODECS=[
+  {n:'ProRes 422',base:147,add:2.304,pad:1.15},
+  {n:'ProRes 422 LT',base:102,add:2.304,pad:1.15},
+  {n:'H.264 (Pearl Mini)',base:5.32,add:0,pad:1.1},
+  {n:'H.264 Medium',base:7.5,add:.32,pad:1.025},
+  {n:'H.264 Medium-High',base:10,add:.32,pad:1.025},
+  {n:'H.264 High',base:12.5,add:.32,pad:1.025},
+  {n:'H.265',half:true}
+];
+$('st-codec').innerHTML=CODECS.map((c,i)=>`<option value="${i}"${i===1?' selected':''}>${c.n}</option>`).join('');
+function codecRate(c,scale){
+  if(c.half){const p=CODECS[2];return (scale*p.base+p.add)*p.pad/2}
+  return (scale*c.base+c.add)*c.pad;
+}
+function calcStorage(){
+  const [w,h]=$('st-res').value.split('x').map(s=>parseFloat(s));
+  const fps=parseFloat($('st-fps').value), hrs=num('st-hrs'), rec=num('st-rec'), sel=+$('st-codec').value;
+  const scale=(w*h)/(1920*1080)*(fps/29.97);
+  const rows=CODECS.map((c,i)=>{const r=codecRate(c,scale);const per=r*hrs*3600/8/1024;return {i,n:c.n,r,per,tot:per*rec}});
+  const s=rows[sel];
+  $('st-gb').innerHTML=unit(fx(s.tot,1),'GB');
+  $('st-tb').textContent=`${fx(s.tot/1000,2)} TB · ${fa(rec,0)} record${rec===1?'':'s'} × ${fa(hrs,2)} hrs`;
+  $('st-per').innerHTML=unit(fx(s.per,1),'GB');
+  $('st-rate').innerHTML=unit(fx(s.r,1),'Mbps');
+  $('st-table').innerHTML=rows.map(r=>`<tr class="click${r.i===sel?' sel':''}" data-i="${r.i}"><td>${r.n}</td><td class="num">${fx(r.r,1)}</td><td class="num">${fx(r.per,1)} GB</td><td class="num">${fx(r.tot,1)} GB</td></tr>`).join('');
+}
+$('st-table').addEventListener('click',e=>{const tr=e.target.closest('tr[data-i]');if(!tr)return;$('st-codec').value=tr.dataset.i;saveInputs();calcStorage()});
+
+/* ---------------- POWER ---------------- */
+const LIB208=[['Panasonic','RZ12KU',1200],['Panasonic','RZ21KU',1510],['Panasonic','RZ31KU',2870],['Panasonic','RQ18KU',1030],['Panasonic','RQ25KU',1330],['Panasonic','RQ35KU',2550],['Panasonic','RQ50KU',4100],['Barco','UDX-4K40',3750],['Barco','UDM-4K30',2200]];
+const LIB120G=[
+ ['Switchers',[['Analog Way','RS2',700],['Analog Way','RS4',1010],['Analog Way','RS6',1300],['Roland','V60',37],['Roland','V160',55],['Panasonic','HS400',120],['Panasonic','HS450',120],['Panasonic','UHS500',150],['Barco','E2 Gen2',1100],['Barco','S3',826]]],
+ ['Monitors',[['Panasonic','80"',235],['Panasonic','70"',200],['Panasonic','55"',280],['Panasonic','40"',235],['Panasonic','32"',59],['Panasonic','24"',36]]],
+ ['Routers',[['Blackmagic','BM 40x (SDI)',46.5],['AJA','AJA 32x (SDI)',60],['AJA','AJA 16x (SDI)',60],['Lightware','Lightware 16x (HDMI)',83],['Lightware','Lightware 24x (HDMI)',108],['Lightware','Lightware 32x (HDMI)',167],['Lightware','Lightware 48x (HDMI)',203]]],
+ ['Converters',[['Decimator','MD-HX',3.6],['Decimator','MD-LX',3.6]]],
+ ['Laptops',[['Lenovo','Lenovo',130],['Dell','Dell',180]]],
+ ['Cameras',[['Panasonic','UCU600',500]]],
+ ['Misc',[['','20 amp circuit',2400]]]
+];
+const LIB120=LIB120G.flatMap(g=>g[1]);
+$('lib208').innerHTML=LIB208.map(d=>`<option value="${esc(d[1])}">${esc(d[0])} · ${d[2]} W</option>`).join('');
+$('lib120').innerHTML=LIB120.map(d=>`<option value="${esc(d[1])}">${esc(d[0]||'Misc')} · ${d[2]} W</option>`).join('');
+$('pw-lib').innerHTML=[['Projectors (208V)',LIB208],...LIB120G.map(g=>[g[0]+' (120V)',g[1]])].map(([t,l])=>`<div><h4>${t}</h4>${l.map(d=>`<p><span>${esc(d[1])}</span><span>${d[2]} W</span></p>`).join('')}</div>`).join('');
+function lookup(v,name){const l=v==='r208'?LIB208:LIB120;const k=name.trim().toLowerCase();const d=l.find(x=>x[1].toLowerCase()===k);return d?d[2]:null}
+
+const R=(n,q,w)=>({n,q,w,pf:1});
+const POWER_DEFAULT={video:{r208:[],r120:[]},audio:{r208:[],r120:[]},lighting:{r208:[],r120:[]}};
+/* rows that earlier versions pre-filled from the sheet; dropped if they were saved untouched */
+const OLD_POWER={
+  video:{r208:[R('RZ21KU',4,1510),R('RQ35KU',0,2550)],r120:[R('RS4',0,1010),R('55"',0,280),R('UCU600',1,500)]},
+  audio:{r208:[R('Cool speaker',6,2000),R('Cool Sub',4,1550)],r120:[R('console',2,700),R('Front fills',4,400),R('sucky speaker',17,500)]},
+  lighting:{r208:[R('Some random Light',40,300),R('some other light',4,1550)],r120:[R('uplights',100,100)]}
+};
+const rowSig=rows=>JSON.stringify((rows||[]).map(r=>[r.n,+r.q,+r.w,+r.pf]));
+const DEPTS={video:'Video',audio:'Audio',lighting:'Lighting'};
+let power=store.get('power',null)||clone(POWER_DEFAULT);
+for(const d in DEPTS){if(!power[d])power[d]=clone(POWER_DEFAULT[d]);
+  for(const k of ['r208','r120']){if(!Array.isArray(power[d][k])||rowSig(power[d][k])===rowSig(OLD_POWER[d][k]))power[d][k]=[]}}
+let dept=store.get('dept','video');if(!DEPTS[dept])dept='video';
+const savePower=()=>store.set('power',power);
+const rowAmps=(r,volts)=>{const w=(+r.q||0)*(+r.w||0);const pf=+r.pf||0;return pf?w/(volts*pf):0};
+function deptTotals(d){
+  const p=power[d];
+  const w208=p.r208.reduce((s,r)=>s+(+r.q||0)*(+r.w||0),0), w120=p.r120.reduce((s,r)=>s+(+r.q||0)*(+r.w||0),0);
+  const a208=p.r208.reduce((s,r)=>s+rowAmps(r,208),0)/1.732, a120=p.r120.reduce((s,r)=>s+rowAmps(r,120),0)/3;
+  return {w208,w120,a208,a120,svc:a208+a120};
+}
+function rowEl(k,r,i){
+  const el=document.createElement('div');el.className='prow';
+  el.innerHTML=`<label class="c-name"><span class="mini">Item</span><input type="text" list="lib${k.slice(1)}" value="${esc(r.n)}" data-f="n" placeholder="Item name" aria-label="Item name" autocomplete="off"></label>
+<label class="c-q"><span class="mini">Qty</span><input type="number" inputmode="decimal" step="any" min="0" value="${r.q}" data-f="q" aria-label="Quantity"></label>
+<label class="c-w"><span class="mini">Watts each</span><input type="number" inputmode="decimal" step="any" min="0" value="${r.w}" data-f="w" aria-label="Watts per device"></label>
+<label class="c-pf"><span class="mini">PF</span><input type="number" inputmode="decimal" step="0.01" min="0" value="${r.pf}" data-f="pf" aria-label="Power factor"></label>
+<div class="c-a"><span class="mini">Amps</span><output class="amps">0.00</output></div>
+<button class="del" type="button" aria-label="Remove row">×</button>`;
+  el.addEventListener('input',e=>{
+    const f=e.target.dataset.f;if(!f)return;
+    if(f==='n'){r.n=e.target.value;const w=lookup(k,r.n);if(w!=null){r.w=w;el.querySelector('[data-f="w"]').value=w}}
+    else r[f]=parseFloat(e.target.value)||0;
+    calcPower();savePower();
+  });
+  el.querySelector('.del').addEventListener('click',()=>{power[dept][k].splice(i,1);renderPower();savePower()});
+  el._r=r;el._v=k==='r208'?208:120;return el;
+}
+function renderPower(){
+  document.querySelectorAll('#pw-dept button').forEach(b=>b.setAttribute('aria-pressed',b.dataset.d===dept));
+  ['r208','r120'].forEach(k=>{const box=$('pw-'+k);box.innerHTML='';power[dept][k].forEach((r,i)=>box.appendChild(rowEl(k,r,i)));
+    const empty=power[dept][k].length===0;box.previousElementSibling.hidden=empty;$('pw-e'+k.slice(1)).hidden=!empty});
+  $('pw-reset').hidden=!power[dept].r208.length&&!power[dept].r120.length;
+  calcPower();
+}
+function calcPower(){
+  ['r208','r120'].forEach(k=>{[...$('pw-'+k).children].forEach(el=>{el.querySelector('.amps').textContent=fx(rowAmps(el._r,el._v),2)})});
+  const t=deptTotals(dept);
+  $('pw-w208').textContent=fa(t.w208,1)+' W';$('pw-a208').textContent=fx(t.a208,2)+' A';
+  $('pw-w120').textContent=fa(t.w120,1)+' W';$('pw-a120').textContent=fx(t.a120,2)+' A';
+  $('pw-dname').textContent=DEPTS[dept]+' · service rating per phase';
+  $('pw-svc20').innerHTML=unit(fx(t.svc*1.2,2),'A');
+  $('pw-svc').textContent=fx(t.svc,2)+' A';
+  $('pw-wall').textContent=fa(t.w208+t.w120,1)+' W';
+}
+$('pw-dept').addEventListener('click',e=>{const b=e.target.closest('button[data-d]');if(!b)return;dept=b.dataset.d;store.set('dept',dept);renderPower()});$('pw-add208').addEventListener('click',()=>{power[dept].r208.push(R('','',''));renderPower();savePower();const ins=$('pw-r208').querySelectorAll('input[data-f="n"]');ins[ins.length-1].focus()});
+$('pw-add120').addEventListener('click',()=>{power[dept].r120.push(R('','',''));renderPower();savePower();const ins=$('pw-r120').querySelectorAll('input[data-f="n"]');ins[ins.length-1].focus()});
+twoTap($('pw-reset'),()=>{power[dept]={r208:[],r120:[]};renderPower();savePower()});
+
+/* ---------------- PROJECTOR ---------------- */
+const LENSES={
+  /* [lens, WUXGA throw ratio, horizontal shift, vertical shift] from Panasonic spec/options pages.
+     Shift is from screen centre as a fraction of image width (H) or height (V): a number means ±, [lo,hi] is asymmetric, null = no shift. */
+  rz:[['ET-D75LE95','0.364',.12,[.68,.78]],['ET-D75LE50','0.69',null,null],['ET-D75LE6','0.924–1.10',.15,.44],['ET-D3LEW600','0.924–1.28',.15,.44],['ET-D75LE10','1.30–1.67',.2,.55],['ET-D75LE20','1.67–2.41',.2,.55],['ET-D75LE30','2.40–4.66',.2,.55],['ET-D75LE40','4.62–7.38',.2,.55],['ET-D75LE8','7.34–13.8',.2,.55]],
+  rq:[['ET-D75LE95','0.437',.14,[.71,.93]],['ET-D3LEU100','0.447',[-.25,.30],.66],['ET-D3LEW200','0.779–1.03',.18,.57],['ET-D75LE6','1.11–1.32',.18,.52],['ET-D3LEW600','1.12–1.55',.18,.52],['ET-D75LE10','1.56–2.01',.24,.66],['ET-D3LES20','2.00–2.90',.24,.66],['ET-D75LE20','2.00–2.90',.24,.66],['ET-D75LE30','2.89–5.61',.24,.66],['ET-D75LE40','5.55–8.86',.24,.66],['ET-D75LE8','8.83–16.6',.24,.66]],
+  rq35:[['ET-D75LE95','0.364',.12,[.68,.78]],['ET-D3LEU100','0.370',[0,.25],.55],['ET-D3LEW200','0.645–0.850',.15,.48],['ET-D3LEW50','0.694',null,null],['ET-D75LE6','0.924–1.10',.15,.44],['ET-D3LEW600','0.924–1.28',.15,.44],['ET-D75LE10','1.30–1.67',.2,.55],['ET-D3LES20','1.67–2.41',.2,.55],['ET-D75LE20','1.67–2.41',.2,.55],['ET-D75LE30','2.40–4.66',.2,.55],['ET-D75LE40','4.62–7.38',.2,.55],['ET-D75LE8','7.34–13.8',.2,.55]]
+};
+/* edge warning: LE20 and longer lenses warn within 0.15 throw of either end; shorter zooms within the outer 10% of their range */
+const EDGE=0.10, EDGE_LONG=0.15;
+const isLong=n=>/LE(20|30|40|8)$|LES20$/.test(n);
+const nearEdge=(n,lo,hi,tr)=>{const m=isLong(n)?EDGE_LONG:EDGE*(hi-lo);return tr-lo<m?'wide':hi-tr<m?'tele':null};
+/* fixed lenses match within ±1.5% */
+const range=s=>{const p=s.split(/\s*[–-]\s*/).map(parseFloat);return p.length>1?[p[0],p[1]]:[p[0]*.985,p[0]*1.015]};
+const sgn=(x,d)=>(x>0?'+':x<0?'−':'')+fx(Math.abs(x),d);
+const shiftPct=s=>s==null?'—':Array.isArray(s)?`${sgn(s[0]*100,0)} to ${sgn(s[1]*100,0)}%`:`±${Math.round(s*100)}%`;
+const shiftFt=(s,b)=>s==null?'—':Array.isArray(s)?`${sgn(s[0]*b,2)} to ${sgn(s[1]*b,2)}`:`±${fx(s*b,2)}`;
+/* ET-D75LE95 math: [L1 coef 16:9, 16:10, L1 add, L3, L4, A1min 16:9, 16:10, A1max 16:9, 16:10, A1 sub, A2 add] (meters) */
+const LE95={
+  RZ21K:[.312,.303,.02,-.292,-1.017,.205,.184,.37,.283,.128,.324],
+  RZ31K:[.312,.303,.02,-.262,-1.332,.205,.184,.37,.283,.128,.419],
+  RQ18K:[.374,.364,.02,-.293,-.863,.293,.214,.533,.43,.11,.268],
+  RQ25K:[.374,.364,.02,-.293,-.863,.293,.214,.533,.43,.11,.268],
+  RQ35K:[.312,.303,.02,-.292,-1.072,.205,.184,.37,.283,.128,.402]
+};
+/* ET-D75LE95 to-scale drawings (all inputs in meters, labels in feet) */
+const ARROWS=`<defs><marker id="ar" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse"><path d="M0 1 L9 5 L0 9 z" style="fill:var(--muted)"/></marker></defs>`;
+const ftl=m=>fx(m/FT_M,2)+' ft';
+const dimLine=(x1,y1,x2,y2)=>`<line class="dim" x1="${x1}" y1="${y1}" x2="${x2}" y2="${y2}" marker-start="url(#ar)" marker-end="url(#ar)"/>`;
+const ext=(x1,y1,x2,y2)=>`<line class="ext" x1="${x1}" y1="${y1}" x2="${x2}" y2="${y2}"/>`;
+const label=(x,y,k,v,opt='')=>`<text class="bg" x="${x}" y="${y}" ${opt}><tspan class="k">${k}</tspan> ${v}</text>`;
+function drawLE95(v,model){
+  $('pj-dia-h').textContent=`ET-D75LE95 layout · ${model}`;
+  if(!(v.SH>0&&v.SW>0&&v.L2>0)){$('pj-front').innerHTML=$('pj-side').innerHTML='<p class="note">Enter an image height to see the layout.</p>';return}
+  /* front view */
+  {const W=320,ml=44,mr=16,top=16,w=W-ml-mr,h=w*v.SH/v.SW,H=top+h+44;
+   const x0=ml,y0=top,x1=ml+w,y1=top+h,ang=-Math.atan2(h,w)*180/Math.PI;
+   $('pj-front').innerHTML=`<svg class="dia" viewBox="0 0 ${W} ${H}" role="img" aria-label="Front view of the projected image">${ARROWS}
+<rect x="${x0}" y="${y0}" width="${w}" height="${h}" style="fill:var(--accent-soft);stroke:var(--ink);stroke-width:2"/>
+<line x1="${x0}" y1="${y0}" x2="${x1}" y2="${y1}" style="stroke:var(--accent);stroke-width:1.5;stroke-dasharray:6 4"/>
+${label((x0+x1)/2,(y0+y1)/2-6,'SD',ftl(v.SD),`text-anchor="middle" transform="rotate(${-ang} ${(x0+x1)/2} ${(y0+y1)/2})"`)}
+${ext(x0,y1,x0,y1+30)}${ext(x1,y1,x1,y1+30)}${dimLine(x0,y1+24,x1,y1+24)}${label((x0+x1)/2,y1+20,'SW',ftl(v.SW),'text-anchor="middle"')}
+${ext(x0,y0,x0-30,y0)}${ext(x0,y1,x0-30,y1)}${dimLine(x0-24,y0,x0-24,y1)}${label(x0-30,(y0+y1)/2,'SH',ftl(v.SH),`text-anchor="middle" transform="rotate(-90 ${x0-30} ${(y0+y1)/2})"`)}
+</svg>`;}
+  /* side view */
+  const W=440,ml=56,mr=100;
+  const minX=Math.min(0,v.L4), s=(W-ml-mr)/(v.L2-minX);
+  const top=28, X=m=>ml+(m-minX)*s, Y0=top+v.SH*s, Y=m=>Y0-m*s;
+  const pT=Y(-v.A1n), pB=Y(-v.A2n);
+  const xs=X(0), xr=X(v.L2);
+  const pj=drawProj(X(v.L4),X(v.L3),X(v.L1),xr,pT,pB,1);
+  const lensB=pj.barrelB;
+  const d0=pB+30, st=24, H=d0+st*3+18;
+  const dims=[['L4',v.L4,pB],['L3',v.L3,pB],['L1',v.L1,lensB],['L2',v.L2,lensB]];
+  let o=`<svg class="dia" viewBox="0 0 ${W} ${H}" role="img" aria-label="Side view of the ET-D75LE95 setup">${ARROWS}`;
+  o+=`<polygon points="${pj.ex},${pj.ey} ${xs},${Y(v.SH)} ${xs},${Y(0)}" style="fill:var(--accent-soft);stroke:var(--accent);stroke-width:1;stroke-dasharray:4 3"/>`;
+  o+=`<line x1="${xs}" y1="${Y(v.SH)}" x2="${xs}" y2="${Y(0)}" style="stroke:var(--ink);stroke-width:4;stroke-linecap:round"/>`;
+  o+=`<text x="${xs+8}" y="${Y(v.SH)-10}">Screen</text>`;
+  o+=pj.svg;
+  o+=ext(xs,Y(0),xs,d0+st*3+6);
+  dims.forEach(([k,m,from],i)=>{const y=d0+st*i;o+=ext(X(m),from,X(m),y+6)+dimLine(xs,y,X(m),y)+label((xs+X(m))/2,y-5,k,ftl(m),'text-anchor="middle"')});
+  /* SH on the left */
+  o+=ext(xs,Y(v.SH),xs-34,Y(v.SH))+ext(xs,Y(0),xs-34,Y(0))+dimLine(xs-28,Y(v.SH),xs-28,Y(0));
+  o+=label(xs-34,(Y(v.SH)+Y(0))/2,'SH',ftl(v.SH),`text-anchor="middle" transform="rotate(-90 ${xs-34} ${(Y(v.SH)+Y(0))/2})"`);
+  /* A1 / A2 on the right, measured down from the screen's bottom edge */
+  const a1x=xr+26,a2x=xr+56;
+  o+=ext(xs,Y(0),a2x+6,Y(0))+ext(xr,pT,a1x+6,pT)+ext(xr,pB,a2x+6,pB);
+  o+=dimLine(a1x,Y(0),a1x,pT)+dimLine(a2x,Y(0),a2x,pB);
+  const a1m=(Y(0)+pT)/2,a2m=(Y(0)+pB)/2;
+  o+=label(a1x-6,a1m,'A1',`${fx(v.A1n/FT_M,2)}–${fx(v.A1x/FT_M,2)} ft`,`text-anchor="middle" transform="rotate(-90 ${a1x-6} ${a1m})"`);
+  o+=label(a2x+16,a2m,'A2',`${fx(v.A2n/FT_M,2)}–${fx(v.A2x/FT_M,2)} ft`,`text-anchor="middle" transform="rotate(-90 ${a2x+16} ${a2m})"`);
+  o+='</svg>';
+  $('pj-side').innerHTML=o;
+
+}
+/* Panasonic-style projector body with an ET-D75LE95 periscope lens, side view.
+   xR rear, xF front, xM mirror (L1), xT lens tip, yT/yB body top/bottom, k = detail level */
+function drawProj(xR,xF,xM,xT,yT,yB,k){
+  const h=Math.max(6,yB-yT), w=Math.max(8,xF-xR), sw=k>1?2:1.3;
+  const ink=`stroke:var(--ink);stroke-width:${sw};stroke-linejoin:round`;
+  const fill='fill:var(--surface-2);';
+  let g='';
+  /* feet */
+  const fh=h*.12, fw=Math.max(2,w*.07);
+  g+=`<rect x="${xR+w*.08}" y="${yB}" width="${fw}" height="${fh}" style="fill:var(--ink)"/><rect x="${xF-w*.08-fw}" y="${yB}" width="${fw}" height="${fh}" style="fill:var(--ink)"/>`;
+  /* body + top cover seam */
+  g+=`<rect x="${xR}" y="${yT}" width="${w}" height="${h}" rx="${h*.1}" style="${fill}${ink}"/>`;
+  g+=`<line x1="${xR+h*.1}" y1="${yT+h*.2}" x2="${xF-h*.1}" y2="${yT+h*.2}" style="stroke:var(--muted);stroke-width:${sw*.6}"/>`;
+  /* rear vents */
+  const vx=xR+w*.06, vw=w*.22;
+  for(let i=0;i<4;i++){const x=vx+vw*(i+.5)/4;g+=`<line x1="${x}" y1="${yT+h*.35}" x2="${x}" y2="${yT+h*.8}" style="stroke:var(--muted);stroke-width:${sw*.8};stroke-linecap:round"/>`}
+  /* front bezel */
+  g+=`<rect x="${xF-w*.07}" y="${yT+h*.08}" width="${w*.07}" height="${h*.84}" style="fill:var(--line);stroke:none"/>`;
+  /* lens: barrel out of the front, then the angled mirror head */
+  const bT=yT+h*.22, bB=yT+h*.62, xH=xF+(xM-xF)*.38, hT=yT-h*.7;
+  g+=`<rect x="${xF}" y="${bT}" width="${Math.max(1,xH-xF)}" height="${bB-bT}" style="${fill}${ink}"/>`;
+  if(k>1)for(let i=1;i<3;i++){const x=xF+(xH-xF)*i/3;g+=`<line x1="${x}" y1="${bT}" x2="${x}" y2="${bB}" style="stroke:var(--muted);stroke-width:1"/>`}
+  g+=`<polygon points="${xH},${bB} ${xT},${bB} ${xT},${hT} ${xM},${hT} ${xH},${bT}" style="${fill}${ink}"/>`;
+  /* exit window on the slanted face, facing back toward the screen */
+  g+=`<line x1="${xH+(xM-xH)*.12}" y1="${bT+(hT-bT)*.12}" x2="${xH+(xM-xH)*.88}" y2="${bT+(hT-bT)*.88}" style="stroke:var(--accent);stroke-width:${sw*2};stroke-linecap:round"/>`;
+  return {svg:g,ex:(xH+xM)/2,ey:(bT+hT)/2,barrelB:bB};
+}
+
+/* projector picker: rated lumens (ANSI/ISO, not centre), lens table family, LE95 model */
+const PJ_MODELS={
+  RZ12K:{lm:12000,fam:'rz'}, RZ21K:{lm:20000,fam:'rz',le:'RZ21K'}, RZ31K:{lm:31000,fam:'rz',le:'RZ31K'},
+  RQ18K:{lm:16000,fam:'rq',le:'RQ18K'}, RQ25K:{lm:20000,fam:'rq',le:'RQ25K'}, RQ35K:{lm:30500,fam:'rq35',le:'RQ35K'},
+  RQ50K:{lm:50000}, UDX:{lm:35500}, UDM:{lm:25000}
+};
+$('pj-model').addEventListener('change',()=>{
+  const m=PJ_MODELS[$('pj-model').value];if(!m)return;
+  $('pj-lm').value=m.lm;
+  if(m.fam)$('pj-fam').value=m.fam;
+  if(m.le)$('pj-le').value=m.le;
+});
+$('pj-lm').addEventListener('input',()=>{
+  const m=PJ_MODELS[$('pj-model').value];
+  if(m&&num('pj-lm')!==m.lm)$('pj-model').value='custom';
+});
+
+let pjAnchor=store.get('pjAnchor','dist');
+$('pj-dist').addEventListener('input',()=>{pjAnchor='dist';store.set('pjAnchor',pjAnchor)});
+$('pj-ratio').addEventListener('input',()=>{pjAnchor='ratio';store.set('pjAnchor',pjAnchor)});
+function calcProjector(){
+  const is169=$('pj-aspect').value==='16:9';
+  const H=num('pj-h'), W=H*(is169?1.7778:1.6), area=W*H;
+  const lm=num('pj-lm'), gain=num('pj-gain');
+  let D=num('pj-dist'), ratio=num('pj-ratio');
+  if(W>0){
+    if(pjAnchor==='ratio'){D=ratio*W;$('pj-dist').value=+D.toFixed(2)}
+    else{ratio=D/W;$('pj-ratio').value=+ratio.toFixed(3)}
+  }
+  $('pj-area').textContent=`${fa(H,2)} ft × ${fa(W,2)} ft image`;
+  $('pj-w').innerHTML=unit(fx(W,2),'ft');
+  $('pj-diag').innerHTML=unit(fx(Math.hypot(W,H),2),'ft');
+  const lpsf=area?lm/area:0, ftl=lpsf*gain;
+  $('pj-lpsf').innerHTML=unit(fx(lpsf,1),'lm');
+  $('pj-ftl').innerHTML=unit(fx(ftl,1),'ft-L');
+  $('pj-nits').textContent=`${fx(ftl*3.4262590996,0)} nits`;
+  const m=$('pj-meter');m.style.width=Math.min(ftl/80,1)*100+'%';
+  m.style.background=ftl>=50?'var(--good)':ftl>=40?'var(--warn)':ftl>=30?'var(--warn)':'var(--bad)';
+  const rec=area*50;
+  $('pj-rec').innerHTML=unit(fa(Math.round(rec),0),'lm');
+  $('pj-recnote').innerHTML=lm>=rec?'<span class="pill good">Projector meets it</span>':'<span class="pill bad">Projector is under</span>';
+  const tr=ratio;
+  /* lenses */
+  $('pj-lenses').innerHTML=LENSES[$('pj-fam').value].map(([n,t,hs,vs])=>{
+    const [lo,hi]=range(t);const fits=tr>=lo&&tr<=hi;const zoom=/[–-]/.test(t);
+    let pill='';
+    if(fits){
+      const e=zoom?nearEdge(n,lo,hi,tr):null;
+      pill=e==='wide'?'<span class="pill warn">Near wide end</span>':e==='tele'?'<span class="pill warn">Near tele end</span>':'<span class="pill good">Fits</span>';
+    }
+    return `<tr class="${fits?'sel':''}"><td>${n}</td><td class="num">${t}</td><td class="num">${shiftPct(hs)}</td><td class="num">${shiftPct(vs)}</td><td class="num">${shiftFt(hs,W)}</td><td class="num">${shiftFt(vs,H)}</td><td>${pill}</td></tr>`}).join('');
+  /* summary under the throw readouts */
+  const L=LENSES[$('pj-fam').value].map(([n,t])=>{const [lo,hi]=range(t),z=/[–-]/.test(t);return {n,lo,hi,e:z?nearEdge(n,lo,hi,tr):null}}).filter(l=>tr>=l.lo&&tr<=l.hi);
+  const good=L.filter(l=>!l.e), edge=L.filter(l=>l.e);
+  $('pj-fit').innerHTML=!tr?'':good.length?`<span class="pill good">Comfortable on ${good.map(l=>l.n).join(', ')}</span>`:edge.length?`<span class="pill warn">Only near the edge of ${edge.map(l=>l.n).join(', ')}</span>`:'<span class="pill bad">No lens in this list covers this throw ratio</span>';
+  /* ET-D75LE95 */
+  const c=LE95[$('pj-le').value];
+  const Hm=H*FT_M, Wm=(is169?1.778:1.6)*H*FT_M, Dm=Math.hypot(Wm,Hm);
+  const L1=(is169?c[0]:c[1])*Dm+c[2];
+  const A1n=(is169?c[5]:c[6])*Hm-c[9], A1x=(is169?c[7]:c[8])*Hm-c[9];
+  const rows=[['SH',Hm],['SW',Wm],['SD',Dm],['L1',L1],['L2',L1+.029],['L3',L1+c[3]],['L4',L1+c[4]],['A1 min',A1n],['A1 max',A1x],['A2 min',A1n+c[10]],['A2 max',A1x+c[10]]];
+  drawLE95({SH:Hm,SW:Wm,SD:Dm,L1,L2:L1+.029,L3:L1+c[3],L4:L1+c[4],A1n,A1x,A2n:A1n+c[10],A2x:A1x+c[10]},$('pj-le').value);
+  $('pj-le-table').innerHTML=rows.map(([k,mv])=>`<tr><td><b>${k}</b></td><td class="num">${fx(mv/FT_M,2)}</td><td class="num">${fx(mv,3)}</td></tr>`).join('');
+}
+
+/* ---------------- PIXELS ---------------- */
+const PX_DEFAULT={ft:{px:1080,size:15,rows:[]},m:{px:2112,size:5.5,rows:[]}};
+/* surfaces that earlier versions pre-filled; drop them if they were saved untouched */
+const OLD_SURF={ft:'Center LED,45,30|HL LED,30,15|HR LED,30,10|16:9 Screen,20,10.5|Inside Gap,17.42,0|Outside Gap,40,0',m:'Center Wall,15,5.5|HL Wall,9.5,5.5|HR Wall,9.5,5.5|Gap,8.5334,0|Gap,8.5334,0|Person,0,1.71'};
+let pix=store.get('pix',null)||clone(PX_DEFAULT);
+if(!pix.ft)pix.ft=clone(PX_DEFAULT.ft);if(!pix.m)pix.m=clone(PX_DEFAULT.m);
+for(const u of ['ft','m']){if((pix[u].rows||[]).map(r=>[r.n,r.h,r.v].join(',')).join('|')===OLD_SURF[u])pix[u].rows=[]}
+let pu=store.get('pxunit','ft');if(pu!=='m')pu='ft';
+const savePix=()=>store.set('pix',pix);
+function surfEl(r,i){
+  const el=document.createElement('div');el.className='surf'+(r.skip?' skipped':'');
+  el.innerHTML=`<div class="surf-top"><input type="text" value="${esc(r.n)}" data-f="n" aria-label="Surface name" placeholder="Surface name"><label class="chk"><input type="checkbox" data-f="skip"${r.skip?' checked':''}>Skip</label><button class="del" type="button" aria-label="Remove surface">×</button></div>
+<div class="surf-dims"><label><span class="mini">Width (${pu})</span><input type="number" inputmode="decimal" step="any" min="0" value="${r.h}" data-f="h"></label><label><span class="mini">Height (${pu})</span><input type="number" inputmode="decimal" step="any" min="0" value="${r.v}" data-f="v"></label></div>
+<div class="surf-out"></div>`;
+  el.addEventListener('input',e=>{const f=e.target.dataset.f;if(!f)return;
+    if(f==='n')r.n=e.target.value;else if(f==='skip'){r.skip=e.target.checked;el.classList.toggle('skipped',r.skip)}else r[f]=parseFloat(e.target.value)||0;
+    calcPixels();savePix()});
+  el.querySelector('.del').addEventListener('click',()=>{pix[pu].rows.splice(i,1);renderPixels();savePix()});
+  el._r=r;return el;
+}
+function renderPixels(){
+  document.querySelectorAll('#px-unit button').forEach(b=>b.setAttribute('aria-pressed',b.dataset.u===pu));
+  $('px-refpx').value=pix[pu].px;$('px-refsize').value=pix[pu].size;
+  $('px-refsize-l').textContent=`Vertical size (${pu})`;
+  const box=$('px-rows');box.innerHTML='';pix[pu].rows.forEach((r,i)=>box.appendChild(surfEl(r,i)));
+  $('px-empty').hidden=pix[pu].rows.length>0;$('px-reset').hidden=pix[pu].rows.length===0;
+  calcPixels();
+}
+function calcPixels(){
+  const P=pix[pu], dens=P.size?P.px/P.size:0;
+  if(pu==='ft'){
+    $('px-dens-l').textContent='Pixels per inch';$('px-dens').innerHTML=unit(fx(dens/12,2),'px/in');
+    $('px-pitch').innerHTML=unit(fx(dens?304.8/dens:0,2),'mm');
+  }else{
+    $('px-dens-l').textContent='Pixels per meter';$('px-dens').innerHTML=unit(fx(dens,1),'px/m');
+    $('px-pitch').innerHTML=unit(fx(dens?1000/dens:0,2),'mm');
+  }
+  const res=P.rows.map(r=>({H:r.h*dens,V:r.v*dens}));
+  const total=P.rows.reduce((s,r,i)=>s+(r.skip?0:res[i].H),0);
+  $('px-total').textContent=`Canvas width ${fa(total,2)} px`;
+  [...$('px-rows').children].forEach((el,i)=>{const x=res[i];
+    const ar=x.V?x.H/x.V:0, ph=total?x.H*1920/total*.75:0, pv=total?x.V*1920/total*.75:0;
+    el.querySelector('.surf-out').innerHTML=`<span>Pixels <b>${fa(x.H,2)} × ${fa(x.V,2)}</b></span><span>AR <b>${ar?fx(ar,2):'—'}</b></span><span>PPT <b>${fa(ph,1)} × ${fa(pv,1)}</b></span>`;
+  });
+}
+$('px-unit').addEventListener('click',e=>{const b=e.target.closest('button[data-u]');if(!b)return;pu=b.dataset.u;store.set('pxunit',pu);renderPixels()});
+$('px-refpx').addEventListener('input',e=>{pix[pu].px=parseFloat(e.target.value)||0;calcPixels();savePix()});
+$('px-refsize').addEventListener('input',e=>{pix[pu].size=parseFloat(e.target.value)||0;calcPixels();savePix()});
+$('px-add').addEventListener('click',()=>{pix[pu].rows.push({n:'',h:0,v:0,skip:false});renderPixels();savePix();const ins=$('px-rows').querySelectorAll('input[data-f="n"]');ins[ins.length-1].focus()});
+twoTap($('px-reset'),()=>{pix[pu]=clone(PX_DEFAULT[pu]);renderPixels();savePix()});
+
+/* feet <-> meters converter: every box is editable, one length (in meters) drives them all */
+const CV=['cv-ft','cv-in','cv-dec','cv-m','cv-mm'];
+let cvM=store.get('cvM',25*FT_M);
+function cvShow(skip){
+  CV.forEach(id=>{if(!skip.includes(id))$(id).value=''});
+  if(cvM==null)return;
+  const ft=cvM/FT_M;let F=Math.trunc(ft+(ft<0?-1e-9:1e-9)),I=(ft-F)*12;if(Math.abs(I)>11.9995){F+=Math.sign(I);I=0}
+  const vals={'cv-ft':F,'cv-in':+I.toFixed(3),'cv-dec':+ft.toFixed(4),'cv-m':+cvM.toFixed(4),'cv-mm':+(cvM*1000).toFixed(1)};
+  CV.forEach(id=>{if(!skip.includes(id))$(id).value=vals[id]});
+}
+CV.forEach(id=>$(id).addEventListener('input',()=>{
+  const raw=k=>$(k).value.trim(), v=k=>parseFloat(raw(k))||0;
+  const fi=id==='cv-ft'||id==='cv-in';
+  if(fi?(raw('cv-ft')===''&&raw('cv-in')===''):raw(id)==='')cvM=null;
+  else if(fi)cvM=(v('cv-ft')+v('cv-in')/12)*FT_M;
+  else if(id==='cv-dec')cvM=v('cv-dec')*FT_M;
+  else if(id==='cv-m')cvM=v('cv-m');
+  else cvM=v('cv-mm')/1000;
+  store.set('cvM',cvM);cvShow(fi?['cv-ft','cv-in']:[id]);
+}));
+$('cv-clear').addEventListener('click',()=>{cvM=null;store.set('cvM',null);cvShow([]);$('cv-ft').focus()});
+cvShow([]);
+
+/* ---------------- CAMERA ---------------- */
+const SENSORS=[['2/3"',9.586,5.39],['Full Frame',36,24],['Super 35',24.89,14],['1.0 type CMOS',13.2,8.8]];
+const CAM_LENSES=[['Fujinon UA24x7.8BERD-S10','24x',7.8,187],['Fujinon HA42x9.7BERD-U48','42x',9.7,410],['Fujinon UA46x9.5BERD','46x',9.5,437],['Fujinon XA55x9.5','55x',9.5,525],['Fujinon XA88x8.8BESM','88x',8.8,777],['Canon HA18x7.6BERM / BERD','18x',7.6,137],['Canon HJ40x10B IASD-V','40x',10,400],['Canon XJ60x9BIE-D','60x',9,540],['Canon XJ86x9.3B','86x',9.3,800],['Canon XJ95x8.6B','95x',8.6,820]];
+let camMode=store.get('camMode','dist');if(camMode!=='lens')camMode='dist';
+$('cam-d').addEventListener('input',()=>{$('cam-d2').value=$('cam-d').value});
+$('cam-d2').addEventListener('input',()=>{$('cam-d').value=$('cam-d2').value;$('cam-d').dispatchEvent(new Event('input'))});
+$('cam-mode').addEventListener('click',e=>{const b=e.target.closest('button[data-m]');if(!b)return;camMode=b.dataset.m;store.set('camMode',camMode);calcCamera()});
+function calcCamera(){
+  const B=camMode==='lens';
+  document.querySelectorAll('#cam-mode button').forEach(b=>b.setAttribute('aria-pressed',b.dataset.m===camMode));
+  $('cam-pA').hidden=B;$('cam-pB').hidden=!B;
+  document.querySelectorAll('#v-camera .onlyB').forEach(el=>el.hidden=!B);
+  const s=B?(SENSORS[+$('cam-s').value]||SENSORS[0]):SENSORS[0];
+  const D=num('cam-d');
+  if(B){
+    const f=num('cam-f');
+    const hw=f?s[1]*D/f:0, vh=f?s[2]*D/f:0;
+    const deg=x=>f?2*Math.atan(x/(2*f))*180/Math.PI:0;
+    $('cam-hf').innerHTML=unit(fx(hw,2),'ft');$('cam-ha').textContent=fx(deg(s[1]),2)+'° horizontal';
+    $('cam-vf').innerHTML=unit(fx(vh,2),'ft');$('cam-va').textContent=fx(deg(s[2]),2)+'° vertical';
+  }
+  const need=D/2.5;
+  $('cam-rec').innerHTML=unit('At least '+fa(need,1),'x');
+  $('cam-lens-h').textContent=`Lenses at ${fa(D,0)} ft · ${s[0]} sensor`;
+  $('cam-lenses').innerHTML=CAM_LENSES.map(([n,z,mn,mx])=>{const zoom=parseFloat(z);const ok=zoom>=need;
+    return `<tr class="${ok?'sel':''}"><td>${n}</td><td class="num">${z}</td><td class="num">${mn}–${mx}</td><td class="num">${fx(s[1]*D/mn,1)}</td><td class="num">${fx(s[1]*D/mx,2)}</td><td class="num">${fx(s[1]*D/(mx*2),2)}</td><td>${ok?'<span class="pill good">Meets rec</span>':'<span class="pill mute">Short</span>'}</td></tr>`}).join('');
+}
+
+/* ---------------- SCALING ---------------- */
+function calcScaling(){
+  const H=Math.round(num('sc-h')), V=Math.round(num('sc-v')), mode=$('sc-mode').value, filt=$('sc-filter').value;
+  const LIM=3840*2160;
+  if(H<=0||V<=0){$('sc-table').innerHTML='<tr><td colspan="4">Enter a horizontal and vertical resolution.</td></tr>';$('sc-count').textContent='';return}
+  const ar=H/V;
+  $('sc-ar').innerHTML=unit(fx(ar,4),':1');
+  $('sc-px').textContent=fa(H*V,0);
+  $('sc-pxnote').innerHTML=H*V>LIM?'<span class="pill warn">Over a 4K pixel count</span>':'<span class="pill good">Within a 4K pixel count</span>';
+  const rows=[];const top=mode==='v'?V:H;let start=Math.max(8,Math.ceil(top/2/8)*8);
+  if((top-start)/8>3000)start=top-3000*8;
+  for(let x=start;x<=top;x+=8){const h=mode==='v'?x*ar:x, v=mode==='v'?x:x/ar;rows.push([h,v])}
+  if(rows.length&&(mode==='v'?rows[rows.length-1][1]!==V:rows[rows.length-1][0]!==H))rows.push([H,V]);
+  const m8=x=>whole(x)&&Math.round(x)%8===0;
+  const shown=rows.filter(([h,v])=>filt==='all'||(filt==='whole'&&whole(h)&&whole(v))||(filt==='eight'&&m8(h)&&m8(v))).reverse();
+  $('sc-count').textContent=`${shown.length} of ${rows.length} steps`;
+  const cell=x=>`<td class="num${m8(x)?' m8':''}">${whole(x)?fa(Math.round(x),0):fx(x,2)}</td>`;
+  $('sc-table').innerHTML=shown.length?shown.map(([h,v])=>{const p=h*v;return `<tr>${cell(h)}${cell(v)}<td class="num">${fa(Math.round(p),0)}</td><td>${p>LIM?'<span class="pill warn">Over 4K</span>':''}</td></tr>`}).join(''):'<tr><td colspan="4">No exact matches at this aspect ratio. Try “Every step”.</td></tr>';
+}
+
+/* ---------------- SWITCHERS ---------------- */
+const SWITCHERS=[['E2 Gen 1 / Gen 2','with Preview',20],['E2 Gen 1 / Gen 2','Program only',40],['Aquilon RS2','Program',80],['Aquilon RS4','Program',120]];
+const AUX_MAX=4;
+function calcSwitchers(){
+  /* screen canvas only: aux outputs are scaled separately and don't use canvas megapixels */
+  const mp=(num('sw-4k')*4096*2160+num('sw-31')*3240*1080+num('sw-169')*1920*1080+num('sw-lw')*num('sw-lh'))/1e6;
+  const aux=num('sw-aux');
+  $('sw-mp').innerHTML=unit(fx(mp,2),'MP');
+  $('sw-mpnote').innerHTML=`Plus ${fa(aux,0)} aux output${aux===1?'':'s'} ${aux>AUX_MAX?`<span class="pill bad">More than ${AUX_MAX} aux</span>`:'(not counted)'}`;
+  $('sw-fit').innerHTML=SWITCHERS.map(([n,mode,c])=>{const u=mp/c*100;const cls=u>100?'bad':u>85?'warn':'good';const lab=u>100?'Over':u>85?'Tight':'Fits';
+    return `<tr><td>${n}<div class="note" style="margin:0">${mode}</div></td><td class="num">${c} MP</td><td class="num">${fx(u,0)}%</td><td><span class="pill ${cls}">${lab}</span></td></tr>`}).join('');
+
+}
+
+/* ---------------- shared wiring ---------------- */
+const CALC={storage:calcStorage,projector:calcProjector,camera:calcCamera,scaling:calcScaling,switchers:calcSwitchers,pixels:calcPixels};
+const persisted=[...document.querySelectorAll('[data-p]')];
+let saved=store.get('inputs',{});
+persisted.forEach(el=>{if(saved[el.id]!=null){if(el.tagName==='SELECT'&&![...el.options].some(o=>o.value===saved[el.id]))return;el.value=saved[el.id]}});
+function saveInputs(){persisted.forEach(el=>saved[el.id]=el.value);store.set('inputs',saved)}
+persisted.forEach(el=>{
+  const v=el.closest('.view').id.slice(2);
+  const fn=CALC[v];
+  el.addEventListener(el.tagName==='SELECT'?'change':'input',()=>{fn&&fn();saveInputs()});
+});
+
+const VIEWS=['storage','power','projector','pixels','camera','scaling','switchers','cables'];
+function show(v){
+  if(!VIEWS.includes(v))v='storage';
+  VIEWS.forEach(x=>{$('v-'+x).hidden=x!==v});
+  document.querySelectorAll('.tab').forEach(t=>{const on=t.dataset.v===v;t.setAttribute('aria-selected',on);if(on)t.scrollIntoView({block:'nearest',inline:'nearest'})});
+  store.set('tab',v);
+  try{history.replaceState(null,'','#'+v)}catch(e){}
+}
+$('tabs').addEventListener('click',e=>{const t=e.target.closest('.tab');if(!t)return;show(t.dataset.v);window.scrollTo(0,0)});
+
+$('cam-d2').value=$('cam-d').value;
+$('pj-le-box').open=!!store.get('leOpen',false);
+$('pj-le-box').addEventListener('toggle',()=>store.set('leOpen',$('pj-le-box').open));
+calcStorage();renderPower();calcProjector();renderPixels();calcCamera();calcScaling();calcSwitchers();
+window.addEventListener('hashchange',()=>{const x=location.hash.slice(1);if(VIEWS.includes(x))show(x)});
+const h=(location.hash||'').slice(1);
+show(VIEWS.includes(h)?h:store.get('tab','storage'));
+})();
+</script>
+
+<script>
+if('serviceWorker' in navigator){addEventListener('load',()=>navigator.serviceWorker.register('sw.js').catch(()=>{}))}
+</script>
+</body>
+</html>
