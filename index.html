@@ -55,6 +55,49 @@ body::before{content:"";position:fixed;inset:0 0 auto;height:env(safe-area-inset
 .bars i{display:block}
 .bars i:nth-child(1){background:#C0C0C0}.bars i:nth-child(2){background:#C0C000}.bars i:nth-child(3){background:#00C0C0}.bars i:nth-child(4){background:#00C000}.bars i:nth-child(5){background:#C000C0}.bars i:nth-child(6){background:#C00000}.bars i:nth-child(7){background:#0000C0}
 h1{font-family:var(--f-display);font-weight:700;font-size:1.35rem;letter-spacing:.01em;margin:0;line-height:1.1}
+.view-tools{display:flex;gap:8px;flex-wrap:wrap;margin-top:10px}
+.view-tools .btn{padding:6px 12px;font-size:.88rem}
+.toast{position:fixed;left:50%;bottom:calc(18px + env(safe-area-inset-bottom,0px));transform:translate(-50%,20px);opacity:0;pointer-events:none;z-index:50;background:var(--ink);color:var(--bg);padding:9px 16px;border-radius:999px;font-family:var(--f-display);font-weight:600;letter-spacing:.03em;transition:opacity .2s,transform .2s;max-width:calc(100vw - 32px);text-align:center}
+.toast.on{opacity:1;transform:translate(-50%,0)}
+dialog.sheet{border:1px solid var(--line);border-radius:14px;background:var(--surface);color:var(--ink);padding:0;width:min(520px,calc(100vw - 32px));max-height:calc(100dvh - 48px)}
+dialog.sheet::backdrop{background:rgba(0,0,0,.45)}
+.sheet-in{padding:16px 18px 18px;display:flex;flex-direction:column;gap:12px}
+.sheet-head{display:flex;align-items:center;justify-content:space-between;gap:10px}
+.sheet-head h3{margin:0}
+.show-save{display:flex;gap:8px}
+.show-save input{flex:1;min-width:0}
+.show-list{display:flex;flex-direction:column;border-top:1px solid var(--line)}
+.show-item{display:flex;align-items:center;gap:8px;padding:9px 0;border-bottom:1px dashed var(--line);flex-wrap:wrap}
+.show-item .nm{flex:1;min-width:140px}
+.show-item .nm b{display:block;overflow-wrap:anywhere}
+.show-item .nm span{font-size:.8rem;color:var(--muted)}
+.show-item.cur .nm b::after{content:" · open";color:var(--accent-ink);font-weight:600;font-size:.8rem}
+.show-item .btn{padding:5px 10px;font-size:.85rem}
+.share-text{width:100%;min-height:180px;font-family:var(--f-mono);font-size:.8rem}
+#show-btn{max-width:42vw;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+@media (max-width:480px){#theme-lbl{display:none}}
+.c-leg{grid-area:leg;display:flex;flex-direction:column;gap:3px;min-width:0}
+.c-leg output{font-family:var(--f-mono);font-size:.82rem;color:var(--muted);white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+#print-sheet{display:none}
+@media print{
+  body.print-power>*:not(#print-sheet){display:none!important}
+  body.print-power #print-sheet{display:block}
+  body.print-power{background:#fff;color:#000}
+  body.print-power::before{display:none}
+  #print-sheet{font:11pt/1.35 Arial,Helvetica,sans-serif;color:#000}
+  #print-sheet .pg{break-after:page;page-break-after:always}
+  #print-sheet .pg:last-child{break-after:auto;page-break-after:auto}
+  #print-sheet h1{font-size:18pt;margin:0 0 2pt}
+  #print-sheet h2{font-size:13pt;margin:12pt 0 4pt}
+  #print-sheet .meta{color:#444;margin:0 0 8pt}
+  #print-sheet table{width:100%;border-collapse:collapse;font-size:10pt;margin-bottom:6pt}
+  #print-sheet th,#print-sheet td{border:1px solid #999;padding:3pt 5pt;text-align:left}
+  #print-sheet td.n,#print-sheet th.n{text-align:right;font-variant-numeric:tabular-nums}
+  #print-sheet .sum{display:flex;gap:18pt;flex-wrap:wrap;margin-top:6pt}
+  #print-sheet .sum div{border:1px solid #999;padding:5pt 8pt}
+  #print-sheet .sum b{display:block;font-size:14pt}
+  #print-sheet .fine{font-size:8.5pt;color:#444;margin-top:10pt}
+}
 .top-act{margin-left:auto;display:flex;gap:6px;flex-wrap:wrap;justify-content:flex-end}
 .top-act .btn{padding:6px 11px;font-size:.88rem}
 .top-in p{margin:0;font-size:.74rem;color:var(--muted);letter-spacing:.08em;text-transform:uppercase}
@@ -139,7 +182,7 @@ summary{cursor:pointer;font-family:var(--f-display);font-weight:600;letter-spaci
 details[open] summary{margin-bottom:10px}
 
 /* power rows */
-.prow-head,.prow{display:grid;gap:6px;align-items:end;grid-template-columns:minmax(0,1fr) minmax(0,1fr) minmax(0,.8fr) minmax(0,1fr) 34px;grid-template-areas:"name name name name del" "q w pf a a"}
+.prow-head,.prow{display:grid;gap:6px;align-items:end;grid-template-columns:minmax(0,1fr) minmax(0,1fr) minmax(0,.8fr) minmax(0,1fr) 34px;grid-template-areas:"name name name name del" "q w pf a a" "leg leg leg leg leg"}
 .prow{padding-block:10px;border-bottom:1px dashed var(--line)}
 .prow-head{display:none}
 .c-name{grid-area:name}.c-q{grid-area:q}.c-w{grid-area:w}.c-pf{grid-area:pf}.c-a{grid-area:a}.del{grid-area:del}
@@ -150,7 +193,7 @@ details[open] summary{margin-bottom:10px}
 .del{align-self:center;width:34px;height:34px;border-radius:8px;border:1px solid var(--line);background:transparent;color:var(--muted);font-size:1.2rem;line-height:1;cursor:pointer}
 .del:hover{color:var(--bad);border-color:var(--bad)}
 @media (min-width:700px){
-  .prow-head,.prow{grid-template-columns:minmax(0,2.4fr) 72px 96px 70px 90px 34px;grid-template-areas:"name q w pf a del";align-items:center}
+  .prow-head,.prow{grid-template-columns:minmax(0,2.4fr) 64px 90px 62px 80px minmax(110px,1.3fr) 34px;grid-template-areas:"name q w pf a leg del";align-items:center}
   .prow-head{display:grid;padding-bottom:6px;border-bottom:1px solid var(--line)}
   .prow-head span{font-family:var(--f-display);font-weight:600;font-size:.76rem;letter-spacing:.05em;text-transform:uppercase;color:var(--muted)}
   .prow-head span.r{text-align:right}
@@ -226,12 +269,27 @@ details.fold>summary:hover{border-color:var(--muted)}
 </head>
 <body>
 
+<div class="toast" id="toast" role="status" aria-live="polite"></div>
+<dialog class="sheet" id="shows-dlg" aria-labelledby="shows-title"><div class="sheet-in">
+  <div class="sheet-head"><h3 id="shows-title">Saved shows</h3><button class="btn" type="button" data-close>Close</button></div>
+  <p class="note" style="margin:0">A show saves every tab's inputs, including the power lists for all departments. Shows are kept on this device; use Share to send one to someone else.</p>
+  <div class="show-save"><input type="text" id="show-name" placeholder="Show name, e.g. Hilton Ballroom – Oct" maxlength="80" aria-label="Show name" autocomplete="off"><button class="btn primary" type="button" id="show-save">Save</button></div>
+  <div class="show-list" id="show-list"></div>
+  <p class="note" id="show-empty" style="margin:0">No saved shows yet.</p>
+</div></dialog>
+<dialog class="sheet" id="share-dlg" aria-labelledby="share-title"><div class="sheet-in">
+  <div class="sheet-head"><h3 id="share-title">Share</h3><button class="btn" type="button" data-close>Close</button></div>
+  <p class="note" style="margin:0">Copy this text. The link opens the app with the same inputs.</p>
+  <textarea class="share-text" id="share-text" readonly></textarea>
+</div></dialog>
+<div id="print-sheet" aria-hidden="true"></div>
 <header class="top">
   <div class="wrap">
     <div class="top-in">
       <div class="bars" aria-hidden="true"><i></i><i></i><i></i><i></i><i></i><i></i><i></i></div>
-      <div><h1>AV Show Calculators</h1><p>From Calculators v3.3</p></div>
+      <div><h1>AV Show Calculators</h1><p id="app-ver">v1.8 · Nov 12, 2026</p></div>
       <div class="top-act">
+        <button class="btn" id="show-btn" type="button">Shows</button>
         <button class="btn icon-btn" id="theme-btn" type="button" aria-pressed="false"><span aria-hidden="true" id="theme-ico">☾</span> <span id="theme-lbl">Dark</span></button>
         <button class="btn danger" id="reset-all" type="button">Reset</button>
       </div>
@@ -253,7 +311,8 @@ details.fold>summary:hover{border-color:var(--muted)}
 <!-- ============ STORAGE ============ -->
 <section class="view" id="v-storage" hidden>
   <div class="view-head"><span class="eyebrow">Recording</span><h2>Storage Calculator</h2>
-    <p class="lede">Drive space for a record, with bitrate headroom built in. Progressive scan assumed.</p></div>
+    <p class="lede">Drive space for a record, with bitrate headroom built in. Progressive scan assumed.</p>
+    <div class="view-tools"><button class="btn" type="button" data-share="storage">Share</button></div></div>
   <div class="layout">
     <div class="panel">
       <h3>Record settings</h3>
@@ -287,7 +346,8 @@ details.fold>summary:hover{border-color:var(--muted)}
 <!-- ============ POWER ============ -->
 <section class="view" id="v-power" hidden>
   <div class="view-head"><span class="eyebrow">Distro</span><h2>3-Phase Power</h2>
-    <p class="lede">Amps per phase on a 208V three-phase service, by department. Items are spread across the legs as evenly as their quantities allow, and the busiest leg sets the rating.</p></div>
+    <p class="lede">Amps per phase on a 208V three-phase service, by department. Items are spread across the legs as evenly as their quantities allow, and the busiest leg sets the rating.</p>
+    <div class="view-tools"><button class="btn" type="button" data-share="power">Share</button><button class="btn" type="button" id="pw-print">Print power sheet</button></div></div>
   <div class="stack">
     <div class="panel">
       <div class="panel-head">
@@ -302,14 +362,14 @@ details.fold>summary:hover{border-color:var(--muted)}
       </div>
 
       <h3>208V loads</h3>
-      <div class="prow-head"><span>Item</span><span>Qty</span><span>Watts each</span><span>PF</span><span class="r">Amps</span><span></span></div>
+      <div class="prow-head"><span>Item</span><span>Qty</span><span>Watts each</span><span>PF</span><span class="r">Amps</span><span>Plug on</span><span></span></div>
       <div id="pw-r208"></div>
       <p class="note" id="pw-e208" style="margin:0">No 208V items yet.</p>
       <div class="subtot"><span>Total watts<b id="pw-w208">0</b></span><span>Amps per phase<b id="pw-a208">0</b></span></div>
       <div class="btn-row"><button class="btn" id="pw-add208">+ Add 208V item</button></div>
 
       <h3 style="margin-top:22px">120V loads</h3>
-      <div class="prow-head"><span>Item</span><span>Qty</span><span>Watts each</span><span>PF</span><span class="r">Amps</span><span></span></div>
+      <div class="prow-head"><span>Item</span><span>Qty</span><span>Watts each</span><span>PF</span><span class="r">Amps</span><span>Plug on</span><span></span></div>
       <div id="pw-r120"></div>
       <p class="note" id="pw-e120" style="margin:0">No 120V items yet.</p>
       <div class="subtot"><span>Total watts<b id="pw-w120">0</b></span><span>Amps per phase<b id="pw-a120">0</b></span></div>
@@ -328,7 +388,8 @@ details.fold>summary:hover{border-color:var(--muted)}
 <!-- ============ PROJECTOR ============ -->
 <section class="view" id="v-projector" hidden>
   <div class="view-head"><span class="eyebrow">Projection</span><h2>Projector Calculator</h2>
-    <p class="lede">Image size, brightness, throw and lens shift for Panasonic projectors.</p></div>
+    <p class="lede">Image size, brightness, throw and lens shift for Panasonic projectors.</p>
+    <div class="view-tools"><button class="btn" type="button" data-share="projector">Share</button></div></div>
   <div class="layout">
     <div class="panel">
       <h3>Screen &amp; projector</h3>
@@ -439,7 +500,8 @@ details.fold>summary:hover{border-color:var(--muted)}
 <!-- ============ PIXELS ============ -->
 <section class="view" id="v-pixels" hidden>
   <div class="view-head"><span class="eyebrow">Content creation</span><h2>Pixel Density</h2>
-    <p class="lede">Turn physical surface sizes into canvas pixels from one reference screen, and convert between size and pixels.</p></div>
+    <p class="lede">Turn physical surface sizes into canvas pixels from one reference screen, and convert between size and pixels.</p>
+    <div class="view-tools"><button class="btn" type="button" data-share="pixels">Share</button></div></div>
   <div style="margin-bottom:14px"><div class="seg" id="px-unit" role="group" aria-label="Units"><button data-u="ft" aria-pressed="true">Feet</button><button data-u="m" aria-pressed="false">Meters</button></div></div>
   <div class="layout">
     <div class="stack">
@@ -488,7 +550,8 @@ details.fold>summary:hover{border-color:var(--muted)}
 <!-- ============ CAMERA ============ -->
 <section class="view" id="v-camera" hidden>
   <div class="view-head"><span class="eyebrow">Image Mag</span><h2>Camera Lensing</h2>
-    <p class="lede">Lens size versus subject distance, and the frame each lens gives you from the camera position.</p></div>
+    <p class="lede">Lens size versus subject distance, and the frame each lens gives you from the camera position.</p>
+    <div class="view-tools"><button class="btn" type="button" data-share="camera">Share</button></div></div>
   <div style="margin-bottom:14px"><div class="seg" id="cam-mode" role="group" aria-label="Calculate from"><button data-m="dist" aria-pressed="true">Distance to subject</button><button data-m="lens" aria-pressed="false">Focal length &amp; sensor</button></div></div>
   <div class="layout">
     <div class="panel" id="cam-pA">
@@ -529,7 +592,8 @@ details.fold>summary:hover{border-color:var(--muted)}
 <!-- ============ SCALING ============ -->
 <section class="view" id="v-scaling" hidden>
   <div class="view-head"><span class="eyebrow">Processing</span><h2>Resolution Scaling</h2>
-    <p class="lede">Find smaller resolutions that keep the exact aspect ratio of a canvas, stepping in 8-pixel increments.</p></div>
+    <p class="lede">Find smaller resolutions that keep the exact aspect ratio of a canvas, stepping in 8-pixel increments.</p>
+    <div class="view-tools"><button class="btn" type="button" data-share="scaling">Share</button></div></div>
   <div class="layout">
     <div class="panel">
       <h3>True resolution</h3>
@@ -655,6 +719,42 @@ const store={
 };
 const clone=o=>JSON.parse(JSON.stringify(o));
 
+/* ---------------- shows, share links ---------------- */
+/* keys that are per-device preferences or bookkeeping, not part of a show */
+const NOT_SHOW=['theme','tab','shows','show'];
+function snapshot(){const o={};try{Object.keys(localStorage).forEach(k=>{if(!k.startsWith('avcalc:'))return;const n=k.slice(7);if(NOT_SHOW.includes(n))return;try{o[n]=JSON.parse(localStorage.getItem(k))}catch(e){}})}catch(e){}return o}
+function clearShowState(){try{Object.keys(localStorage).filter(k=>k.startsWith('avcalc:')&&!NOT_SHOW.includes(k.slice(7))).forEach(k=>localStorage.removeItem(k))}catch(e){}}
+function writeState(o){for(const k in o)if(!NOT_SHOW.includes(k))store.set(k,o[k])}
+const b64e=str=>{const b=new TextEncoder().encode(str);let s='';b.forEach(c=>s+=String.fromCharCode(c));return btoa(s).replace(/\+/g,'-').replace(/\//g,'_').replace(/=+$/,'')};
+const b64d=str=>{const s=atob(str.replace(/-/g,'+').replace(/_/g,'/'));return new TextDecoder().decode(Uint8Array.from(s,c=>c.charCodeAt(0)))};
+let incoming=null;
+(function readLink(){
+  let q;try{q=new URLSearchParams(location.search).get('s')}catch(e){}
+  if(!q)return;
+  try{
+    const pkt=JSON.parse(b64d(q));const d=pkt&&pkt.d;if(!d||typeof d!=='object')throw 0;
+    if(pkt.k==='show'){
+      clearShowState();writeState(d);
+      const name=String(pkt.n||'Shared show').slice(0,80);
+      const shows=store.get('shows',{});shows[name]={t:Date.now(),d};store.set('shows',shows);store.set('show',name);
+      incoming=`Opened show “${name}”`;
+    }else{
+      /* one tab: merge so the rest of this device's work is kept */
+      if(d.inputs)store.set('inputs',Object.assign(store.get('inputs',{}),d.inputs));
+      if(d.power){const pw=store.get('power',{})||{};Object.assign(pw,d.power);store.set('power',pw)}
+      if(d.pix){const px=store.get('pix',{})||{};Object.assign(px,d.pix);store.set('pix',px)}
+      ['dept','pxunit','pjAnchor','camMode','cvM','leOpen'].forEach(k=>{if(k in d)store.set(k,d[k])});
+      if(pkt.v)store.set('tab',pkt.v);
+      incoming='Opened shared calculation';
+    }
+  }catch(e){incoming='That share link could not be read'}
+  try{history.replaceState(null,'',location.pathname+location.hash)}catch(e){}
+})();
+let toastT=null;
+function toast(msg){const t=$('toast');t.textContent=msg;t.classList.add('on');clearTimeout(toastT);toastT=setTimeout(()=>t.classList.remove('on'),2600)}
+document.querySelectorAll('dialog [data-close]').forEach(b=>b.addEventListener('click',()=>b.closest('dialog').close()));
+document.querySelectorAll('dialog.sheet').forEach(d=>d.addEventListener('click',e=>{if(e.target===d)d.close()}));
+
 /* two-tap confirm for destructive buttons (the viewer has no confirm dialog) */
 /* theme: follows the device until the button is used, then sticks */
 function isDark(){const t=document.documentElement.dataset.theme;return t?t==='dark':matchMedia('(prefers-color-scheme: dark)').matches}
@@ -674,7 +774,7 @@ function twoTap(btn,action){
 }
 /* reset everything (inputs, power lists, tab, theme) back to defaults */
 twoTap($('reset-all'),()=>{
-  try{Object.keys(localStorage).filter(k=>k.startsWith('avcalc:')).forEach(k=>localStorage.removeItem(k))}catch(e){}
+  try{Object.keys(localStorage).filter(k=>k.startsWith('avcalc:')&&k!=='avcalc:shows').forEach(k=>localStorage.removeItem(k))}catch(e){}
   location.replace(location.pathname);
 });
 
@@ -756,20 +856,24 @@ function deptTotals(d){
 const COS30=Math.sqrt(3)/2;
 function legLoads(d){
   const p=power[d], ln=[0,0,0], pr=[0,0,0]; /* pr: 0=AB 1=BC 2=CA */
+  const place=new Map(); /* row -> how many units on each leg (120V) or leg pair (208V) */
   const legsOf=()=>[0,1,2].map(L=>{const p1=pr[L], p2=pr[(L+2)%3];return Math.hypot(ln[L]+(p1+p2)*COS30,(p1-p2)/2)});
   const units=[];
   const add=(rows,volts,kind)=>rows.forEach(r=>{const pf=+r.pf||0, q=+r.q||0, w=+r.w||0;if(!pf||q<=0||w<=0)return;
     const I=w/(volts*pf), base=Math.floor(q/3), rem=q-base*3;
+    place.set(r,[base,base,base]);
     for(let j=0;j<3;j++)(kind?pr:ln)[j]+=base*I;
-    for(let j=0;j<Math.floor(rem);j++)units.push([kind,I]);
-    if(rem%1>1e-9)units.push([kind,I*(rem%1)])});
+    for(let j=0;j<Math.floor(rem);j++)units.push([kind,I,r,1]);
+    if(rem%1>1e-9)units.push([kind,I*(rem%1),r,rem%1])});
   add(p.r208,208,1);add(p.r120,120,0);
   units.sort((a,b)=>b[1]-a[1]);
-  for(const [kind,I] of units){let best=0,bm=Infinity;
+  for(const [kind,I,r,n] of units){let best=0,bm=Infinity;
     for(let j=0;j<3;j++){(kind?pr:ln)[j]+=I;const m=Math.max(...legsOf());(kind?pr:ln)[j]-=I;if(m<bm-1e-9){bm=m;best=j}}
-    (kind?pr:ln)[best]+=I}
-  return legsOf();
+    (kind?pr:ln)[best]+=I;place.get(r)[best]+=n}
+  const legs=legsOf();legs.place=place;return legs;
 }
+const LEG_NAMES={r120:['A','B','C'],r208:['A–B','B–C','C–A']};
+function placeText(k,counts){if(!counts)return '—';return counts.map((c,j)=>c>0?`${LEG_NAMES[k][j]}×${fa(c,2)}`:'').filter(Boolean).join('  ')||'—'}
 function rowEl(k,r,i){
   const el=document.createElement('div');el.className='prow';
   el.innerHTML=`<label class="c-name"><span class="mini">Item</span><input type="text" list="lib${k.slice(1)}" value="${esc(r.n)}" data-f="n" placeholder="Item name" aria-label="Item name" autocomplete="off"></label>
@@ -777,6 +881,7 @@ function rowEl(k,r,i){
 <label class="c-w"><span class="mini">Watts each</span><input type="number" inputmode="decimal" step="any" min="0" value="${r.w}" data-f="w" aria-label="Watts per device"></label>
 <label class="c-pf"><span class="mini">PF</span><input type="number" inputmode="decimal" step="0.01" min="0" value="${r.pf}" data-f="pf" aria-label="Power factor"></label>
 <div class="c-a"><span class="mini">Amps</span><output class="amps">0.00</output></div>
+<div class="c-leg"><span class="mini">Plug on</span><output class="legs">—</output></div>
 <button class="del" type="button" aria-label="Remove row">×</button>`;
   el.addEventListener('input',e=>{
     const f=e.target.dataset.f;if(!f)return;
@@ -801,6 +906,7 @@ function calcPower(){
   $('pw-w120').textContent=fa(t.w120,1)+' W';$('pw-a120').textContent=fx(t.a120,2)+' A';
   $('pw-dname').textContent=DEPTS[dept]+' · service rating per phase';
   const legs=legLoads(dept), worst=Math.max(...legs);
+  ['r208','r120'].forEach(k=>{[...$('pw-'+k).children].forEach(el=>{const o=el.querySelector('.legs');o.textContent=placeText(k,legs.place.get(el._r));o.title=o.textContent})});
   ['la','lb','lc'].forEach((id,j)=>{$('pw-'+id).textContent=fx(legs[j],2)+' A'});
   $('pw-svc20').innerHTML=unit(fx(worst/0.8,2),'A');
   $('pw-svc').textContent=fx(t.svc,2)+' A';
@@ -1130,6 +1236,92 @@ function calcScaling(){
   $('sc-table').innerHTML=shown.length?shown.map(([h,v])=>{const p=h*v, clk=pixelClock(h,v,hz,timing);return `<tr>${cell(h)}${cell(v)}<td class="num">${fa(Math.round(p),0)}</td><td class="num">${fclk(clk)}</td><td>${aquilonCap(clk)}</td><td>${p>LIM?'<span class="pill warn">Over 4K</span>':''}</td></tr>`}).join(''):'<tr><td colspan="6">No exact matches at this aspect ratio. Try “Every step”.</td></tr>';
 }
 
+/* ---------------- power print sheet ---------------- */
+function buildPowerSheet(){
+  const show=store.get('show',''), date=new Date().toLocaleDateString(undefined,{year:'numeric',month:'short',day:'numeric'});
+  const pages=Object.keys(DEPTS).filter(d=>power[d].r208.length||power[d].r120.length);
+  if(!pages.length)return false;
+  $('print-sheet').innerHTML=pages.map(d=>{
+    const t=deptTotals(d), legs=legLoads(d), worst=Math.max(...legs);
+    const rows=['r208','r120'].flatMap(k=>power[d][k].map(r=>`<tr><td>${esc(r.n||'—')}</td><td>${k==='r208'?'208V':'120V'}</td><td class="n">${fa(+r.q||0,2)}</td><td class="n">${fa(+r.w||0,1)}</td><td class="n">${fx(+r.pf||0,2)}</td><td class="n">${fa((+r.q||0)*(+r.w||0),1)}</td><td class="n">${fx(rowAmps(r,k==='r208'?208:120),2)}</td><td>${placeText(k,legs.place.get(r))}</td></tr>`)).join('');
+    return `<section class="pg"><h1>${esc(show||'AV Show')} · ${DEPTS[d]} power</h1><p class="meta">${date} · 208V three-phase service</p>
+<table><thead><tr><th>Item</th><th>Volts</th><th class="n">Qty</th><th class="n">W each</th><th class="n">PF</th><th class="n">Total W</th><th class="n">Amps</th><th>Plug on</th></tr></thead><tbody>${rows}</tbody></table>
+<div class="sum"><div>Service rating per phase<b>${fx(worst/0.8,2)} A</b></div><div>Leg A<b>${fx(legs[0],2)} A</b></div><div>Leg B<b>${fx(legs[1],2)} A</b></div><div>Leg C<b>${fx(legs[2],2)} A</b></div><div>Total load<b>${fa(t.w208+t.w120,0)} W</b></div></div>
+<p class="fine">Amps column is the item's full draw. Plug on: 120V items by leg, 208V items by leg pair, placed to keep legs even. Rating is the busiest leg ÷ 0.8 (load at 80% of rating, NEC continuous). Wattages are maximum ratings.</p></section>`}).join('');
+  return true;
+}
+$('pw-print').addEventListener('click',()=>{
+  if(!buildPowerSheet()){toast('Add some power items first');return}
+  document.body.classList.add('print-power');window.print();
+});
+addEventListener('afterprint',()=>document.body.classList.remove('print-power'));
+
+/* ---------------- share one tab ---------------- */
+const fieldText=el=>el.tagName==='SELECT'?(el.selectedOptions[0]||{}).textContent||'':el.value;
+const visible=el=>!!(el.offsetWidth||el.offsetHeight||el.getClientRects().length);
+function tabPacket(v){
+  const view=$('v-'+v), d={inputs:{}};
+  view.querySelectorAll('[data-p]').forEach(el=>d.inputs[el.id]=el.value);
+  if(v==='power'){d.power={[dept]:power[dept]};d.dept=dept}
+  if(v==='pixels'){d.pix={[pu]:pix[pu]};d.pxunit=pu;d.cvM=cvM}
+  if(v==='projector'){d.pjAnchor=pjAnchor;d.leOpen=$('pj-le-box').open}
+  if(v==='camera'){d.camMode=camMode}
+  return {v,d};
+}
+function tabText(v){
+  const view=$('v-'+v), L=[];
+  L.push(view.querySelector('h2').textContent+(store.get('show','')?' — '+store.get('show',''):''));
+  if(v==='power'){
+    L.push(DEPTS[dept]+' department');
+    ['r208','r120'].forEach(k=>{const legs=legLoads(dept);power[dept][k].forEach(r=>L.push(`• ${r.n||'Item'} ×${fa(+r.q||0,2)} @ ${fa(+r.w||0,1)} W (${k==='r208'?'208V':'120V'}) → ${fx(rowAmps(r,k==='r208'?208:120),2)} A · ${placeText(k,legs.place.get(r))}`))});
+  }else{
+    view.querySelectorAll('label.field').forEach(f=>{const c=f.querySelector('input,select');if(!c||!visible(c))return;const lbl=(f.querySelector('span')||{}).textContent||'';L.push(`${lbl.trim()}: ${fieldText(c)}`)});
+  }
+  if(v==='pixels')view.querySelectorAll('.surf').forEach(el=>{const r=el._r;if(!r)return;L.push(`• ${r.n||'Surface'} ${fa(r.h,2)} × ${fa(r.v,2)} ${pu}${r.skip?' (skipped)':''} → ${el.querySelector('.surf-out').textContent.replace(/\s+/g,' ').trim()}`)});
+  L.push('');
+  view.querySelectorAll('.ro').forEach(ro=>{if(!visible(ro))return;const l=ro.querySelector('.lbl'), val=ro.querySelector('.val'), sub=ro.querySelector('.sub');
+    if(!l)return;const t=[val&&val.textContent.trim().replace(/(\d)([A-Za-z])/g,'$1 $2'),sub&&sub.textContent.replace(/\s+/g,' ').trim()].filter(Boolean).join(' · ');
+    if(t&&t!=='—')L.push(`${l.textContent.trim()}: ${t}`)});
+  return L.join('\n').replace(/\n{3,}/g,'\n\n').trim();
+}
+const linkFor=pkt=>location.origin+location.pathname+'?s='+b64e(JSON.stringify(pkt))+(pkt.v?'#'+pkt.v:'');
+async function shareOut(title,text,url){
+  if(navigator.share){try{await navigator.share({title,text,url});return}catch(e){if(e&&e.name==='AbortError')return}}
+  const all=text+'\n\n'+url;
+  try{await navigator.clipboard.writeText(all);toast('Copied to clipboard');return}catch(e){}
+  $('share-text').value=all;$('share-dlg').showModal();$('share-text').focus();$('share-text').select();
+}
+document.querySelectorAll('[data-share]').forEach(b=>b.addEventListener('click',()=>{
+  const v=b.dataset.share;shareOut($('v-'+v).querySelector('h2').textContent,tabText(v),linkFor(tabPacket(v)));
+}));
+
+/* ---------------- saved shows ---------------- */
+function paintShowBtn(){const n=store.get('show','');$('show-btn').textContent=n?'Show: '+n:'Shows';$('show-btn').title=n||'Saved shows'}
+function renderShows(){
+  const shows=store.get('shows',{}), cur=store.get('show',''), names=Object.keys(shows).sort((a,b)=>shows[b].t-shows[a].t);
+  $('show-empty').hidden=names.length>0;
+  $('show-list').innerHTML='';
+  names.forEach(n=>{
+    const row=document.createElement('div');row.className='show-item'+(n===cur?' cur':'');
+    row.innerHTML=`<div class="nm"><b>${esc(n)}</b><span>Saved ${new Date(shows[n].t).toLocaleString(undefined,{month:'short',day:'numeric',hour:'numeric',minute:'2-digit'})}</span></div><button class="btn primary" type="button" data-a="load">Open</button><button class="btn" type="button" data-a="share">Share</button><button class="btn danger" type="button" data-a="del">Delete</button>`;
+    row.querySelector('[data-a="load"]').addEventListener('click',()=>{clearShowState();writeState(shows[n].d);store.set('show',n);location.reload()});
+    row.querySelector('[data-a="share"]').addEventListener('click',()=>{shareOut(n,`AV Show Calculators — show “${n}”. Open the link to load every tab's inputs.`,linkFor({k:'show',n,d:shows[n].d}))});
+    twoTap(row.querySelector('[data-a="del"]'),()=>{const sh=store.get('shows',{});delete sh[n];store.set('shows',sh);if(store.get('show','')===n){store.set('show','');paintShowBtn()}renderShows()});
+    $('show-list').appendChild(row);
+  });
+  const nm=$('show-name').value.trim();$('show-save').textContent=nm&&shows[nm]?'Update':'Save';
+}
+$('show-btn').addEventListener('click',()=>{$('show-name').value=store.get('show','');renderShows();$('shows-dlg').showModal()});
+$('show-name').addEventListener('input',renderShows);
+function saveShow(){
+  const n=$('show-name').value.trim();if(!n){$('show-name').focus();return}
+  const shows=store.get('shows',{});shows[n]={t:Date.now(),d:snapshot()};store.set('shows',shows);store.set('show',n);
+  paintShowBtn();renderShows();toast(`Saved “${n}”`);
+}
+$('show-save').addEventListener('click',saveShow);
+$('show-name').addEventListener('keydown',e=>{if(e.key==='Enter'){e.preventDefault();saveShow()}});
+paintShowBtn();
+
 /* ---------------- shared wiring ---------------- */
 const CALC={storage:calcStorage,projector:calcProjector,camera:calcCamera,scaling:calcScaling,pixels:calcPixels};
 const persisted=[...document.querySelectorAll('[data-p]')];
@@ -1159,6 +1351,7 @@ calcStorage();renderPower();calcProjector();renderPixels();calcCamera();calcScal
 window.addEventListener('hashchange',()=>{const x=location.hash.slice(1);if(VIEWS.includes(x))show(x)});
 const h=(location.hash||'').slice(1);
 show(VIEWS.includes(h)?h:store.get('tab','storage'));
+if(incoming)setTimeout(()=>toast(incoming),300);
 })();
 </script>
 
