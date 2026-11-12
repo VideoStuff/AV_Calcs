@@ -555,42 +555,73 @@ details.fold>summary:hover{border-color:var(--muted)}
 <!-- ============ CABLES ============ -->
 <section class="view" id="v-cables" hidden>
   <div class="view-head"><span class="eyebrow">Reference</span><h2>Cabling Info</h2>
-    <p class="lede">Bandwidth, top resolution and practical run length by signal type.</p></div>
+    <p class="lede">Link rate, top format and practical run length by signal type. Lengths are typical passive runs on good cable; equipment and cable quality move them in both directions, so test long runs before the show.</p></div>
   <div class="layout even">
     <div class="panel">
-      <h3>HDMI &amp; DisplayPort</h3>
+      <h3>SDI (coax)</h3>
       <div class="tbl-wrap"><table>
-        <thead><tr><th>Type</th><th>Bandwidth</th><th>Max resolution</th><th>Max length</th></tr></thead>
+        <thead><tr><th>Type</th><th>Rate</th><th>Top format</th><th>Run on 1694A</th></tr></thead>
         <tbody>
-          <tr><td><b>HDMI 1.4</b></td><td class="num" style="text-align:left">8.16 Gbps</td><td>2160p30</td><td>16 ft standard, 49 ft high speed</td></tr>
-          <tr><td><b>HDMI 2.0</b></td><td class="num" style="text-align:left">14.4 Gbps</td><td>2160p60 (8 bpc)</td><td>16 ft</td></tr>
-          <tr><td><b>DisplayPort 1.2</b></td><td class="num" style="text-align:left">17.28 Gbps</td><td>2160p60 (10 bpc)</td><td>Under 15 ft recommended</td></tr>
+          <tr><td><b>SD-SDI</b></td><td>270 Mbps</td><td>480i / 576i</td><td>~1,000 ft (300 m)</td></tr>
+          <tr><td><b>HD-SDI</b></td><td>1.485 Gbps</td><td>1080i60, 720p60, 1080p30</td><td>~330 ft (100 m)</td></tr>
+          <tr><td><b>3G-SDI</b></td><td>2.97 Gbps</td><td>1080p60</td><td>~250 ft (78 m)</td></tr>
+          <tr><td><b>6G-SDI</b></td><td>5.94 Gbps</td><td>2160p30</td><td>~200 ft (60 m)*</td></tr>
+          <tr><td><b>12G-SDI</b></td><td>11.88 Gbps</td><td>2160p60</td><td>~165 ft (50 m)</td></tr>
         </tbody>
       </table></div>
+      <p class="note">Runs are for Belden 1694A (RG6) with typical receiver equalisers. 12G-rated cable such as Belden 4794R reaches about 300 ft (93 m) at 12G. Thin RG59 and mini-coax reach roughly half as far. *6G has no published figure for 1694A; this is an estimate between 3G and 12G.</p>
     </div>
     <div class="panel">
-      <h3>SDI</h3>
+      <h3>HDMI</h3>
       <div class="tbl-wrap"><table>
-        <thead><tr><th>Type</th><th>Bandwidth</th><th>Max resolution</th><th class="num">Max length</th></tr></thead>
+        <thead><tr><th>Version</th><th>Rate (data)</th><th>Top format</th><th>Passive run</th></tr></thead>
         <tbody>
-          <tr><td><b>HD-SDI</b></td><td class="num" style="text-align:left">1.485 Gbps</td><td>1080p30</td><td class="num">300 ft</td></tr>
-          <tr><td><b>3G</b></td><td class="num" style="text-align:left">2.97 Gbps</td><td>1080p60</td><td class="num">200 ft</td></tr>
-          <tr><td><b>6G</b></td><td class="num" style="text-align:left">5.94 Gbps</td><td>2160p30</td><td class="num">100 ft</td></tr>
-          <tr><td><b>12G</b></td><td class="num" style="text-align:left">11.88 Gbps</td><td>2160p60</td><td class="num">100 ft</td></tr>
+          <tr><td><b>HDMI 1.4</b><div class="note" style="margin:0">High Speed cable</div></td><td>10.2 Gbps (8.16)</td><td>2160p30, 1080p60</td><td>~50 ft (15 m) at 1080p; shorter at 4K</td></tr>
+          <tr><td><b>HDMI 2.0</b><div class="note" style="margin:0">Premium High Speed</div></td><td>18 Gbps (14.4)</td><td>2160p60 8-bit 4:4:4 or 10-bit 4:2:2</td><td>~16–25 ft (5–7.5 m)</td></tr>
+          <tr><td><b>HDMI 2.1</b><div class="note" style="margin:0">Ultra High Speed</div></td><td>48 Gbps (42.7)</td><td>2160p120 10-bit; 4320p60 4:2:0 (more with DSC)</td><td>~10 ft (3 m)</td></tr>
         </tbody>
       </table></div>
-      <p class="note">Lengths assume high-quality cable.</p>
+      <p class="note">The HDMI spec sets no maximum length. Past these runs, use an active optical cable, HDBaseT or fiber extenders.</p>
+    </div>
+    <div class="panel">
+      <h3>DisplayPort</h3>
+      <div class="tbl-wrap"><table>
+        <thead><tr><th>Version</th><th>Rate (data)</th><th>Top format</th><th>Passive run</th></tr></thead>
+        <tbody>
+          <tr><td><b>DP 1.2</b><div class="note" style="margin:0">HBR2</div></td><td>21.6 Gbps (17.28)</td><td>2160p60 10-bit</td><td>~6.5–10 ft (2–3 m)</td></tr>
+          <tr><td><b>DP 1.4</b><div class="note" style="margin:0">HBR3 (DP8K cable)</div></td><td>32.4 Gbps (25.92)</td><td>2160p120 8-bit; 4320p60 with DSC</td><td>~6.5 ft (2 m)</td></tr>
+          <tr><td><b>DP 2.1</b><div class="note" style="margin:0">UHBR20 (DP80 cable)</div></td><td>80 Gbps (77.37)</td><td>4320p60 10-bit; 2160p240</td><td>~3–6.5 ft (1–2 m)</td></tr>
+        </tbody>
+      </table></div>
+      <p class="note">VESA guarantees full rate only up to these lengths on certified passive cable. Longer passive cables often only hold 1080p. Use active or fiber cables for longer runs.</p>
+    </div>
+    <div class="panel">
+      <h3>Twisted pair (Cat)</h3>
+      <div class="tbl-wrap"><table>
+        <thead><tr><th>Use</th><th>Cable</th><th>Max run</th></tr></thead>
+        <tbody>
+          <tr><td><b>1 Gb Ethernet</b></td><td>Cat5e / Cat6</td><td>328 ft (100 m)</td></tr>
+          <tr><td><b>10 Gb Ethernet</b></td><td>Cat6</td><td>180 ft (55 m)</td></tr>
+          <tr><td><b>10 Gb Ethernet</b></td><td>Cat6a</td><td>328 ft (100 m)</td></tr>
+          <tr><td><b>HDBaseT</b><div class="note" style="margin:0">up to 2160p30, or 2160p60 4:2:0</div></td><td>Cat6a / Cat6</td><td>328 ft (100 m)</td></tr>
+          <tr><td><b>HDBaseT long reach</b></td><td>Cat6a / Cat6</td><td>492 ft (150 m) at 1080p</td></tr>
+        </tbody>
+      </table></div>
+      <p class="note">Ethernet lengths are the full channel, patch cords included. Use solid-core shielded cable for HDBaseT and keep it away from power.</p>
     </div>
     <div class="panel">
       <h3>Fiber</h3>
       <div class="tbl-wrap"><table>
-        <thead><tr><th>Type</th><th>Max length</th></tr></thead>
+        <thead><tr><th>Type</th><th>Core</th><th>10 Gb run</th></tr></thead>
         <tbody>
-          <tr><td><b>Single-mode</b></td><td>Further than we need</td></tr>
-          <tr><td><b>Multimode OM3</b></td><td>984 ft (10GbE)</td></tr>
-          <tr><td><b>Multimode OM4</b></td><td>1,312 ft (10GbE)</td></tr>
+          <tr><td><b>Single-mode OS2</b><div class="note" style="margin:0">yellow jacket</div></td><td>9 µm</td><td>6.2 mi (10 km)</td></tr>
+          <tr><td><b>Multimode OM4</b><div class="note" style="margin:0">aqua or violet</div></td><td>50 µm</td><td>1,312 ft (400 m)</td></tr>
+          <tr><td><b>Multimode OM3</b><div class="note" style="margin:0">aqua</div></td><td>50 µm</td><td>984 ft (300 m)</td></tr>
+          <tr><td><b>Multimode OM2</b><div class="note" style="margin:0">orange</div></td><td>50 µm</td><td>269 ft (82 m)</td></tr>
+          <tr><td><b>Multimode OM1</b><div class="note" style="margin:0">orange</div></td><td>62.5 µm</td><td>108 ft (33 m)</td></tr>
         </tbody>
       </table></div>
+      <p class="note">Runs are the 10 Gb Ethernet limits; check your SFP spec for video rates. Most SDI and video-extender SFPs are single-mode; match the SFP to the fiber, and don't mix multimode and single-mode on one link.</p>
     </div>
   </div>
 </section>
