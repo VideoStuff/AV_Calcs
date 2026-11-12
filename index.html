@@ -1089,7 +1089,10 @@ function calcScaling(){
   for(let x=start;x<=top;x+=8){const h=mode==='v'?x*ar:x, v=mode==='v'?x:x/ar;rows.push([h,v])}
   if(rows.length&&(mode==='v'?rows[rows.length-1][1]!==V:rows[rows.length-1][0]!==H))rows.push([H,V]);
   const m8=x=>whole(x)&&Math.round(x)%8===0;
-  const shown=rows.filter(([h,v])=>filt==='all'||(filt==='whole'&&whole(h)&&whole(v))||(filt==='eight'&&m8(h)&&m8(v))).reverse();
+  const keep=([h,v])=>filt==='all'||(filt==='whole'&&whole(h)&&whole(v))||(filt==='eight'&&m8(h)&&m8(v));
+  const shown=rows.filter(keep).reverse();
+  /* 4 extra rows below half size, same 8-pixel stepping and filter */
+  for(let x=start-8,extra=0;x>=8&&extra<4;x-=8){const r=mode==='v'?[x*ar,x]:[x,x/ar];rows.push(r);if(keep(r)){shown.push(r);extra++}}
   $('sc-count').textContent=`${shown.length} of ${rows.length} steps`;
   const cell=x=>`<td class="num${m8(x)?' m8':''}">${whole(x)?fa(Math.round(x),0):fx(x,2)}</td>`;
   $('sc-table').innerHTML=shown.length?shown.map(([h,v])=>{const p=h*v, clk=pixelClock(h,v,hz,timing);return `<tr>${cell(h)}${cell(v)}<td class="num">${fa(Math.round(p),0)}</td><td class="num">${fclk(clk)}</td><td>${aquilonCap(clk)}</td><td>${p>LIM?'<span class="pill warn">Over 4K</span>':''}</td></tr>`}).join(''):'<tr><td colspan="6">No exact matches at this aspect ratio. Try “Every step”.</td></tr>';
