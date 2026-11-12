@@ -529,17 +529,21 @@ details.fold>summary:hover{border-color:var(--muted)}
         <label class="field"><span>Vertical</span><input id="sc-v" type="number" inputmode="numeric" step="1" value="1536" data-p></label>
         <label class="field"><span>Step by</span><select id="sc-mode" data-p><option value="v">Vertical (height)</option><option value="h">Horizontal (width)</option></select></label>
         <label class="field"><span>Show</span><select id="sc-filter" data-p><option value="whole">Whole-pixel matches</option><option value="eight">Both multiples of 8</option><option value="all">Every step</option></select></label>
+        <label class="field"><span>Refresh rate (Hz)</span><select id="sc-hz" data-p><option value="60" selected>60</option><option value="59.94">59.94</option><option value="30">30</option><option value="29.97">29.97</option></select></label>
+        <label class="field"><span>Timing</span><select id="sc-timing" data-p><option value="rb">CVT reduced blanking</option><option value="rb2">CVT-RB v2</option><option value="active">Active pixels only</option></select></label>
       </div>
       <div class="readouts" style="margin-top:12px">
         <div class="ro"><span class="lbl">Aspect ratio</span><span class="val" id="sc-ar">—</span></div>
         <div class="ro"><span class="lbl">Total pixels</span><span class="val" id="sc-px">—</span><span class="sub" id="sc-pxnote"></span></div>
+        <div class="ro"><span class="lbl">Pixel clock</span><span class="val" id="sc-clk">—</span><span class="sub" id="sc-cap"></span></div>
       </div>
       <p class="note">Green values are multiples of 8. Rows over a 4K pixel count (3840 × 2160 = 8,294,400) are flagged.</p>
+      <p class="note">Pixel clock = total pixels per line × total lines × refresh rate, including blanking for the chosen timing. Aquilon capacity: up to 300 MHz is Capacity 1, over 300 to 600 MHz is Capacity 2, over 600 MHz to 1 GHz is Capacity 4. Over 1 GHz isn't supported.</p>
     </div>
     <div class="panel">
       <div class="panel-head"><h3>Scaled sizes</h3><span class="pill mute" id="sc-count"></span></div>
       <div class="tbl-wrap" style="max-height:70vh;overflow-y:auto"><table>
-        <thead><tr><th class="num">H</th><th class="num">V</th><th class="num">Pixels</th><th></th></tr></thead>
+        <thead><tr><th class="num">H</th><th class="num">V</th><th class="num">Pixels</th><th class="num">Pixel clock</th><th>Aquilon capacity</th><th></th></tr></thead>
         <tbody id="sc-table"></tbody>
       </table></div>
     </div>
@@ -1045,14 +1049,41 @@ function calcCamera(){
 }
 
 /* ---------------- SCALING ---------------- */
+/* pixel clock in MHz: VESA CVT reduced blanking v1 / v2, or active pixels only */
+function pixelClock(w,h,hz,timing){
+  w=Math.round(w);h=Math.round(h);
+  if(w<=0||h<=0||hz<=0)return NaN;
+  if(timing==='active')return w*h*hz/1e6;
+  const v2=timing==='rb2', MIN_VB=460;
+  const ar=w/h, near=(a,b)=>Math.abs(a-b)<0.01;
+  const vsync=v2?8:near(ar,4/3)?4:near(ar,16/9)?5:near(ar,16/10)?6:(near(ar,5/4)||near(ar,15/9))?7:10;
+  const hpx=v2?w:Math.floor(w/8)*8;
+  const hPeriod=(1e6/hz-MIN_VB)/h;
+  const vbi=Math.max(Math.floor(MIN_VB/hPeriod)+1,(v2?1:3)+vsync+6);
+  const tot=(hpx+(v2?80:160))*(h+vbi)*hz/1e6;
+  const step=v2?0.001:0.25;
+  return step*Math.floor(tot/step);
+}
+function aquilonCap(mhz){
+  if(!Number.isFinite(mhz))return '';
+  if(mhz<=300)return '<span class="pill good">Capacity 1</span>';
+  if(mhz<=600)return '<span class="pill mute">Capacity 2</span>';
+  if(mhz<=1000)return '<span class="pill warn">Capacity 4</span>';
+  return '<span class="pill bad">Over 1 GHz</span>';
+}
+const fclk=m=>Number.isFinite(m)?(m>=1000?unit(fx(m/1000,3),'GHz'):unit(fx(m,2),'MHz')):'—';
 function calcScaling(){
   const H=Math.round(num('sc-h')), V=Math.round(num('sc-v')), mode=$('sc-mode').value, filt=$('sc-filter').value;
   const LIM=3840*2160;
-  if(H<=0||V<=0){$('sc-table').innerHTML='<tr><td colspan="4">Enter a horizontal and vertical resolution.</td></tr>';$('sc-count').textContent='';return}
+  if(H<=0||V<=0){$('sc-clk').textContent='—';$('sc-cap').innerHTML='';$('sc-table').innerHTML='<tr><td colspan="6">Enter a horizontal and vertical resolution.</td></tr>';$('sc-count').textContent='';return}
   const ar=H/V;
   $('sc-ar').innerHTML=unit(fx(ar,4),':1');
   $('sc-px').textContent=fa(H*V,0);
   $('sc-pxnote').innerHTML=H*V>LIM?'<span class="pill warn">Over a 4K pixel count</span>':'<span class="pill good">Within a 4K pixel count</span>';
+  const hz=parseFloat($('sc-hz').value)||60, timing=$('sc-timing').value;
+  const clk0=pixelClock(H,V,hz,timing);
+  $('sc-clk').innerHTML=fclk(clk0);
+  $('sc-cap').innerHTML=`Aquilon ${aquilonCap(clk0)}`;
   const rows=[];const top=mode==='v'?V:H;let start=Math.max(8,Math.ceil(top/2/8)*8);
   if((top-start)/8>3000)start=top-3000*8;
   for(let x=start;x<=top;x+=8){const h=mode==='v'?x*ar:x, v=mode==='v'?x:x/ar;rows.push([h,v])}
@@ -1061,7 +1092,7 @@ function calcScaling(){
   const shown=rows.filter(([h,v])=>filt==='all'||(filt==='whole'&&whole(h)&&whole(v))||(filt==='eight'&&m8(h)&&m8(v))).reverse();
   $('sc-count').textContent=`${shown.length} of ${rows.length} steps`;
   const cell=x=>`<td class="num${m8(x)?' m8':''}">${whole(x)?fa(Math.round(x),0):fx(x,2)}</td>`;
-  $('sc-table').innerHTML=shown.length?shown.map(([h,v])=>{const p=h*v;return `<tr>${cell(h)}${cell(v)}<td class="num">${fa(Math.round(p),0)}</td><td>${p>LIM?'<span class="pill warn">Over 4K</span>':''}</td></tr>`}).join(''):'<tr><td colspan="4">No exact matches at this aspect ratio. Try “Every step”.</td></tr>';
+  $('sc-table').innerHTML=shown.length?shown.map(([h,v])=>{const p=h*v, clk=pixelClock(h,v,hz,timing);return `<tr>${cell(h)}${cell(v)}<td class="num">${fa(Math.round(p),0)}</td><td class="num">${fclk(clk)}</td><td>${aquilonCap(clk)}</td><td>${p>LIM?'<span class="pill warn">Over 4K</span>':''}</td></tr>`}).join(''):'<tr><td colspan="6">No exact matches at this aspect ratio. Try “Every step”.</td></tr>';
 }
 
 /* ---------------- SWITCHERS ---------------- */
