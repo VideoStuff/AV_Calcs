@@ -55,6 +55,8 @@ body::before{content:"";position:fixed;inset:0 0 auto;height:env(safe-area-inset
 .bars i{display:block}
 .bars i:nth-child(1){background:#C0C0C0}.bars i:nth-child(2){background:#C0C000}.bars i:nth-child(3){background:#00C0C0}.bars i:nth-child(4){background:#00C000}.bars i:nth-child(5){background:#C000C0}.bars i:nth-child(6){background:#C00000}.bars i:nth-child(7){background:#0000C0}
 h1{font-family:var(--f-display);font-weight:700;font-size:1.35rem;letter-spacing:.01em;margin:0;line-height:1.1}
+.btn.mini-btn{padding:3px 9px;font-size:.8rem}
+.btn.mini-btn:disabled{opacity:.4;cursor:not-allowed}
 .view-tools{display:flex;gap:8px;flex-wrap:wrap;margin-top:10px}
 .view-tools .btn{padding:6px 12px;font-size:.88rem}
 .toast{position:fixed;left:50%;bottom:calc(18px + env(safe-area-inset-bottom,0px));transform:translate(-50%,20px);opacity:0;pointer-events:none;z-index:50;background:var(--ink);color:var(--bg);padding:9px 16px;border-radius:999px;font-family:var(--f-display);font-weight:600;letter-spacing:.03em;transition:opacity .2s,transform .2s;max-width:calc(100vw - 32px);text-align:center}
@@ -288,7 +290,7 @@ details.fold>summary:hover{border-color:var(--muted)}
   <div class="wrap">
     <div class="top-in">
       <div class="bars" aria-hidden="true"><i></i><i></i><i></i><i></i><i></i><i></i><i></i></div>
-      <div><h1>AV Show Calculators</h1><p id="app-ver">v1.9 · Nov 12, 2026</p></div>
+      <div><h1>AV Show Calculators</h1><p id="app-ver">v2.0 · Nov 13, 2026</p></div>
       <div class="top-act">
         <button class="btn" id="show-btn" type="button">Shows</button>
         <button class="btn icon-btn" id="theme-btn" type="button" aria-pressed="false"><span aria-hidden="true" id="theme-ico">☾</span> <span id="theme-lbl">Dark</span></button>
@@ -605,6 +607,7 @@ details.fold>summary:hover{border-color:var(--muted)}
         <label class="field"><span>Show</span><select id="sc-filter" data-p><option value="whole">Whole-pixel matches</option><option value="eight">Both multiples of 8</option><option value="all">Every step</option></select></label>
         <label class="field"><span>Refresh rate (Hz)</span><select id="sc-hz" data-p><option value="60" selected>60</option><option value="59.94">59.94</option><option value="30">30</option><option value="29.97">29.97</option></select></label>
         <label class="field"><span>Timing</span><select id="sc-timing" data-p><option value="rb">CVT reduced blanking</option><option value="rb2">CVT-RB v2</option><option value="active">Active pixels only</option></select></label>
+        <label class="field"><span>EDID connector</span><select id="sc-conn" data-p><option value="hdmi">HDMI</option><option value="dp">DisplayPort</option></select></label>
       </div>
       <div class="readouts" style="margin-top:12px">
         <div class="ro"><span class="lbl">Aspect ratio</span><span class="val" id="sc-ar">—</span></div>
@@ -612,12 +615,13 @@ details.fold>summary:hover{border-color:var(--muted)}
         <div class="ro"><span class="lbl">Pixel clock</span><span class="val" id="sc-clk">—</span><span class="sub" id="sc-cap"></span></div>
       </div>
       <p class="note">Green values are multiples of 8. Rows over a 4K pixel count (3840 × 2160 = 8,294,400) are flagged.</p>
+      <p class="note">Export EDID downloads a .bin for that row at the chosen refresh rate and connector, using CVT reduced-blanking timing (v2 if selected). HDMI files include audio and support up to 600 MHz (HDMI 2.0) and 4,095 pixels per side. DisplayPort files go up to about 1,080 MHz (DP 1.4); wider than 4,095 pixels or over 655 MHz uses a DisplayID block. Buttons marked * carry a note: hover or tap for details. Greyed-out buttons can't be made for that connector.</p>
       <p class="note">Pixel clock = total pixels per line × total lines × refresh rate, including blanking for the chosen timing. Aquilon capacity: up to 300 MHz is Capacity 1, over 300 to 600 MHz is Capacity 2, over 600 MHz to 1 GHz is Capacity 4. Over 1 GHz isn't supported.</p>
     </div>
     <div class="panel">
       <div class="panel-head"><h3>Scaled sizes</h3><span class="pill mute" id="sc-count"></span></div>
       <div class="tbl-wrap" style="max-height:70vh;overflow-y:auto"><table>
-        <thead><tr><th class="num">H</th><th class="num">V</th><th class="num">Pixels</th><th class="num">Pixel clock</th><th>Aquilon capacity</th><th></th></tr></thead>
+        <thead><tr><th class="num">H</th><th class="num">V</th><th class="num">Pixels</th><th class="num">Pixel clock</th><th>Aquilon capacity</th><th></th><th>EDID</th></tr></thead>
         <tbody id="sc-table"></tbody>
       </table></div>
     </div>
@@ -723,7 +727,7 @@ const clone=o=>JSON.parse(JSON.stringify(o));
 /* ---------------- shows, share links ---------------- */
 /* keys that are per-device preferences or bookkeeping, not part of a show */
 const NOT_SHOW=['theme','tab','shows','show'];
-const APP_VERSION='1.9';
+const APP_VERSION='2.0';
 function snapshot(){const o={};try{Object.keys(localStorage).forEach(k=>{if(!k.startsWith('avcalc:'))return;const n=k.slice(7);if(NOT_SHOW.includes(n))return;try{o[n]=JSON.parse(localStorage.getItem(k))}catch(e){}})}catch(e){}return o}
 function clearShowState(){try{Object.keys(localStorage).filter(k=>k.startsWith('avcalc:')&&!NOT_SHOW.includes(k.slice(7))).forEach(k=>localStorage.removeItem(k))}catch(e){}}
 function writeState(o){for(const k in o)if(!NOT_SHOW.includes(k))store.set(k,o[k])}
@@ -1189,20 +1193,110 @@ function calcCamera(){
 }
 
 /* ---------------- SCALING ---------------- */
-/* pixel clock in MHz: VESA CVT reduced blanking v1 / v2, or active pixels only */
+/* full VESA CVT reduced-blanking timing (v1 or v2) for an exact active size; pclk in MHz */
+function cvtTiming(w,h,hz,v2){
+  w=Math.round(w);h=Math.round(h);
+  if(w<=0||h<=0||hz<=0)return null;
+  const MIN_VB=460, ar=w/h, near=(a,b)=>Math.abs(a-b)<0.01;
+  const vs=v2?8:near(ar,4/3)?4:near(ar,16/9)?5:near(ar,16/10)?6:(near(ar,5/4)||near(ar,15/9))?7:10;
+  const hPeriod=(1e6/hz-MIN_VB)/h;
+  const vb=Math.max(Math.floor(MIN_VB/hPeriod)+1,v2?1+8+6:3+vs+6);
+  const hb=v2?80:160, step=v2?0.001:0.25;
+  const pclk=step*Math.floor((w+hb)*(h+vb)*hz/1e6/step+1e-9);
+  return {w,h,hb,hfp:v2?8:48,hs:32,hpos:true,vb,vfp:v2?vb-8-6:3,vs,vpos:false,pclk};
+}
+/* pixel clock in MHz: CVT-RB v1 / v2, or active pixels only */
 function pixelClock(w,h,hz,timing){
   w=Math.round(w);h=Math.round(h);
   if(w<=0||h<=0||hz<=0)return NaN;
   if(timing==='active')return w*h*hz/1e6;
-  const v2=timing==='rb2', MIN_VB=460;
-  const ar=w/h, near=(a,b)=>Math.abs(a-b)<0.01;
-  const vsync=v2?8:near(ar,4/3)?4:near(ar,16/9)?5:near(ar,16/10)?6:(near(ar,5/4)||near(ar,15/9))?7:10;
-  const hpx=v2?w:Math.floor(w/8)*8;
-  const hPeriod=(1e6/hz-MIN_VB)/h;
-  const vbi=Math.max(Math.floor(MIN_VB/hPeriod)+1,(v2?1:3)+vsync+6);
-  const tot=(hpx+(v2?80:160))*(h+vbi)*hz/1e6;
-  const step=v2?0.001:0.25;
-  return step*Math.floor(tot/step);
+  return cvtTiming(w,h,hz,timing==='rb2').pclk;
+}
+
+/* ---------- EDID export (EDID 1.4 base block + CTA-861 for HDMI, or DisplayID for large DP formats) */
+const VGA640={w:640,h:480,hb:160,hfp:16,hs:96,hpos:false,vb:45,vfp:10,vs:2,vpos:false,pclk:25.175};
+const CTA_1080P60={w:1920,h:1080,hb:280,hfp:88,hs:44,hpos:true,vb:45,vfp:4,vs:5,vpos:true,pclk:148.5};
+const fitsDTD=t=>t.w<=4095&&t.h<=4095&&t.hb<=4095&&t.vb<=4095&&t.hfp<=1023&&t.hs<=1023&&t.vfp<=63&&t.vs<=63&&Math.round(t.pclk*100)<=65535;
+const lineKHz=t=>t.pclk*1000/(t.w+t.hb), frameHz=t=>t.pclk*1e6/((t.w+t.hb)*(t.h+t.vb));
+function dtd(t){const d=new Array(18).fill(0),pc=Math.round(t.pclk*100);
+  d[0]=pc&255;d[1]=pc>>8;d[2]=t.w&255;d[3]=t.hb&255;d[4]=((t.w>>8)<<4)|(t.hb>>8);
+  d[5]=t.h&255;d[6]=t.vb&255;d[7]=((t.h>>8)<<4)|(t.vb>>8);
+  d[8]=t.hfp&255;d[9]=t.hs&255;d[10]=((t.vfp&15)<<4)|(t.vs&15);d[11]=((t.hfp>>8)<<6)|((t.hs>>8)<<4)|((t.vfp>>4)<<2)|(t.vs>>4);
+  d[17]=0x18|(t.vpos?4:0)|(t.hpos?2:0);return d}
+function textDesc(tag,str){const d=[0,0,0,tag,0];const b=[...str.slice(0,13)].map(c=>c.charCodeAt(0)&127);if(b.length<13)b.push(10);while(b.length<13)b.push(32);return d.concat(b)}
+function rangeDesc(ts){
+  const hz=ts.map(frameHz), kh=ts.map(lineKHz);
+  let vmin=Math.max(1,Math.floor(Math.min(...hz))-1), vmax=Math.min(255,Math.ceil(Math.max(...hz))+1);
+  let hmin=Math.max(1,Math.floor(Math.min(...kh))-1), hmax=Math.ceil(Math.max(...kh))+1, off=0;
+  if(hmax>255){off|=8;hmax-=255;if(hmin>255){off|=4;hmin-=255}}
+  return [0,0,0,0xFD,off,vmin,vmax,hmin,Math.min(255,hmax),Math.min(255,Math.ceil(Math.max(...ts.map(t=>t.pclk))/10)),0x01,0x0A,32,32,32,32,32,32];
+}
+const finish=b=>{let s=0;for(let i=0;i<127;i++)s+=b[i];b[127]=(256-s%256)%256;return b};
+function baseBlock(conn,pref,ranges,name,exts){
+  const b=new Array(128).fill(0);
+  [0,255,255,255,255,255,255,0].forEach((x,i)=>b[i]=x);
+  const id=((1)<<10)|(22<<5)|19; b[8]=id>>8;b[9]=id&255; /* "AVS" */
+  /* HDMI sinks must use EDID 1.3 (digital flag only); DisplayPort uses 1.4 with 8 bpc + DP interface */
+  const v13=conn!=='dp';
+  b[10]=1;b[17]=new Date().getFullYear()-1990;b[18]=1;b[19]=v13?3:4;
+  b[20]=v13?0x80:0x80|0x20|5;
+  b[23]=0x78;b[24]=0x06; /* sRGB, preferred timing is native */
+  [0xEE,0x91,0xA3,0x54,0x4C,0x99,0x26,0x0F,0x50,0x54].forEach((x,i)=>b[25+i]=x); /* sRGB primaries */
+  b[35]=0x20; /* 640x480@60 */
+  for(let i=38;i<54;i++)b[i]=1;
+  const rd=rangeDesc([...ranges,VGA640]);if(v13)rd[10]=0; /* 1.3: default GTF field, no "range limits only" */
+  [dtd(pref),rd,textDesc(0xFC,name),[0,0,0,0x10,0,0,0,0,0,0,0,0,0,0,0,0,0,0]].forEach((d,k)=>d.forEach((x,i)=>b[54+k*18+i]=x));
+  b[126]=exts;return finish(b);
+}
+function ctaBlock(t){
+  const blocks=[[0x23,0x09,0x07,0x07],[0x83,0x01,0x00,0x00],[0xE2,0x00,0x4A],[0x67,0x03,0x0C,0x00,0x10,0x00,0x00,0x44]];
+  if(t.pclk>340)blocks.push([0x67,0xD8,0x5D,0xC4,0x01,0x78,0x80,0x00]); /* HDMI Forum VSDB: 600 MHz TMDS, SCDC */
+  const data=blocks.flat(), b=new Array(128).fill(0);
+  b[0]=2;b[1]=3;b[2]=4+data.length;b[3]=0x80|0x40|1; /* underscan, basic audio, 1 native DTD */data.forEach((x,i)=>b[4+i]=x);
+  return finish(b);
+}
+function displayIdBlock(t){
+  const ar=t.w/t.h, near=(a,b)=>Math.abs(a-b)<0.005;
+  const asp=near(ar,1)?0:near(ar,5/4)?1:near(ar,4/3)?2:near(ar,15/9)?3:near(ar,16/9)?4:near(ar,16/10)?5:near(ar,64/27)?6:near(ar,256/135)?7:8;
+  const le2=v=>[v&255,(v>>8)&255], pc=Math.round(t.pclk*100)-1;
+  const tim=[pc&255,(pc>>8)&255,(pc>>16)&255,0x80|asp,...le2(t.w-1),...le2(t.hb-1),(t.hfp-1)&255,(((t.hfp-1)>>8)&127)|(t.hpos?128:0),...le2(t.hs-1),
+             ...le2(t.h-1),...le2(t.vb-1),(t.vfp-1)&255,(((t.vfp-1)>>8)&127)|(t.vpos?128:0),...le2(t.vs-1)];
+  const yr=new Date().getFullYear()-2000;
+  const prod=[0x00,0x00,12,0x41,0x56,0x53,1,0,0,0,0,0,0,yr,0]; /* product ID block: "AVS", code 1, no serial */
+  const params=[0x01,0x00,12,0,0,0,0,...le2(t.w),...le2(t.h),0x00,0x78,Math.min(255,Math.round(ar*100-100)),0x77]; /* gamma 2.2, 8 bpc */
+  const iface=[0x0F,0x00,10,(10<<4)|4,0x12,0x02,0,0,0,0,0,0,0]; /* DisplayPort 1.2, 4 lanes, RGB 8 bpc */
+  const data=[...prod,0x03,0x00,tim.length,...tim,...params,...iface], b=new Array(128).fill(0);
+  b[0]=0x70;b[1]=0x12;b[2]=data.length;b[3]=0x03;b[4]=0; /* product type: standalone display */data.forEach((x,i)=>b[5+i]=x);
+  let s=0;for(let i=1;i<5+data.length;i++)s+=b[i];b[5+data.length]=(256-s%256)%256;
+  return finish(b);
+}
+/* returns {bytes, notes} or {err} for one scaled size */
+function buildEdid(w,h,hz,timing,conn){
+  if(!whole(w)||!whole(h))return {err:'Not a whole-pixel size'};
+  const t=cvtTiming(w,h,hz,timing==='rb2');if(!t)return {err:'Enter a resolution'};
+  const notes=[], name=`${t.w}x${t.h}p${Math.round(hz)}`;
+  if(timing==='active')notes.push('Uses CVT reduced blanking (an EDID needs blanking)');
+  if(conn==='hdmi'){
+    if(t.pclk>600)return {err:`${fx(t.pclk,2)} MHz is over HDMI 2.0's 600 MHz. Use DisplayPort or a lower refresh rate.`};
+    if(!fitsDTD(t))return {err:'HDMI EDIDs can only describe up to 4,095 pixels per side. Use DisplayPort.'};
+    if(t.pclk>340)notes.push('Needs an HDMI 2.0 source (over 340 MHz)');
+    return {bytes:[...baseBlock('hdmi',t,[t],name,1),...ctaBlock(t)],notes,t};
+  }
+  if(t.pclk>1080)return {err:`${fx(t.pclk,2)} MHz is over DisplayPort 1.4's limit (about 1,080 MHz at 8-bit RGB).`};
+  if(t.pclk>720)notes.push('Needs DisplayPort 1.4 (HBR3); over DP 1.2’s 720 MHz');
+  if(fitsDTD(t))return {bytes:baseBlock('dp',t,[t],name,0),notes,t};
+  notes.push('Format is in a DisplayID block (over 4,095 px or 655 MHz). The base block lists 1920×1080 as a fallback for sources that only read standard EDID.');
+  return {bytes:[...baseBlock('dp',CTA_1080P60,[t,CTA_1080P60],name,1),...displayIdBlock(t)],notes,t};
+}
+function exportEdid(w,h){
+  const hz=parseFloat($('sc-hz').value)||60, timing=$('sc-timing').value, conn=$('sc-conn').value;
+  const r=buildEdid(w,h,hz,timing,conn);
+  if(r.err){toast(r.err);return}
+  const blob=new Blob([new Uint8Array(r.bytes)],{type:'application/octet-stream'});
+  const a=document.createElement('a');a.href=URL.createObjectURL(blob);
+  a.download=`EDID_${Math.round(w)}x${Math.round(h)}_${String(hz).replace('.','-')}Hz_${conn==='dp'?'DP':'HDMI'}.bin`;
+  document.body.appendChild(a);a.click();a.remove();setTimeout(()=>URL.revokeObjectURL(a.href),4000);
+  toast(r.notes.length?`EDID saved · ${r.notes[0]}`:'EDID saved');
 }
 function aquilonCap(mhz){
   if(!Number.isFinite(mhz))return '';
@@ -1215,7 +1309,7 @@ const fclk=m=>Number.isFinite(m)?(m>=1000?unit(fx(m/1000,3),'GHz'):unit(fx(m,2),
 function calcScaling(){
   const H=Math.round(num('sc-h')), V=Math.round(num('sc-v')), mode=$('sc-mode').value, filt=$('sc-filter').value;
   const LIM=3840*2160;
-  if(H<=0||V<=0){$('sc-clk').textContent='—';$('sc-cap').innerHTML='';$('sc-table').innerHTML='<tr><td colspan="6">Enter a horizontal and vertical resolution.</td></tr>';$('sc-count').textContent='';return}
+  if(H<=0||V<=0){$('sc-clk').textContent='—';$('sc-cap').innerHTML='';$('sc-table').innerHTML='<tr><td colspan="7">Enter a horizontal and vertical resolution.</td></tr>';$('sc-count').textContent='';return}
   const ar=H/V;
   $('sc-ar').innerHTML=unit(fx(ar,4),':1');
   $('sc-px').textContent=fa(H*V,0);
@@ -1234,9 +1328,15 @@ function calcScaling(){
   /* 4 extra rows below half size, same 8-pixel stepping and filter */
   for(let x=start-8,extra=0;x>=8&&extra<4;x-=8){const r=mode==='v'?[x*ar,x]:[x,x/ar];rows.push(r);if(keep(r)){shown.push(r);extra++}}
   $('sc-count').textContent=`${shown.length} of ${rows.length} steps`;
+  const conn=$('sc-conn').value;
+  const edidBtn=(h,v)=>{const r=buildEdid(h,v,hz,timing,conn);
+    return r.err?`<button class="btn mini-btn" type="button" disabled title="${esc(r.err)}">Export</button>`
+      :`<button class="btn mini-btn" type="button" data-edid="${Math.round(h)}x${Math.round(v)}" title="${esc(r.notes.join('. ')||'Download EDID (.bin)')}">Export${r.notes.length?' *':''}</button>`};
   const cell=x=>`<td class="num${m8(x)?' m8':''}">${whole(x)?fa(Math.round(x),0):fx(x,2)}</td>`;
-  $('sc-table').innerHTML=shown.length?shown.map(([h,v])=>{const p=h*v, clk=pixelClock(h,v,hz,timing);return `<tr>${cell(h)}${cell(v)}<td class="num">${fa(Math.round(p),0)}</td><td class="num">${fclk(clk)}</td><td>${aquilonCap(clk)}</td><td>${p>LIM?'<span class="pill warn">Over 4K</span>':''}</td></tr>`}).join(''):'<tr><td colspan="6">No exact matches at this aspect ratio. Try “Every step”.</td></tr>';
+  $('sc-table').innerHTML=shown.length?shown.map(([h,v])=>{const p=h*v, clk=pixelClock(h,v,hz,timing);return `<tr>${cell(h)}${cell(v)}<td class="num">${fa(Math.round(p),0)}</td><td class="num">${fclk(clk)}</td><td>${aquilonCap(clk)}</td><td>${p>LIM?'<span class="pill warn">Over 4K</span>':''}</td><td>${edidBtn(h,v)}</td></tr>`}).join(''):'<tr><td colspan="7">No exact matches at this aspect ratio. Try “Every step”.</td></tr>';
 }
+
+$('sc-table').addEventListener('click',e=>{const b=e.target.closest('button[data-edid]');if(!b)return;const [w,h]=b.dataset.edid.split('x').map(Number);exportEdid(w,h)});
 
 /* ---------------- power print sheet ---------------- */
 function buildPowerSheet(){
