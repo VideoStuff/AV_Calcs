@@ -290,7 +290,7 @@ details.fold>summary:hover{border-color:var(--muted)}
   <div class="wrap">
     <div class="top-in">
       <div class="bars" aria-hidden="true"><i></i><i></i><i></i><i></i><i></i><i></i><i></i></div>
-      <div><h1>AV Show Calculators</h1><p id="app-ver">v2.0 · Nov 13, 2026</p></div>
+      <div><h1>AV Show Calculators</h1><p id="app-ver">v2.1 · Nov 15, 2026</p></div>
       <div class="top-act">
         <button class="btn" id="show-btn" type="button">Shows</button>
         <button class="btn icon-btn" id="theme-btn" type="button" aria-pressed="false"><span aria-hidden="true" id="theme-ico">☾</span> <span id="theme-lbl">Dark</span></button>
@@ -615,7 +615,7 @@ details.fold>summary:hover{border-color:var(--muted)}
         <div class="ro"><span class="lbl">Pixel clock</span><span class="val" id="sc-clk">—</span><span class="sub" id="sc-cap"></span></div>
       </div>
       <p class="note">Green values are multiples of 8. Rows over a 4K pixel count (3840 × 2160 = 8,294,400) are flagged.</p>
-      <p class="note">Export EDID downloads a .bin for that row at the chosen refresh rate and connector, using CVT reduced-blanking timing (v2 if selected). HDMI files include audio and support up to 600 MHz (HDMI 2.0) and 4,095 pixels per side. DisplayPort files go up to about 1,080 MHz (DP 1.4); wider than 4,095 pixels or over 655 MHz uses a DisplayID block. Buttons marked * carry a note: hover or tap for details. Greyed-out buttons can't be made for that connector.</p>
+      <p class="note">Export EDID downloads a .bin for that row at the chosen refresh rate and connector, using CVT reduced-blanking timing (v2 if selected). HDMI files include audio. HDMI is limited by pixel clock only: up to 600 MHz for HDMI 2.0, and up to about 1,700 MHz (HDMI 2.1, uncompressed 8-bit) above that. DisplayPort files go up to about 1,080 MHz (DP 1.4). On both, sizes wider than 4,095 pixels or over 655 MHz are stored in a DisplayID block. Buttons marked * carry a note: hover or tap for details. Greyed-out buttons can't be made for that connector.</p>
       <p class="note">Pixel clock = total pixels per line × total lines × refresh rate, including blanking for the chosen timing. Aquilon capacity: up to 300 MHz is Capacity 1, over 300 to 600 MHz is Capacity 2, over 600 MHz to 1 GHz is Capacity 4. Over 1 GHz isn't supported.</p>
     </div>
     <div class="panel">
@@ -727,7 +727,7 @@ const clone=o=>JSON.parse(JSON.stringify(o));
 /* ---------------- shows, share links ---------------- */
 /* keys that are per-device preferences or bookkeeping, not part of a show */
 const NOT_SHOW=['theme','tab','shows','show'];
-const APP_VERSION='2.0';
+const APP_VERSION='2.1';
 function snapshot(){const o={};try{Object.keys(localStorage).forEach(k=>{if(!k.startsWith('avcalc:'))return;const n=k.slice(7);if(NOT_SHOW.includes(n))return;try{o[n]=JSON.parse(localStorage.getItem(k))}catch(e){}})}catch(e){}return o}
 function clearShowState(){try{Object.keys(localStorage).filter(k=>k.startsWith('avcalc:')&&!NOT_SHOW.includes(k.slice(7))).forEach(k=>localStorage.removeItem(k))}catch(e){}}
 function writeState(o){for(const k in o)if(!NOT_SHOW.includes(k))store.set(k,o[k])}
@@ -1248,14 +1248,16 @@ function baseBlock(conn,pref,ranges,name,exts){
   [dtd(pref),rd,textDesc(0xFC,name),[0,0,0,0x10,0,0,0,0,0,0,0,0,0,0,0,0,0,0]].forEach((d,k)=>d.forEach((x,i)=>b[54+k*18+i]=x));
   b[126]=exts;return finish(b);
 }
-function ctaBlock(t){
+function ctaBlock(t,big){
   const blocks=[[0x23,0x09,0x07,0x07],[0x83,0x01,0x00,0x00],[0xE2,0x00,0x4A],[0x67,0x03,0x0C,0x00,0x10,0x00,0x00,0x44]];
-  if(t.pclk>340)blocks.push([0x67,0xD8,0x5D,0xC4,0x01,0x78,0x80,0x00]); /* HDMI Forum VSDB: 600 MHz TMDS, SCDC */
+  if(t.pclk>340&&t.pclk<=600)blocks.push([0x67,0xD8,0x5D,0xC4,0x01,0x78,0x80,0x00]); /* HDMI Forum VSDB: 600 MHz TMDS, SCDC */
+  if(t.pclk>600)blocks.push([0xE0|8,0x79,0x00,0x00,0x01,0x78,0x80,0x60,0x00]); /* HF-SCDB: HDMI 2.1, FRL up to 48 Gbps (6 on 4 lanes) */
   const data=blocks.flat(), b=new Array(128).fill(0);
-  b[0]=2;b[1]=3;b[2]=4+data.length;b[3]=0x80|0x40|1; /* underscan, basic audio, 1 native DTD */data.forEach((x,i)=>b[4+i]=x);
+  b[0]=2;b[1]=3;b[2]=4+data.length;b[3]=0x80|0x40|(big?0:1); /* underscan, basic audio, 1 native DTD (none when the real format is in DisplayID) */data.forEach((x,i)=>b[4+i]=x);
   return finish(b);
 }
-function displayIdBlock(t){
+function blockMap(tags){const b=new Array(128).fill(0);b[0]=0xF0;tags.forEach((x,i)=>b[1+i]=x);return finish(b)}
+function displayIdBlock(t,conn){
   const ar=t.w/t.h, near=(a,b)=>Math.abs(a-b)<0.005;
   const asp=near(ar,1)?0:near(ar,5/4)?1:near(ar,4/3)?2:near(ar,15/9)?3:near(ar,16/9)?4:near(ar,16/10)?5:near(ar,64/27)?6:near(ar,256/135)?7:8;
   const le2=v=>[v&255,(v>>8)&255], pc=Math.round(t.pclk*100)-1;
@@ -1264,7 +1266,7 @@ function displayIdBlock(t){
   const yr=new Date().getFullYear()-2000;
   const prod=[0x00,0x00,12,0x41,0x56,0x53,1,0,0,0,0,0,0,yr,0]; /* product ID block: "AVS", code 1, no serial */
   const params=[0x01,0x00,12,0,0,0,0,...le2(t.w),...le2(t.h),0x00,0x78,Math.min(255,Math.round(ar*100-100)),0x77]; /* gamma 2.2, 8 bpc */
-  const iface=[0x0F,0x00,10,(10<<4)|4,0x12,0x02,0,0,0,0,0,0,0]; /* DisplayPort 1.2, 4 lanes, RGB 8 bpc */
+  const iface=[0x0F,0x00,10,conn==='hdmi'?(7<<4)|1:(10<<4)|4,0x12,0x02,0,0,0,0,0,0,0]; /* HDMI-A, or DisplayPort 1.2 with 4 lanes; RGB 8 bpc */
   const data=[...prod,0x03,0x00,tim.length,...tim,...params,...iface], b=new Array(128).fill(0);
   b[0]=0x70;b[1]=0x12;b[2]=data.length;b[3]=0x03;b[4]=0; /* product type: standalone display */data.forEach((x,i)=>b[5+i]=x);
   let s=0;for(let i=1;i<5+data.length;i++)s+=b[i];b[5+data.length]=(256-s%256)%256;
@@ -1277,16 +1279,18 @@ function buildEdid(w,h,hz,timing,conn){
   const notes=[], name=`${t.w}x${t.h}p${Math.round(hz)}`;
   if(timing==='active')notes.push('Uses CVT reduced blanking (an EDID needs blanking)');
   if(conn==='hdmi'){
-    if(t.pclk>600)return {err:`${fx(t.pclk,2)} MHz is over HDMI 2.0's 600 MHz. Use DisplayPort or a lower refresh rate.`};
-    if(!fitsDTD(t))return {err:'HDMI EDIDs can only describe up to 4,095 pixels per side. Use DisplayPort.'};
-    if(t.pclk>340)notes.push('Needs an HDMI 2.0 source (over 340 MHz)');
-    return {bytes:[...baseBlock('hdmi',t,[t],name,1),...ctaBlock(t)],notes,t};
+    if(t.pclk>1700)return {err:`${fx(t.pclk,2)} MHz is over what HDMI 2.1 can carry uncompressed (about 1,700 MHz at 8-bit RGB). Use a lower refresh rate or DisplayPort.`};
+    if(t.pclk>600)notes.push('Needs an HDMI 2.1 source (FRL, over HDMI 2.0’s 600 MHz)');
+    else if(t.pclk>340)notes.push('Needs an HDMI 2.0 source (over 340 MHz)');
+    if(fitsDTD(t))return {bytes:[...baseBlock('hdmi',t,[t],name,1),...ctaBlock(t)],notes,t};
+    notes.push('Format is in a DisplayID block (over 4,095 px). The base block lists 1920×1080 as a fallback for sources that only read standard EDID.');
+    return {bytes:[...baseBlock('hdmi',CTA_1080P60,[t,CTA_1080P60],name,3),...blockMap([0x02,0x70]),...ctaBlock(t,true),...displayIdBlock(t,'hdmi')],notes,t};
   }
   if(t.pclk>1080)return {err:`${fx(t.pclk,2)} MHz is over DisplayPort 1.4's limit (about 1,080 MHz at 8-bit RGB).`};
   if(t.pclk>720)notes.push('Needs DisplayPort 1.4 (HBR3); over DP 1.2’s 720 MHz');
   if(fitsDTD(t))return {bytes:baseBlock('dp',t,[t],name,0),notes,t};
   notes.push('Format is in a DisplayID block (over 4,095 px or 655 MHz). The base block lists 1920×1080 as a fallback for sources that only read standard EDID.');
-  return {bytes:[...baseBlock('dp',CTA_1080P60,[t,CTA_1080P60],name,1),...displayIdBlock(t)],notes,t};
+  return {bytes:[...baseBlock('dp',CTA_1080P60,[t,CTA_1080P60],name,1),...displayIdBlock(t,'dp')],notes,t};
 }
 function exportEdid(w,h){
   const hz=parseFloat($('sc-hz').value)||60, timing=$('sc-timing').value, conn=$('sc-conn').value;
