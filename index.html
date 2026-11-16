@@ -57,6 +57,11 @@ body::before{content:"";position:fixed;inset:0 0 auto;height:env(safe-area-inset
 h1{font-family:var(--f-display);font-weight:700;font-size:1.35rem;letter-spacing:.01em;margin:0;line-height:1.1}
 .btn.mini-btn{padding:3px 9px;font-size:.8rem}
 .btn.mini-btn:disabled{opacity:.4;cursor:not-allowed}
+.svc-bar{display:flex;gap:8px;align-items:center;flex-wrap:wrap;margin-bottom:10px}
+.svc-bar .btn{padding:6px 12px;font-size:.88rem}
+.svc-edit{display:flex;gap:8px;align-items:flex-end;flex-wrap:wrap;margin-bottom:14px}
+.svc-edit .field{flex:1;min-width:180px;max-width:320px}
+.svc-edit .btn{padding:8px 12px}
 .view-tools{display:flex;gap:8px;flex-wrap:wrap;margin-top:10px}
 .view-tools .btn{padding:6px 12px;font-size:.88rem}
 .toast{position:fixed;left:50%;bottom:calc(18px + env(safe-area-inset-bottom,0px));transform:translate(-50%,20px);opacity:0;pointer-events:none;z-index:50;background:var(--ink);color:var(--bg);padding:9px 16px;border-radius:999px;font-family:var(--f-display);font-weight:600;letter-spacing:.03em;transition:opacity .2s,transform .2s;max-width:calc(100vw - 32px);text-align:center}
@@ -290,7 +295,7 @@ details.fold>summary:hover{border-color:var(--muted)}
   <div class="wrap">
     <div class="top-in">
       <div class="bars" aria-hidden="true"><i></i><i></i><i></i><i></i><i></i><i></i><i></i></div>
-      <div><h1>AV Show Calculators</h1><p id="app-ver">v2.3 · Nov 16, 2026</p></div>
+      <div><h1>AV Show Calculators</h1><p id="app-ver">v2.4 · Nov 16, 2026</p></div>
       <div class="top-act">
         <button class="btn" id="show-btn" type="button">Shows</button>
         <button class="btn icon-btn" id="theme-btn" type="button" aria-pressed="false"><span aria-hidden="true" id="theme-ico">☾</span> <span id="theme-lbl">Dark</span></button>
@@ -358,10 +363,19 @@ details.fold>summary:hover{border-color:var(--muted)}
           <button data-d="video" aria-pressed="true">Video</button><button data-d="audio" aria-pressed="false">Audio</button><button data-d="lighting" aria-pressed="false">Lighting</button>
         </div>
       </div>
+      <div class="svc-bar">
+        <div class="seg" id="pw-svcs" role="group" aria-label="Power service"></div>
+        <button class="btn" type="button" id="pw-svc-add">+ Add service</button>
+      </div>
+      <div class="svc-edit">
+        <label class="field"><span>Service name</span><input id="pw-svc-name" type="text" maxlength="40" autocomplete="off"></label>
+        <button class="btn danger" type="button" id="pw-svc-del">Delete service</button>
+      </div>
       <div class="readouts" style="margin-bottom:16px">
         <div class="ro hero"><span class="lbl" id="pw-dname">Video · service rating per phase</span><span class="val" id="pw-svc20">—</span><span class="sub">Busiest leg ÷ 0.8 (load at 80% of rating, NEC continuous)</span></div>
         <div class="ro wide"><span class="lbl">Load per leg</span><span class="sub" style="font-size:.92rem">A <b id="pw-la" style="font-family:var(--f-mono)">—</b> · B <b id="pw-lb" style="font-family:var(--f-mono)">—</b> · C <b id="pw-lc" style="font-family:var(--f-mono)">—</b></span>
           <span class="sub" style="font-size:.92rem">Perfectly balanced <b id="pw-svc" style="font-family:var(--f-mono)">—</b> per phase · total <b id="pw-wall" style="font-family:var(--f-mono)">—</b></span></div>
+        <div class="ro wide" id="pw-all-ro" hidden><span class="lbl">All services in this department</span><span class="sub" id="pw-all" style="font-size:.92rem"></span></div>
       </div>
 
       <h3>208V loads</h3>
@@ -376,7 +390,7 @@ details.fold>summary:hover{border-color:var(--muted)}
       <div id="pw-r120"></div>
       <p class="note" id="pw-e120" style="margin:0">No 120V items yet.</p>
       <div class="subtot"><span>Total watts<b id="pw-w120">0</b></span><span>Amps per phase<b id="pw-a120">0</b></span></div>
-      <div class="btn-row"><button class="btn" id="pw-add120">+ Add 120V item</button><button class="btn danger" id="pw-reset">Clear all</button></div>
+      <div class="btn-row"><button class="btn" id="pw-add120">+ Add 120V item</button><button class="btn danger" id="pw-reset">Clear this service</button></div>
       <p class="note">Typing a model from the device list fills in its wattage. Power factor of 1 is the default. Device wattages are maximum ratings.</p>
       <p class="note">Leg loads assume each item is plugged in to keep the legs as even as possible: 120V items go on one leg (A, B or C), 208V items across a pair (A–B, B–C or C–A). A few large items can't be split evenly, so the busiest leg can be well above the balanced figure. Spread gear the same way on site, or the busiest leg will be higher still.</p>
 
@@ -727,7 +741,7 @@ const clone=o=>JSON.parse(JSON.stringify(o));
 /* ---------------- shows, share links ---------------- */
 /* keys that are per-device preferences or bookkeeping, not part of a show */
 const NOT_SHOW=['theme','tab','shows','show'];
-const APP_VERSION='2.3';
+const APP_VERSION='2.4';
 function snapshot(){const o={};try{Object.keys(localStorage).forEach(k=>{if(!k.startsWith('avcalc:'))return;const n=k.slice(7);if(NOT_SHOW.includes(n))return;try{o[n]=JSON.parse(localStorage.getItem(k))}catch(e){}})}catch(e){}return o}
 function clearShowState(){try{Object.keys(localStorage).filter(k=>k.startsWith('avcalc:')&&!NOT_SHOW.includes(k.slice(7))).forEach(k=>localStorage.removeItem(k))}catch(e){}}
 function writeState(o){for(const k in o)if(!NOT_SHOW.includes(k))store.set(k,o[k])}
@@ -846,14 +860,31 @@ const OLD_POWER={
 };
 const rowSig=rows=>JSON.stringify((rows||[]).map(r=>[r.n,+r.q,+r.w,+r.pf]));
 const DEPTS={video:'Video',audio:'Audio',lighting:'Lighting'};
-let power=store.get('power',null)||clone(POWER_DEFAULT);
-for(const d in DEPTS){if(!power[d])power[d]=clone(POWER_DEFAULT[d]);
-  for(const k of ['r208','r120']){if(!Array.isArray(power[d][k])||rowSig(power[d][k])===rowSig(OLD_POWER[d][k]))power[d][k]=[]}}
+/* each department holds one or more power services: power[d] = {sv:[{n, r208, r120}, ...]} */
+const MAX_SVC=8;
+const mkSvc=n=>({n,r208:[],r120:[]});
+function normPower(pw){
+  pw=(pw&&typeof pw==='object')?pw:{};
+  for(const d in DEPTS){
+    let x=pw[d];
+    if(!x||typeof x!=='object')x={sv:[mkSvc('Service 1')]};
+    else if(!Array.isArray(x.sv))x={sv:[{n:'Service 1',r208:x.r208,r120:x.r120}]}; /* older single-service format */
+    x.sv=x.sv.filter(v=>v&&typeof v==='object').slice(0,MAX_SVC).map((v,i)=>({n:String(v.n||('Service '+(i+1))).slice(0,40),r208:Array.isArray(v.r208)?v.r208:[],r120:Array.isArray(v.r120)?v.r120:[]}));
+    if(!x.sv.length)x.sv=[mkSvc('Service 1')];
+    if(x.sv.length===1)for(const k of ['r208','r120'])if(rowSig(x.sv[0][k])===rowSig(OLD_POWER[d][k]))x.sv[0][k]=[];
+    pw[d]=x;
+  }
+  return pw;
+}
+let power=normPower(store.get('power',null));
 let dept=store.get('dept','video');if(!DEPTS[dept])dept='video';
+let svcI=store.get('svc',{});if(!svcI||typeof svcI!=='object')svcI={};
+const svcIdx=(d=dept)=>{const i=svcI[d]|0;return i>=0&&i<power[d].sv.length?i:0};
+const curSvc=(d=dept)=>power[d].sv[svcIdx(d)];
 const savePower=()=>store.set('power',power);
+const saveSvcI=()=>store.set('svc',svcI);
 const rowAmps=(r,volts)=>{const w=(+r.q||0)*(+r.w||0);const pf=+r.pf||0;return pf?w/(volts*pf):0};
-function deptTotals(d){
-  const p=power[d];
+function deptTotals(p){
   const w208=p.r208.reduce((s,r)=>s+(+r.q||0)*(+r.w||0),0), w120=p.r120.reduce((s,r)=>s+(+r.q||0)*(+r.w||0),0);
   const a208=p.r208.reduce((s,r)=>s+rowAmps(r,208),0)/1.732, a120=p.r120.reduce((s,r)=>s+rowAmps(r,120),0)/3;
   return {w208,w120,a208,a120,svc:a208+a120};
@@ -861,8 +892,8 @@ function deptTotals(d){
 /* place each unit on a leg (120V) or leg pair (208V) to keep the busiest leg as low as possible.
    Leg current = its 120V current + the two pair currents at ±30° (delta line current), treated as in phase. */
 const COS30=Math.sqrt(3)/2;
-function legLoads(d){
-  const p=power[d], ln=[0,0,0], pr=[0,0,0]; /* pr: 0=AB 1=BC 2=CA */
+function legLoads(p){
+  const ln=[0,0,0], pr=[0,0,0]; /* pr: 0=AB 1=BC 2=CA */
   const place=new Map(); /* row -> how many units on each leg (120V) or leg pair (208V) */
   const legsOf=()=>[0,1,2].map(L=>{const p1=pr[L], p2=pr[(L+2)%3];return Math.hypot(ln[L]+(p1+p2)*COS30,(p1-p2)/2)});
   const units=[];
@@ -896,32 +927,50 @@ function rowEl(k,r,i){
     else r[f]=parseFloat(e.target.value)||0;
     calcPower();savePower();
   });
-  el.querySelector('.del').addEventListener('click',()=>{power[dept][k].splice(i,1);renderPower();savePower()});
+  el.querySelector('.del').addEventListener('click',()=>{curSvc()[k].splice(i,1);renderPower();savePower()});
   el._r=r;el._v=k==='r208'?208:120;return el;
+}
+function renderSvcBar(){
+  const sv=power[dept].sv, cur=svcIdx();
+  $('pw-svcs').innerHTML=sv.map((v,i)=>`<button type="button" data-s="${i}" aria-pressed="${i===cur}">${esc(v.n)}</button>`).join('');
+  $('pw-svc-name').value=sv[cur].n;
+  $('pw-svc-add').hidden=sv.length>=MAX_SVC;
+  $('pw-svc-del').hidden=sv.length<2;
 }
 function renderPower(){
   document.querySelectorAll('#pw-dept button').forEach(b=>b.setAttribute('aria-pressed',b.dataset.d===dept));
-  ['r208','r120'].forEach(k=>{const box=$('pw-'+k);box.innerHTML='';power[dept][k].forEach((r,i)=>box.appendChild(rowEl(k,r,i)));
-    const empty=power[dept][k].length===0;box.previousElementSibling.hidden=empty;$('pw-e'+k.slice(1)).hidden=!empty});
-  $('pw-reset').hidden=!power[dept].r208.length&&!power[dept].r120.length;
+  const sv=curSvc();
+  renderSvcBar();
+  ['r208','r120'].forEach(k=>{const box=$('pw-'+k);box.innerHTML='';sv[k].forEach((r,i)=>box.appendChild(rowEl(k,r,i)));
+    const empty=sv[k].length===0;box.previousElementSibling.hidden=empty;$('pw-e'+k.slice(1)).hidden=!empty});
+  $('pw-reset').hidden=!sv.r208.length&&!sv.r120.length;
   calcPower();
 }
 function calcPower(){
   ['r208','r120'].forEach(k=>{[...$('pw-'+k).children].forEach(el=>{el.querySelector('.amps').textContent=fx(rowAmps(el._r,el._v),2)})});
-  const t=deptTotals(dept);
+  const sv=curSvc(), t=deptTotals(sv);
   $('pw-w208').textContent=fa(t.w208,1)+' W';$('pw-a208').textContent=fx(t.a208,2)+' A';
   $('pw-w120').textContent=fa(t.w120,1)+' W';$('pw-a120').textContent=fx(t.a120,2)+' A';
-  $('pw-dname').textContent=DEPTS[dept]+' · service rating per phase';
-  const legs=legLoads(dept), worst=Math.max(...legs);
+  const many=power[dept].sv.length>1;
+  $('pw-dname').textContent=DEPTS[dept]+(many?' · '+sv.n:'')+' · service rating per phase';
+  const legs=legLoads(sv), worst=Math.max(...legs);
+  $('pw-all-ro').hidden=!many;
+  if(many)$('pw-all').innerHTML=power[dept].sv.map(v=>{const l=legLoads(v), tt=deptTotals(v);return `<span style="display:block">${esc(v.n)}: <b style="font-family:var(--f-mono)">${fx(Math.max(...l)/0.8,2)} A</b> per phase · ${fa(tt.w208+tt.w120,0)} W</span>`}).join('');
   ['r208','r120'].forEach(k=>{[...$('pw-'+k).children].forEach(el=>{const o=el.querySelector('.legs');o.textContent=placeText(k,legs.place.get(el._r));o.title=o.textContent})});
   ['la','lb','lc'].forEach((id,j)=>{$('pw-'+id).textContent=fx(legs[j],2)+' A'});
   $('pw-svc20').innerHTML=unit(fx(worst/0.8,2),'A');
   $('pw-svc').textContent=fx(t.svc,2)+' A';
   $('pw-wall').textContent=fa(t.w208+t.w120,1)+' W';
 }
-$('pw-dept').addEventListener('click',e=>{const b=e.target.closest('button[data-d]');if(!b)return;dept=b.dataset.d;store.set('dept',dept);renderPower()});$('pw-add208').addEventListener('click',()=>{power[dept].r208.push(R('','',''));renderPower();savePower();const ins=$('pw-r208').querySelectorAll('input[data-f="n"]');ins[ins.length-1].focus()});
-$('pw-add120').addEventListener('click',()=>{power[dept].r120.push(R('','',''));renderPower();savePower();const ins=$('pw-r120').querySelectorAll('input[data-f="n"]');ins[ins.length-1].focus()});
-twoTap($('pw-reset'),()=>{power[dept]={r208:[],r120:[]};renderPower();savePower()});
+$('pw-dept').addEventListener('click',e=>{const b=e.target.closest('button[data-d]');if(!b)return;dept=b.dataset.d;store.set('dept',dept);renderPower()});
+$('pw-svcs').addEventListener('click',e=>{const b=e.target.closest('button[data-s]');if(!b)return;svcI[dept]=+b.dataset.s;saveSvcI();renderPower()});
+$('pw-svc-name').addEventListener('input',e=>{const sv=curSvc();sv.n=e.target.value.slice(0,40)||'Service';savePower();
+  const b=$('pw-svcs').querySelector(`button[data-s="${svcIdx()}"]`);if(b)b.textContent=sv.n;calcPower()});
+$('pw-svc-add').addEventListener('click',()=>{const a=power[dept].sv;if(a.length>=MAX_SVC)return;let n=a.length+1;while(a.some(v=>v.n==='Service '+n))n++;
+  a.push(mkSvc('Service '+n));svcI[dept]=a.length-1;saveSvcI();savePower();renderPower();$('pw-svc-name').focus();$('pw-svc-name').select()});
+twoTap($('pw-svc-del'),()=>{const a=power[dept].sv;if(a.length<2)return;a.splice(svcIdx(),1);svcI[dept]=Math.min(svcIdx(),a.length-1);saveSvcI();savePower();renderPower()});$('pw-add208').addEventListener('click',()=>{curSvc().r208.push(R('','',''));renderPower();savePower();const ins=$('pw-r208').querySelectorAll('input[data-f="n"]');ins[ins.length-1].focus()});
+$('pw-add120').addEventListener('click',()=>{curSvc().r120.push(R('','',''));renderPower();savePower();const ins=$('pw-r120').querySelectorAll('input[data-f="n"]');ins[ins.length-1].focus()});
+twoTap($('pw-reset'),()=>{const sv=curSvc();sv.r208=[];sv.r120=[];renderPower();savePower()});
 
 /* ---------------- PROJECTOR ---------------- */
 const LENSES={
@@ -1344,12 +1393,12 @@ $('sc-table').addEventListener('click',e=>{const b=e.target.closest('button[data
 /* ---------------- power print sheet ---------------- */
 function buildPowerSheet(){
   const show=store.get('show',''), date=new Date().toLocaleDateString(undefined,{year:'numeric',month:'short',day:'numeric'});
-  const pages=Object.keys(DEPTS).filter(d=>power[d].r208.length||power[d].r120.length);
+  const pages=Object.keys(DEPTS).flatMap(d=>power[d].sv.filter(v=>v.r208.length||v.r120.length).map(v=>[d,v]));
   if(!pages.length)return false;
-  $('print-sheet').innerHTML=pages.map(d=>{
-    const t=deptTotals(d), legs=legLoads(d), worst=Math.max(...legs);
-    const rows=['r208','r120'].flatMap(k=>power[d][k].map(r=>`<tr><td>${esc(r.n||'—')}</td><td>${k==='r208'?'208V':'120V'}</td><td class="n">${fa(+r.q||0,2)}</td><td class="n">${fa(+r.w||0,1)}</td><td class="n">${fx(+r.pf||0,2)}</td><td class="n">${fa((+r.q||0)*(+r.w||0),1)}</td><td class="n">${fx(rowAmps(r,k==='r208'?208:120),2)}</td><td>${placeText(k,legs.place.get(r))}</td></tr>`)).join('');
-    return `<section class="pg"><h1>${esc(show||'AV Show')} · ${DEPTS[d]} power</h1><p class="meta">${date} · 208V three-phase service</p>
+  $('print-sheet').innerHTML=pages.map(([d,sv])=>{
+    const t=deptTotals(sv), legs=legLoads(sv), worst=Math.max(...legs);
+    const rows=['r208','r120'].flatMap(k=>sv[k].map(r=>`<tr><td>${esc(r.n||'—')}</td><td>${k==='r208'?'208V':'120V'}</td><td class="n">${fa(+r.q||0,2)}</td><td class="n">${fa(+r.w||0,1)}</td><td class="n">${fx(+r.pf||0,2)}</td><td class="n">${fa((+r.q||0)*(+r.w||0),1)}</td><td class="n">${fx(rowAmps(r,k==='r208'?208:120),2)}</td><td>${placeText(k,legs.place.get(r))}</td></tr>`)).join('');
+    return `<section class="pg"><h1>${esc(show||'AV Show')} · ${DEPTS[d]} power${power[d].sv.length>1?' · '+esc(sv.n):''}</h1><p class="meta">${date} · 208V three-phase service</p>
 <table><thead><tr><th>Item</th><th>Volts</th><th class="n">Qty</th><th class="n">W each</th><th class="n">PF</th><th class="n">Total W</th><th class="n">Amps</th><th>Plug on</th></tr></thead><tbody>${rows}</tbody></table>
 <div class="sum"><div>Service rating per phase<b>${fx(worst/0.8,2)} A</b></div><div>Leg A<b>${fx(legs[0],2)} A</b></div><div>Leg B<b>${fx(legs[1],2)} A</b></div><div>Leg C<b>${fx(legs[2],2)} A</b></div><div>Total load<b>${fa(t.w208+t.w120,0)} W</b></div></div>
 <p class="fine">Amps column is the item's full draw. Plug on: 120V items by leg, 208V items by leg pair, placed to keep legs even. Rating is the busiest leg ÷ 0.8 (load at 80% of rating, NEC continuous). Wattages are maximum ratings.</p></section>`}).join('');
@@ -1378,13 +1427,15 @@ function tabText(v){
   L.push(view.querySelector('h2').textContent+(store.get('show','')?' — '+store.get('show',''):''));
   if(v==='power'){
     L.push(DEPTS[dept]+' department');
-    ['r208','r120'].forEach(k=>{const legs=legLoads(dept);power[dept][k].forEach(r=>L.push(`• ${r.n||'Item'} ×${fa(+r.q||0,2)} @ ${fa(+r.w||0,1)} W (${k==='r208'?'208V':'120V'}) → ${fx(rowAmps(r,k==='r208'?208:120),2)} A · ${placeText(k,legs.place.get(r))}`))});
+    power[dept].sv.forEach(sv=>{const legs=legLoads(sv);
+      if(power[dept].sv.length>1)L.push('','Service: '+sv.n+' — '+fx(Math.max(...legs)/0.8,2)+' A per phase');
+      ['r208','r120'].forEach(k=>sv[k].forEach(r=>L.push(`• ${r.n||'Item'} ×${fa(+r.q||0,2)} @ ${fa(+r.w||0,1)} W (${k==='r208'?'208V':'120V'}) → ${fx(rowAmps(r,k==='r208'?208:120),2)} A · ${placeText(k,legs.place.get(r))}`)))});
   }else{
     view.querySelectorAll('label.field').forEach(f=>{const c=f.querySelector('input,select');if(!c||!visible(c))return;const lbl=(f.querySelector('span')||{}).textContent||'';L.push(`${lbl.trim()}: ${fieldText(c)}`)});
   }
   if(v==='pixels')view.querySelectorAll('.surf').forEach(el=>{const r=el._r;if(!r)return;L.push(`• ${r.n||'Surface'} ${fa(r.h,2)} × ${fa(r.v,2)} ${pu}${r.skip?' (skipped)':''} → ${el.querySelector('.surf-out').textContent.replace(/\s+/g,' ').trim()}`)});
   L.push('');
-  view.querySelectorAll('.ro').forEach(ro=>{if(!visible(ro))return;const l=ro.querySelector('.lbl'), val=ro.querySelector('.val'), sub=ro.querySelector('.sub');
+  view.querySelectorAll('.ro').forEach(ro=>{if(!visible(ro)||ro.id==='pw-all-ro')return;const l=ro.querySelector('.lbl'), val=ro.querySelector('.val'), sub=ro.querySelector('.sub');
     if(!l)return;const t=[val&&val.textContent.trim().replace(/(\d)([A-Za-z])/g,'$1 $2'),sub&&sub.textContent.replace(/\s+/g,' ').trim()].filter(Boolean).join(' · ');
     if(t&&t!=='—')L.push(`${l.textContent.trim()}: ${t}`)});
   return L.join('\n').replace(/\n{3,}/g,'\n\n').trim();
