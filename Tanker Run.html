@@ -54,7 +54,7 @@
     <h1>🛢️ TANKER RUN</h1>
     <div class="sub">STRAIT OF HORMUZ</div>
     <p class="small">You're a big, slow oil tanker trying to sail through the Strait of Hormuz — and Iranian and US ships and planes are firing missiles and bullets at you from every side!<br>Your point-defense guns are weak, but they can <b>shoot incoming missiles and bullets out of the air</b>. Scoop up <span class="shard">Barrels</span> of crude from the wreckage. When you're sunk, spend them at the shipyard on a tougher tanker, then sail again to get further. Each leg adds new dangers: <b>rammer boats, bombers, shield ships, EMP jammers, submarines and landing ships</b>.<br><b>Beware the A-10 Warthogs:</b> their cannon rounds can't be shot down — dodge the red line or hide behind an island!</p>
-    <p class="small"><b>Steer:</b> drag with finger/mouse (1:1) or WASD / arrows — islands and oil rigs are solid, ramming one wrecks your hull and you must back off &nbsp; <b>Guns:</b> auto-aim at the nearest missile, bullet or ship inside your dotted range ring (short range!) — tap / click / Space repeatedly to shoot faster &nbsp; <b>Turbo:</b> TURBO button / Shift &nbsp; <b>Perks:</b> pick 1 of 3 after every leg &nbsp; <b>Checkpoints:</b> every 15 legs you reach a new stretch of sea — enemies get 2× tougher, and you can restart from there after you sink &nbsp; <b>Abilities:</b> unlock Smoke / Salvo / Repair at the shipyard or as perks, then use the round buttons (or keys 1-3) &nbsp; <b>Combos:</b> chain kills for bonus barrels &nbsp; <b>Power-ups:</b> grab floating orbs (S/P/R/L) for timed ammo upgrades</p>
+    <p class="small"><b>Steer:</b> drag with finger/mouse (1:1) or WASD / arrows — islands and oil rigs are solid, ramming one wrecks your hull and you must back off &nbsp; <b>Guns:</b> auto-aim at the nearest missile, bullet or ship inside your dotted range ring (short range!) — tap / click / Space repeatedly to shoot faster &nbsp; <b>Perks:</b> pick 1 of 3 after every leg &nbsp; <b>Checkpoints:</b> every 15 legs you reach a new stretch of sea — enemies get 2× tougher, and you can restart from there after you sink &nbsp; <b>Abilities:</b> unlock Smoke / Salvo / Repair at the shipyard or as perks, then use the round buttons (or keys 1-3) &nbsp; <b>Combos:</b> chain kills for bonus barrels &nbsp; <b>Power-ups:</b> grab floating orbs (S/P/R/L) for timed ammo upgrades</p>
     <button id="startBtn">Set Sail ⚓</button>
     <button id="tierBtn" class="alt" style="display:none"></button>
     <button id="shopBtn0" class="alt">Shipyard</button>
@@ -107,7 +107,6 @@ const persist=()=>{try{localStorage.setItem(SAVE,JSON.stringify(save))}catch(e){
 const UPG=[
   {id:'hull',  name:'Double Hull',     desc:'+12 max hull per level',            max:24, base:20, grow:1.2,  cat:'Ship'},
   {id:'engine',name:'Diesel Engines',  desc:'+4% move speed per level',          max:16, base:25, grow:1.22, cat:'Ship'},
-  {id:'dash',  name:'Turbo Boost',     desc:'Slightly shorter turbo cooldown',   max:12, base:40, grow:1.26, cat:'Ship'},
   {id:'magnet',name:'Barrel Net',      desc:'+22 barrel pickup range per level', max:12, base:30, grow:1.22, cat:'Ship'},
   {id:'damage',name:'Hot Rounds',      desc:'+10% gun damage per level',         max:30, base:25, grow:1.22, cat:'Weapons'},
   {id:'rate',  name:'Rapid Loader',    desc:'+6% fire rate per level',           max:20, base:30, grow:1.22, cat:'Weapons'},
@@ -136,7 +135,6 @@ function buildStats(){
   return {
     maxHull:100+12*L('hull'),
     speed:260*(1+0.04*L('engine')),
-    dashCd:3.0-0.18*L('dash'),
     magnet:70+22*L('magnet'),
     damage:8*(1+0.10*L('damage')),
     fireDelay:0.30/(1+0.06*L('rate')),
@@ -222,7 +220,6 @@ addEventListener('keydown',e=>{keys[e.code]=true;if(['Space','ArrowUp','ArrowDow
 addEventListener('keyup',e=>keys[e.code]=false);
 // Drag control: the ship moves exactly as far as the finger/mouse drags (1:1). Each tap fires an extra volley.
 let drag=null,dragId=null,lastTap=0,lastDir={x:0,y:-1};
-const DASH_BTN={x:W-52,y:H-62,r:34};
 function ptr(e){const r=cv.getBoundingClientRect();return{x:(e.clientX-r.left)*W/r.width,y:(e.clientY-r.top)*H/r.height}}
 function tapFire(){
   if(!G||state!=='play')return;
@@ -254,7 +251,7 @@ function resolveIslands(){
 }
 // ---- active abilities (unlock at the shipyard or via perks): 1 = smoke screen, 2 = missile salvo, 3 = emergency repairs ----
 const ABIL=[{id:'smoke',label:'☁️',col:'#aab6c8'},{id:'salvo',label:'🚀',col:'#ff9a3c'},{id:'repair',label:'🔧',col:'#4fcf6b'}];
-const ABIL_BTN=i=>({x:W-130-i*56,y:H-40,r:26});
+const ABIL_BTN=i=>({x:W-44-i*58,y:H-44,r:27});
 function useAbility(i){
   if(!G||state!=='play')return;
   const S=G.S,p=G.p,id=ABIL[i].id,L=S[id];if(!L||p.abCd[id]>0)return;
@@ -266,20 +263,8 @@ function useAbility(i){
   p.abCd[id]=cd;p.abMax[id]=cd;
 }
 addEventListener('keydown',e=>{if(e.repeat||state!=='play')return;const i=['Digit1','Digit2','Digit3'].indexOf(e.code);if(i>=0)useAbility(i)});
-function doDash(){
-  if(!G||state!=='play')return;const p=G.p;if(p.dashCd>0)return;
-  let dx=0,dy=0;
-  if(keys.KeyA||keys.ArrowLeft)dx--;if(keys.KeyD||keys.ArrowRight)dx++;
-  if(keys.KeyW||keys.ArrowUp)dy--;if(keys.KeyS||keys.ArrowDown)dy++;
-  if(!dx&&!dy){dx=lastDir.x;dy=lastDir.y}
-  const l=Math.hypot(dx,dy)||1;
-  for(let i=0;i<14;i++){const nx=Math.max(16,Math.min(W-16,p.x+dx/l*10)),ny=Math.max(30,Math.min(H-36,p.y+dy/l*10));if(hitIsland(nx,ny))break;p.x=nx;p.y=ny}
-  p.dashCd=G.S.dashCd;p.inv=.45;sfx('dash');
-  for(let i=0;i<12;i++)G.fx.push({k:'p',x:p.x,y:p.y,vx:rand(-90,90),vy:rand(-90,90),t:0,max:.4,col:'#8cf'});
-}
 cv.addEventListener('pointerdown',e=>{
   const q=ptr(e);
-  if(state==='play'&&Math.hypot(q.x-DASH_BTN.x,q.y-DASH_BTN.y)<DASH_BTN.r+8){doDash();return}
   if(state==='play'&&G)for(let i=0;i<3;i++){const b=ABIL_BTN(i);if(G.S[ABIL[i].id]&&Math.hypot(q.x-b.x,q.y-b.y)<b.r+6){useAbility(i);return}}
   if(dragId===null){drag=q;dragId=e.pointerId;try{cv.setPointerCapture(e.pointerId)}catch(_){}}
   tapFire();   // extra fingers can keep tapping to fire while one finger drags
@@ -681,8 +666,6 @@ function update(dt){
   if(keys.KeyW||keys.ArrowUp)ay-=1;if(keys.KeyS||keys.ArrowDown)ay+=1;
   if(ax||ay){const l=Math.hypot(ax,ay);p.vx=ax/l*S.speed*(G.slowT>0?.5:1);p.vy=ay/l*S.speed*(G.slowT>0?.5:1);mouse.active=false}
   else{p.vx=0;p.vy=0}
-  p.dashCd-=dt;
-  if(keys.ShiftLeft||keys.ShiftRight)doDash();
   p.x=Math.max(16,Math.min(W-16,p.x+p.vx*dt));p.y=Math.max(30,Math.min(H-36,p.y+p.vy*dt));
   G.crashT-=dt;resolveIslands();
   p.inv-=dt;p.flash-=dt;p.novaT-=dt;p.jamT-=dt;for(const k in p.abCd)p.abCd[k]-=dt;
@@ -1259,10 +1242,6 @@ function draw(){
   if(G.usT>0){bar(12,by,200,15,G.usT/30,BUFFS[G.usType||'fury'].col,BUFFS[G.usType||'fury'].name+' '+Math.ceil(G.usT)+'s');by+=19}
   if(G.combo>=3){ctx.globalAlpha=Math.min(1,G.comboT+.3);const sc=1+Math.min(.3,G.combo*.01);
     txt('COMBO ×'+G.combo+'  (+'+Math.round(Math.min(G.combo,50)*2)+'%)',W-12,70,15*sc,'#ffe45c','right',4);ctx.globalAlpha=1}
-  if(state==='play'){ctx.save();ctx.translate(DASH_BTN.x,DASH_BTN.y);
-    const rdy=p.dashCd<=0;ctx.beginPath();ctx.arc(0,0,DASH_BTN.r,0,TAU);ctx.globalAlpha=.8;outlineFill(rdy?'#4fc3ff':'#6b6a9a',4);
-    if(!rdy){ctx.beginPath();ctx.moveTo(0,0);ctx.arc(0,0,DASH_BTN.r-3,-1.5708,-1.5708+TAU*(1-p.dashCd/S.dashCd));ctx.closePath();ctx.fillStyle='#9fe0ff';ctx.fill()}
-    ctx.globalAlpha=1;txt('TURBO',0,5,13,'#fff','center',4);ctx.restore()}
   for(let i=0;i<3;i++){const id=ABIL[i].id;if(!S[id])continue;const b=ABIL_BTN(i),cd=p.abCd[id],rdy=cd<=0;
     ctx.save();ctx.translate(b.x,b.y);ctx.globalAlpha=.85;ctx.beginPath();ctx.arc(0,0,b.r,0,TAU);outlineFill(rdy?ABIL[i].col:'#6b6a9a',3.5);
     if(!rdy){ctx.beginPath();ctx.moveTo(0,0);ctx.arc(0,0,b.r-3,-1.5708,-1.5708+TAU*(1-cd/(p.abMax[id]||1)));ctx.closePath();ctx.fillStyle='rgba(255,255,255,.5)';ctx.fill()}
