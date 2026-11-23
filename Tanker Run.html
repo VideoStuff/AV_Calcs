@@ -36,6 +36,7 @@
   #newsCard .chip{position:absolute;top:-14px;left:12px;background:#e8483f;color:#fff;border:3px solid var(--ink);border-radius:12px;padding:1px 10px;font-weight:700;font-size:13px}
   #newsCard .nrow{display:flex;gap:10px;align-items:center}
   #newsCard canvas{flex:none;width:90px;height:100px;background:none;cursor:default}
+  #newsSrc{font-size:11px;color:#6b5f9a;margin-top:3px;font-weight:500}
   #newsText{font-weight:700;font-size:15px;line-height:1.25}
   #newsCard .nfoot{color:#d92b2b;font-weight:700;font-size:13px;margin-top:6px}
   #perks{display:flex;flex-direction:column;gap:12px;width:min(420px,100%);margin:12px 0}
@@ -78,7 +79,7 @@
     <div id="newsCard" style="display:none">
       <div class="chip">📺 BREAKING NEWS</div>
       <div class="nrow"><canvas id="newsIcon" width="90" height="100"></canvas>
-        <div><div id="newsText"></div><div class="nfoot" id="newsFoot"></div></div></div>
+        <div><div id="newsText"></div><div id="newsSrc"></div><div class="nfoot" id="newsFoot"></div></div></div>
     </div>
     <div id="perks"></div>
   </div>
@@ -323,65 +324,32 @@ const BUFFS={ // what the US fleet gets for 30s after each tweet
   swarm:{name:'REINFORCEMENTS',col:'#c58bff',aura:'rgba(190,130,255,.3)',desc:'Reinforcements! 8 extra US ships join in, firing faster for 30s!'},
   air:{name:'AIR SUPPORT',col:'#e8f0ff',aura:'rgba(230,240,255,.4)',desc:'Air support! Two Warthogs and three jets are called in!'},
 };
-const NEWS=[
-  {text:`I have a plan for the strait. It's a secret. Even from me. Especially me.`,buff:'fury'},
-  {text:`TARIFFS on the ocean! Because it's WET and I did not approve the wet.`,buff:'armor'},
-  {text:`Reporter: "Epstein files?" — "Is that a kind of pasta? I love pasta. Boats, attack the pasta!"`,buff:'rapid'},
-  {text:`I have the biggest boats. Boats so big they have their own boats. And those boats have boats.`,buff:'swarm'},
-  {text:`Tweet: "the tanker is 100% oil and 0% me. SAD. FIRE."`,buff:'fury'},
-  {text:`I invented the word "strait". Before me it was just "stright". You're welcome.`,buff:'speed'},
-  {text:`My fleet runs on pure confidence and also diesel. Mostly confidence. Full speed ahead!`,buff:'speed'},
-  {text:`A tanker told me it's "full". FULL? Of what?! Missiles. Give it missiles!`,buff:'missiles'},
-  {text:`I put a tariff on gravity. Things are falling much slower now. Tremendous.`,buff:'armor'},
-  {text:`Everyone's saying the ocean is too big. I'm making it smaller. My plan is called "squeeze".`,buff:'fury'},
-  {text:`Reporter: "Sir, the Epstein files—" "Look, a bird! Navy, shoot the bird! ALL OF THE BIRDS!"`,buff:'rapid'},
-  {text:`Why do ships have a front and a back? Very unfair to the middle. Fleet: sail sideways!`,buff:'speed'},
-  {text:`I'm very good at maps. I drew the strait with my favorite crayon. It's a lake now. A big lake.`,buff:'fury'},
-  {text:`BREAKING: I bought the sea. Not all of it. Just the wet part. Fire!`,buff:'fury'},
-  {text:`The tanker is a bad deal. Why? Because it's a deal. I don't do deals. I only do WINS.`,buff:'armor'},
-  {text:`Missiles are just small boats that go up. I'm sending 40 small boats up. UP!`,buff:'missiles'},
-  {text:`Tweet at 4 AM: "who put water in the ocean". Nobody answers. Fleet is on high alert.`,buff:'rapid'},
-  {text:`I told the strait to be more narrow. It did. Nobody else can do that.`,buff:'speed'},
-  {text:`Planes! I love planes. I'm sending all the planes. Some are just paper but VERY fast!`,buff:'air'},
-  {text:`I'm the only one who knows what a "tanker" is. It's a tank. For tanks. Boats can't drive tanks. Weird.`,buff:'swarm'},
-  {text:`We will build a wall around the tanker. Then another wall around the wall. Then Iran pays.`,buff:'armor'},
-  {text:`I've been told oil comes from dinosaurs. Dinosaurs that are now boats. I'm fighting dinosaurs.`,buff:'fury'},
-  {text:`Reporter: "The Epstein files?" — "I only read files with pictures. Next! Missile!"`,buff:'missiles'},
-  {text:`My admirals don't wear hats anymore. Hats cost money. Tariff on hats! SAILING BAREHEADED!`,buff:'speed'},
-  {text:`I found a boat in my bathtub. NATIONAL EMERGENCY. Send everything!`,buff:'swarm'},
-  {text:`The wind is rigged. I demand a recount of the wind. Meanwhile: jets.`,buff:'air'},
-  {text:`I'm very smart. I counted the waves. There were nine. Maybe ten. A lot. Fire at all of them.`,buff:'rapid'},
-  {text:`New rule: ships must be 40% more orange. It's science. Also faster. Also angrier.`,buff:'fury'},
-  {text:`I told the missiles to go up and come down on the tanker. They said "yes sir". Very obedient missiles.`,buff:'missiles'},
-  {text:`Tariffs on boats! Tariffs on floating! If it floats I TAX it. If it sinks I TAX it MORE!`,buff:'armor'},
-  {text:`Naval battle is just chess where the squares are wet. I'm winning chess. Wetly.`,buff:'fury'},
-  {text:`Press conference: I ate nine cheeseburgers and invaded a sandwich. Navy, join me.`,buff:'swarm'},
-  {text:`Are we at war? I keep forgetting. Just in case: yes. Send the planes.`,buff:'air'},
-  {text:`Hot take: the tanker is too hot. Cool it with missiles. COOL IT.`,buff:'missiles'},
-  {text:`I don't know what a strait is, but I'm winning it. My strait. Biggest strait. Tremendous strait.`,buff:'speed'},
-  {text:`Tweet: "seagulls are spies. Tariff the seagulls. Shoot the seagulls. Tariff the shooting."`,buff:'rapid'},
-  {text:`Nobody sails like me. Last week I sailed a bathtub. It sank. That was the bathtub's fault.`,buff:'speed'},
-  {text:`I called the ocean. It said "please leave a message". I left 37 messages. Now I'm sending boats.`,buff:'swarm'},
-  {text:`The best oil comes from my hair. Everyone says so. Tanker: stop stealing my oil. Fire!`,buff:'fury'},
-  {text:`I want everything 200% bigger. Including the missiles. Including the missiles' feelings.`,buff:'missiles'},
-  {text:`Reporter: "What about the Epstein files?" — "I'm busy being a boat. Choo choo!"`,buff:'rapid'},
-  {text:`I signed an executive order to make today Tuesday. Everybody is in a Tuesday mood. FIRE!`,buff:'rapid'},
-  {text:`I'm the first president to be 100% Cheeto. No other president can say that. Believe it. And fire.`,buff:'fury'},
-  {text:`Why walk when you can sail? Why sail when you can fly? Why fly when you can… planes!`,buff:'air'},
-  {text:`The tanker has no friends. I have 14 friends. Maybe 15. Attack, friends!`,buff:'swarm'},
-  {text:`My lawyer says "don't shoot". My lawyer is fired. Shoot.`,buff:'rapid'},
-  {text:`I only use the best words. "Boat". "Big". "Boom". That's all of them. Boom boat big!`,buff:'missiles'},
-  {text:`Tariff on Tuesdays! Tariff on yesterdays! Tomorrow is also tariffed. It's called "planning".`,buff:'armor'},
-  {text:`I trained my fleet with a tiny piece of paper that says "win". Works every time. Full steam!`,buff:'speed'},
-  {text:`I looked at the ocean really hard and it blinked first. WE WON. Fleet: more winning!`,buff:'fury'},
-  {text:`A man told me tankers are important to the economy. I fired him. He was my economy.`,buff:'armor'},
-  {text:`We're getting the best jets. Jets so fast they're already tomorrow. Tomorrow is also tariffed.`,buff:'air'},
-  {text:`Hot dog! No wait, hot BOAT. Fire the hot boats at the tanker!`,buff:'swarm'},
-  {text:`My tiny fingers typed "BOMB THE TANKR". Spell check says "tanker". Spell check is fake news.`,buff:'missiles'},
-  {text:`The strait is just a river that went to college. I'm pretty sure. SEND THE FLEET.`,buff:'swarm'},
-  {text:`I invented fire and also shooting. Both. At the same time. Nobody else thought of it. FIRE.`,buff:'rapid'},
-  {text:`I can't swim, but I can fly. Probably. Send the jets, I'll watch from my golf cart.`,buff:'air'},
-  {text:`My admiral says the tanker is "unarmed". I say unarmed just means the arms are small. Attack!`,buff:'fury'},
+const NEWS=[ // real statements, quoted only in the short fragments given in news coverage (see src); the framing before the colon is ours
+  {text:`On NATO not helping in Hormuz: “COWARDS, and we will REMEMBER!”`,src:`Truth Social, March 2026, as reported by Maritime Executive`,buff:'rapid'},
+  {text:`On NATO without US backing: “a paper tiger”`,src:`as reported by AOL, March 2026`,buff:'fury'},
+  {text:`On Iran's oil: “KEEP THE OIL, ANYONE?”`,src:`Truth Social, as reported in news coverage, 2026`,buff:'armor'},
+  {text:`On Iran's military: “Their military is destroyed.”`,src:`as reported in news coverage, 2026`,buff:'air'},
+  {text:`On Iran's navy: “Their whole Navy is underwater.”`,src:`as reported in news coverage, 2026`,buff:'swarm'},
+  {text:`On Iran's navy, March 3, 2026: “They have no Navy; it's been knocked out.”`,src:`as reported in news coverage`,buff:'missiles'},
+  {text:`On the blockade: “Nobody's ever seen a blockade like that, with no ships-zero-getting in”`,src:`as reported in news coverage, 2026`,buff:'armor'},
+  {text:`On the same blockade: a “wall of steel”`,src:`as reported in news coverage, 2026`,buff:'armor'},
+  {text:`On the strait: “The straits are in great shape.”`,src:`as reported by Mediaite, 2026`,buff:'speed'},
+  {text:`On the strait, September 2026: “extremely good shape”`,src:`as reported by the New Straits Times`,buff:'speed'},
+  {text:`On who controls the strait: “almost total control”`,src:`Truth Social, September 2026, as reported by ANI / Times of Oman`,buff:'swarm'},
+  {text:`On Iran attacking oil ships: “No matter how badly defeated they are”`,src:`as reported by Yahoo News, 2026`,buff:'rapid'},
+  {text:`On US ships in the strait: Iran will be “blown off the face of the earth” if they are hit`,src:`as reported by the Washington Examiner, 2026`,buff:'missiles'},
+  {text:`Order to the Navy on Iranian mine-laying boats: “shoot and kill”`,src:`as reported by PBS / AP, April 2026`,buff:'rapid'},
+  {text:`On missiles: thousands “locked and loaded”`,src:`Truth Social, as reported in news coverage, 2026`,buff:'missiles'},
+  {text:`On ending the war: “finish up” the “nice way or not-so-nice way”`,src:`as reported by Open magazine, 2026`,buff:'fury'},
+  {text:`On Iran's oil: with more time the US can “take the oil”`,src:`as reported by Al Jazeera, April 2026`,buff:'armor'},
+  {text:`On the US Navy: “the world's undisputed naval superpower”`,src:`as reported in news coverage, 2026`,buff:'swarm'},
+  {text:`On help from allies: the US does “not need the help of anyone”`,src:`as reported by China Daily / Xinhua, March 2026`,buff:'fury'},
+  {text:`On NATO's answer: “Not exactly thrilled”`,src:`as reported by AOL, March 2026`,buff:'rapid'},
+  {text:`On oil prices: they will drop once Hormuz is “straightened out”`,src:`as reported by Dawn, 2026`,buff:'armor'},
+  {text:`On Iran with no deal: hit “more violently”`,src:`as reported by the Washington Examiner, 2026`,buff:'fury'},
+  {text:`On the war: the US has beaten Iran “militarily, economically, and in every other way”`,src:`as reported by AOL, 2026`,buff:'air'},
+  {text:`On oil-importing countries securing the strait: “Team effort”`,src:`as reported by WJLA, 2026`,buff:'swarm'},
+  {text:`On the strait: it is “permanently” open`,src:`as reported by Yahoo Finance, 2026`,buff:'speed'},
 ];
 function pickNews(){ // shuffled bag: every scenario shows once before any repeats
   if(!G.newsBag||!G.newsBag.length){G.newsBag=NEWS.map((_,i)=>i);for(let i=G.newsBag.length-1;i>0;i--){const j=Math.floor(Math.random()*(i+1));[G.newsBag[i],G.newsBag[j]]=[G.newsBag[j],G.newsBag[i]]}}
@@ -432,7 +400,7 @@ function openPerks(title){
   $('perkTitle').textContent=title||'CHOOSE A PERK';
   $('newsCard').style.display='none';G.newsShown=false;
   if(!(G.bonus>0)){ // last perk screen before a leg starts: show the breaking news
-    const sc=pickNews();$('newsText').textContent=sc.text;G.pendingBuff=sc.buff;$('newsFoot').textContent=BUFFS[sc.buff].desc;
+    const sc=pickNews();$('newsText').textContent=sc.text;$('newsSrc').textContent='— '+sc.src;G.pendingBuff=sc.buff;$('newsFoot').textContent=BUFFS[sc.buff].desc;
     const nc=$('newsIcon').getContext('2d');nc.clearRect(0,0,90,100);cheeto(nc,45,62,1.3,0);
     $('newsCard').style.display='block';G.newsShown=true;sfx('news');
   }
