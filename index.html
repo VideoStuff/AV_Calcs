@@ -301,7 +301,7 @@ details.fold>summary:hover{border-color:var(--muted)}
   <div class="wrap">
     <div class="top-in">
       <img class="logo" src="icon-192.png?v=2.8" width="40" height="40" alt="" aria-hidden="true">
-      <div><h1>AV Show Calculators</h1><p id="app-ver">v3.2 · Nov 28, 2026</p></div>
+      <div><h1>AV Show Calculators</h1><p id="app-ver">v3.3 · Nov 28, 2026</p></div>
       <div class="top-act">
         <button class="btn" id="show-btn" type="button">Shows</button>
         <button class="btn icon-btn" id="theme-btn" type="button" aria-pressed="false"><span aria-hidden="true" id="theme-ico">☾</span> <span id="theme-lbl">Dark</span></button>
@@ -624,12 +624,17 @@ details.fold>summary:hover{border-color:var(--muted)}
         <div class="fields">
           <label class="field" style="grid-column:1/-1"><span>Processor</span><select id="led-proc" data-p><option value="sx40xd" selected>Brompton Tessera SX40 with XD boxes</option><option value="custom">Custom</option></select></label>
         </div>
-        <div class="fields" id="led-proc-custom" style="margin-top:10px" hidden>
-          <label class="field"><span>Total pixel capacity</span><input id="led-ptotal" type="number" inputmode="numeric" step="any" min="0" value="" data-p></label>
-          <label class="field"><span>Pixels per output</span><input id="led-pport" type="number" inputmode="numeric" step="any" min="0" value="" data-p></label>
-          <label class="field"><span>Outputs per box (optional)</span><input id="led-pbox" type="number" inputmode="numeric" step="1" min="0" value="" data-p></label>
+        <div class="fields" id="led-sx40-fields" style="margin-top:10px">
+          <label class="field"><span>Bit depth</span><select id="led-bits" data-p><option value="8" selected>8-bit</option><option value="10">10-bit</option><option value="12">12-bit</option></select></label>
+          <label class="field"><span>Frame rate (Hz)</span><select id="led-fps" data-p><option value="24">24</option><option value="25">25</option><option value="30">30</option><option value="50">50</option><option value="60" selected>60</option><option value="120">120</option></select></label>
         </div>
-        <p class="note" id="led-proc-note">SX40 with XD: 9 million pixels total (Brompton's nominal rating at 36 bits per pixel, 60 Hz), and 10 outputs per XD box at 525,000 pixels each (8-bit, 60 Hz). Per-output capacity falls at higher bit depths and frame rates; use Custom to enter other figures.</p>
+        <div class="fields" id="led-proc-custom" style="margin-top:10px" hidden>
+          <label class="field"><span>Pixels per processor</span><input id="led-ptotal" type="number" inputmode="numeric" step="any" min="0" value="" data-p></label>
+          <label class="field"><span>Pixels per output</span><input id="led-pport" type="number" inputmode="numeric" step="any" min="0" value="" data-p></label>
+          <label class="field"><span>Outputs per box</span><input id="led-pbox" type="number" inputmode="numeric" step="1" min="0" value="" data-p></label>
+          <label class="field"><span>Boxes per processor (optional)</span><input id="led-pboxes" type="number" inputmode="numeric" step="1" min="0" value="" data-p></label>
+        </div>
+        <p class="note" id="led-proc-note">SX40 with XD: each SX40 takes 9 million pixels (Brompton's nominal rating at 36 bits per pixel, 60 Hz) and feeds up to 4 XD boxes, one per 10G output, with no daisy chaining. Each XD has 10 outputs at 525,000 pixels each (8-bit, 60 Hz). Other bit depths and frame rates scale that per-output figure (8 ÷ bits × 60 ÷ Hz), an estimate from Brompton's published figures. Whole panels only: a panel is never split across outputs. Use Custom for other hardware.</p>
       </div>
     </div>
     <div class="panel">
@@ -643,7 +648,7 @@ details.fold>summary:hover{border-color:var(--muted)}
         <div class="ro"><span class="lbl">Amps per phase (max)</span><span class="val" id="led-amps">—</span><span class="sub" id="led-ampsub"></span></div>
         <div class="ro"><span class="lbl">Heat (max)</span><span class="val" id="led-btu">—</span><span class="sub" id="led-btusub"></span></div>
         <div class="ro"><span class="lbl">Min viewing distance</span><span class="val" id="led-view">—</span><span class="sub">Rule of thumb: 1 mm pitch = 1 m</span></div>
-        <div class="ro wide"><span class="lbl">Processing</span><span class="val" id="led-fit" style="font-size:1rem">—</span><span class="sub" id="led-fitsub"></span><span class="sub" id="led-ports"></span></div>
+        <div class="ro wide"><span class="lbl" id="led-proc-l">Processing</span><span class="val" id="led-fit" style="font-size:1.3rem">—</span><span class="sub" id="led-fitsub"></span><span class="sub" id="led-ports"></span></div>
       </div>
       <div class="btn-row"><button class="btn primary" id="led-send-power" type="button">Send to Power</button><button class="btn" id="led-send-px" type="button">Send to Pixel Density</button></div>
       <p class="note">Send to Power puts the panels in their own service called LED in the current department (sending again updates it), at the voltage chosen. Send to Pixel Density adds the wall's physical size as a surface; that tab's reference screen sets its pixel counts. Weight is panels only, with no rigging or frames.</p>
@@ -828,7 +833,7 @@ const clone=o=>JSON.parse(JSON.stringify(o));
 /* ---------------- shows, share links ---------------- */
 /* keys that are per-device preferences or bookkeeping, not part of a show */
 const NOT_SHOW=['theme','tab','shows','show'];
-const APP_VERSION='3.2';
+const APP_VERSION='3.3';
 function snapshot(){const o={};try{Object.keys(localStorage).forEach(k=>{if(!k.startsWith('avcalc:'))return;const n=k.slice(7);if(NOT_SHOW.includes(n))return;try{o[n]=JSON.parse(localStorage.getItem(k))}catch(e){}})}catch(e){}return o}
 function clearShowState(){try{Object.keys(localStorage).filter(k=>k.startsWith('avcalc:')&&!NOT_SHOW.includes(k.slice(7))).forEach(k=>localStorage.removeItem(k))}catch(e){}}
 function writeState(o){for(const k in o)if(!NOT_SHOW.includes(k))store.set(k,o[k])}
@@ -1319,7 +1324,9 @@ const LED_PANELS={
 const LED_GRAPHITE_HALF={n:'ROE Graphite 2.6 half',pxw:192,pxh:192,mmw:500,mmh:500,kg:5.2,wmax:160,wtyp:80};
 const LED_FIELDS={pitch:'led-pitch',pxw:'led-pxw',pxh:'led-pxh',mmw:'led-mmw',mmh:'led-mmh',kg:'led-kg',wmax:'led-wmax',wtyp:'led-wtyp'};
 /* Brompton Tessera SX40 + XD: 9M px nominal (36 bpp, 60 Hz); XD has 10 x 1G outputs, 525k px each at 8 bpc 60 Hz */
-const LED_SX40={total:9000000,port:525000,perBox:10};
+const LED_SX40={total:9000000,port:525000,perBox:10,boxesPer:4}; /* boxesPer: one XD per 10G output, no chaining */
+/* per-output capacity scales from Brompton's 525k at 8-bit 60 Hz as 8/bits x 60/fps (matches their published 120 Hz and 24 Hz figures) */
+const ledPortCap=(bits,fps)=>Math.floor(LED_SX40.port*(8/bits)*(60/fps));
 /* earlier versions had Graphite full and half as separate choices */
 (function(){const si=store.get('inputs',{});if(si&&si['led-panel']){const m={gpfull:'graphite',gphalf:'custom'}[si['led-panel']];if(m){si['led-panel']=m;store.set('inputs',si)}}})();
 let ledU=store.get('ledUnit','ft');if(ledU!=='m')ledU='ft';
@@ -1379,23 +1386,28 @@ function calcLed(){
   $('led-btu').innerHTML=unit(fa(wMax*3.412,0),'BTU/hr');
   $('led-btusub').textContent=`${fa(wTyp*3.412,0)} typical`;
   $('led-view').textContent=ledU==='ft'?`${fx(P.pitch*3.2808,1)} ft`:`${fx(P.pitch,1)} m`;
-  /* processing: panels are never split across outputs; full panels are packed first, then any half panels */
-  const C=custom?{total:num('led-ptotal'),port:num('led-pport'),perBox:num('led-pbox')}:LED_SX40;
-  const fullPx=P.pxw*P.pxh, halfPx=H?H.pxw*H.pxh:0;
-  if(C.total<=0&&C.port<=0){$('led-fit').textContent='Enter capacity';$('led-fitsub').textContent='';$('led-ports').textContent='';}
-  else{
-    const util=C.total>0?totalPx/C.total*100:0, tooBig=C.port>0&&(fullPx>C.port||(nHalf>0&&halfPx>C.port));
-    const over=tooBig||(C.total>0&&util>100), cls=over?'bad':util>85?'warn':'good', lab=over?'Over':util>85?'Tight':'Fits';
-    $('led-fit').innerHTML=`<span class="pill ${cls}">${lab}</span>`;
-    $('led-fitsub').textContent=C.total>0?`${fx(util,0)}% of ${fa(C.total,0)} pixels`:'';
-    if(tooBig)$('led-ports').textContent=`One panel is more than an output carries (${fa(C.port,0)} px)`;
-    else if(C.port>0){
-      let outs=0,used=C.port; /* force the first panel to open an output */
-      const put=px=>{if(used+px>C.port){outs++;used=0}used+=px};
-      for(let i=0;i<nFull;i++)put(fullPx);for(let i=0;i<nHalf;i++)put(halfPx);
-      const perOut=Math.floor(C.port/fullPx), boxes=C.perBox>0?Math.ceil(outs/C.perBox):0;
-      $('led-ports').textContent=`${fa(outs,0)} output${outs===1?'':'s'}${H?'':` at ${fa(perOut,0)} panel${perOut===1?'':'s'} each`}${boxes?` · ${fa(boxes,0)} ${custom?'box':'XD box'}${boxes===1?'':'es'}`:''}`}
-    else $('led-ports').textContent='';
+  /* processing: how many processors and boxes. Panels are never split across outputs; full panels are packed first, then any half panels */
+  const bits=+$('led-bits').value||8, fps=+$('led-fps').value||60;
+  const C=custom?{total:num('led-ptotal'),port:num('led-pport'),perBox:num('led-pbox'),boxesPer:num('led-pboxes')}:{total:LED_SX40.total,port:ledPortCap(bits,fps),perBox:LED_SX40.perBox,boxesPer:LED_SX40.boxesPer};
+  const pn=custom?'processor':'SX40', bn=custom?'box':'XD box', fullPx=P.pxw*P.pxh, halfPx=H?H.pxw*H.pxh:0;
+  $('led-sx40-fields').hidden=custom;$('led-proc-l').textContent=custom?'Processing':'Processing (SX40 + XD)';
+  const clear=t=>{$('led-fit').textContent=t;$('led-fitsub').textContent='';$('led-ports').textContent=''};
+  if(C.total<=0||C.port<=0){clear('Enter capacity')}
+  else if(fullPx>C.port||(nHalf>0&&halfPx>C.port)){
+    $('led-fit').innerHTML='<span class="pill bad">Over</span>';$('led-fitsub').textContent=`One panel is more than an output carries (${fa(C.port,0)} px)`;$('led-ports').textContent='';
+  }else{
+    let outs=0,used=C.port; /* force the first panel to open an output */
+    const put=px=>{if(used+px>C.port){outs++;used=0}used+=px};
+    for(let i=0;i<nFull;i++)put(fullPx);for(let i=0;i<nHalf;i++)put(halfPx);
+    const boxes=C.perBox>0?Math.ceil(outs/C.perBox):0;
+    const byPx=Math.ceil(totalPx/C.total), byBoxes=boxes>0&&C.boxesPer>0?Math.ceil(boxes/C.boxesPer):0;
+    const procs=Math.max(1,byPx,byBoxes), load=totalPx/(procs*C.total)*100, cls=load>85?'warn':'good';
+    const bl=k=>k===1?bn:bn+'es';
+    $('led-fit').textContent=`${fa(procs,0)} × ${pn}${boxes?` · ${fa(boxes,0)} × ${bl(boxes)}`:''}`;
+    const why=procs===1?'':byBoxes>byPx?` (limited by ${bn} outputs)`:byPx>byBoxes?' (limited by pixels)':' (pixels and outputs both)';
+    $('led-fitsub').innerHTML=`<span class="pill ${cls}">${fx(load,0)}% load per ${pn}</span> ${fa(totalPx,0)} of ${fa(procs*C.total,0)} pixels${why}`;
+    const perOut=Math.floor(C.port/fullPx);
+    $('led-ports').textContent=`${fa(outs,0)} output${outs===1?'':'s'}${H?'':` at ${fa(perOut,0)} panel${perOut===1?'':'s'} each`} · ${fa(C.port,0)} px per output`;
   }
   ledLast={name,cols,rows,nFull,nHalf,wMm,hMm,wmax:P.wmax,pf,volts:V,half:H};
 }
