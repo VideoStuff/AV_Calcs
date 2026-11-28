@@ -301,7 +301,7 @@ details.fold>summary:hover{border-color:var(--muted)}
   <div class="wrap">
     <div class="top-in">
       <img class="logo" src="icon-192.png?v=2.8" width="40" height="40" alt="" aria-hidden="true">
-      <div><h1>AV Show Calculators</h1><p id="app-ver">v3.5 · Nov 29, 2026</p></div>
+      <div><h1>AV Show Calculators</h1><p id="app-ver">v3.6 · Nov 29, 2026</p></div>
       <div class="top-act">
         <button class="btn" id="show-btn" type="button">Shows</button>
         <button class="btn icon-btn" id="theme-btn" type="button" aria-pressed="false"><span aria-hidden="true" id="theme-ico">☾</span> <span id="theme-lbl">Dark</span></button>
@@ -629,7 +629,7 @@ details.fold>summary:hover{border-color:var(--muted)}
           <label class="field"><span>Processor redundancy</span><select id="led-procred" data-p><option value="0" selected>Off</option><option value="1">On</option></select></label>
         </div>
         <div class="fields" id="led-sx40-fields" style="margin-top:10px">
-          <label class="field"><span>Bit depth</span><select id="led-bits" data-p><option value="8" selected>8-bit</option><option value="10">10-bit</option><option value="12">12-bit</option></select></label>
+          <label class="field"><span>Bit depth</span><select id="led-bits" data-p><option value="8">8-bit</option><option value="10" selected>10-bit</option><option value="12">12-bit</option></select></label>
           <label class="field"><span>Frame rate (Hz)</span><select id="led-fps" data-p><option value="24">24</option><option value="25">25</option><option value="30">30</option><option value="50">50</option><option value="60" selected>60</option><option value="120">120</option></select></label>
         </div>
         <div class="fields" id="led-proc-custom" style="margin-top:10px" hidden>
@@ -638,7 +638,7 @@ details.fold>summary:hover{border-color:var(--muted)}
           <label class="field"><span>Outputs per box</span><input id="led-pbox" type="number" inputmode="numeric" step="1" min="0" value="" data-p></label>
           <label class="field"><span>Boxes per processor (optional)</span><input id="led-pboxes" type="number" inputmode="numeric" step="1" min="0" value="" data-p></label>
         </div>
-        <p class="note" id="led-proc-note">SX40 with XD: each SX40 takes 9 million pixels (Brompton's nominal rating at 36 bits per pixel, 60 Hz) and feeds up to 4 XD boxes, one per 10G output, with no daisy chaining. Each XD has 10 outputs at 525,000 pixels each (8-bit, 60 Hz). Other bit depths and frame rates scale that per-output figure (8 ÷ bits × 60 ÷ Hz), an estimate from Brompton's published figures. Redundancy means a full 1:1 backup: backup XD boxes each take an SX40 output of their own, and backup SX40s mirror the primaries. Whole panels only: a panel is never split across outputs. Use Custom for other hardware.</p>
+        <p class="note" id="led-proc-note">SX40 with XD: each SX40 takes 9 million pixels (Brompton's nominal rating at 36 bits per pixel, 60 Hz) and feeds up to 4 XD boxes, one per 10G output, with no daisy chaining. Each XD has 10 outputs at 525,000 pixels each (8-bit, 60 Hz; 10-bit, the default here, carries 420,000). Other bit depths and frame rates scale that per-output figure (8 ÷ bits × 60 ÷ Hz), an estimate from Brompton's published figures. Redundancy means a full 1:1 backup: backup XD boxes each take an SX40 output of their own, and backup SX40s mirror the primaries. Whole panels only: a panel is never split across outputs. Use Custom for other hardware.</p>
       </div>
     </div>
     <div class="panel">
@@ -655,7 +655,7 @@ details.fold>summary:hover{border-color:var(--muted)}
         <div class="ro wide"><span class="lbl" id="led-proc-l">Processing</span><span class="val" id="led-fit" style="font-size:1.3rem">—</span><span class="sub" id="led-fitsub"></span><span class="sub" id="led-ports"></span><span class="sub" id="led-red"></span></div>
       </div>
       <div class="btn-row"><button class="btn primary" id="led-send-power" type="button">Send to Power</button><button class="btn" id="led-send-sc" type="button">Send to Res Scaling</button></div>
-      <p class="note">Send to Power puts the panels in their own service called LED in the current department (sending again updates it), at the voltage chosen. Send to Res Scaling fills in the wall's resolution (and the refresh rate, when it is 60 or 30 Hz) so you can see scaled sizes, pixel clock and EDIDs for it. Weight is panels only, with no rigging or frames.</p>
+      <p class="note">Send to Power puts the panels in their own service called LED in the current department (sending again updates it), at the voltage chosen, along with the SX40s and XD boxes including backups (144 W and 48 W each, on the 120V list; not for a Custom processor). Send to Res Scaling fills in the wall's resolution (and the refresh rate, when it is 60 or 30 Hz) so you can see scaled sizes, pixel clock and EDIDs for it. Weight is panels only, with no rigging or frames.</p>
     </div>
   </div>
 </section>
@@ -837,7 +837,7 @@ const clone=o=>JSON.parse(JSON.stringify(o));
 /* ---------------- shows, share links ---------------- */
 /* keys that are per-device preferences or bookkeeping, not part of a show */
 const NOT_SHOW=['theme','tab','shows','show'];
-const APP_VERSION='3.5';
+const APP_VERSION='3.6';
 function snapshot(){const o={};try{Object.keys(localStorage).forEach(k=>{if(!k.startsWith('avcalc:'))return;const n=k.slice(7);if(NOT_SHOW.includes(n))return;try{o[n]=JSON.parse(localStorage.getItem(k))}catch(e){}})}catch(e){}return o}
 function clearShowState(){try{Object.keys(localStorage).filter(k=>k.startsWith('avcalc:')&&!NOT_SHOW.includes(k.slice(7))).forEach(k=>localStorage.removeItem(k))}catch(e){}}
 function writeState(o){for(const k in o)if(!NOT_SHOW.includes(k))store.set(k,o[k])}
@@ -933,6 +933,7 @@ const LIB208=[['Panasonic','RZ12KU',1200],['Panasonic','RZ21KU',1510],['Panasoni
 const LIB120G=[
  ['Switchers',[['Analog Way','RS2',700],['Analog Way','RS4',1010],['Analog Way','RS6',1300],['Roland','V60',37],['Roland','V160',55],['Panasonic','HS400',120],['Panasonic','HS450',120],['Panasonic','UHS500',150],['Barco','E2 Gen2',1100],['Barco','S3',826]]],
  ['Media servers',[['Pixera','Pixera 4RS',900]]],
+ ['LED processing',[['Brompton','Brompton Tessera SX40',144],['Brompton','Brompton Tessera XD',48]]],
  ['Monitors',[['Panasonic','80"',235],['Panasonic','70"',200],['Panasonic','55"',280],['Panasonic','40"',235],['Panasonic','32"',59],['Panasonic','24"',36]]],
  ['Routers',[['Blackmagic','BM 40x (SDI)',46.5],['AJA','AJA 32x (SDI)',60],['AJA','AJA 16x (SDI)',60],['Lightware','Lightware 16x (HDMI)',83],['Lightware','Lightware 24x (HDMI)',108],['Lightware','Lightware 32x (HDMI)',167],['Lightware','Lightware 48x (HDMI)',203]]],
  ['Converters',[['Decimator','MD-HX',3.6],['Decimator','MD-LX',3.6]]],
@@ -1328,6 +1329,7 @@ const LED_PANELS={
 const LED_GRAPHITE_HALF={n:'ROE Graphite 2.6 half',pxw:192,pxh:192,mmw:500,mmh:500,kg:5.2,wmax:160,wtyp:80};
 const LED_FIELDS={pitch:'led-pitch',pxw:'led-pxw',pxh:'led-pxh',mmw:'led-mmw',mmh:'led-mmh',kg:'led-kg',wmax:'led-wmax',wtyp:'led-wtyp'};
 /* Brompton Tessera SX40 + XD: 9M px nominal (36 bpp, 60 Hz); XD has 10 x 1G outputs, 525k px each at 8 bpc 60 Hz */
+const LED_GEAR_W={sx40:144,xd:48}; /* Brompton Tessera SX40 and XD, watts at 120V (supplied by the user) */
 const LED_SX40={total:9000000,port:525000,perBox:10,boxesPer:4}; /* boxesPer: one XD per 10G output, no chaining */
 /* per-output capacity scales from Brompton's 525k at 8-bit 60 Hz as 8/bits x 60/fps (matches their published 120 Hz and 24 Hz figures) */
 const ledPortCap=(bits,fps)=>Math.floor(LED_SX40.port*(8/bits)*(60/fps));
@@ -1391,9 +1393,10 @@ function calcLed(){
   $('led-btusub').textContent=`${fa(wTyp*3.412,0)} typical`;
   $('led-view').textContent=ledU==='ft'?`${fx(P.pitch*3.2808,1)} ft`:`${fx(P.pitch,1)} m`;
   /* processing: how many processors and boxes. Panels are never split across outputs; full panels are packed first, then any half panels */
-  const bits=+$('led-bits').value||8, fps=+$('led-fps').value||60;
+  const bits=+$('led-bits').value||10, fps=+$('led-fps').value||60;
   const C=custom?{total:num('led-ptotal'),port:num('led-pport'),perBox:num('led-pbox'),boxesPer:num('led-pboxes')}:{total:LED_SX40.total,port:ledPortCap(bits,fps),perBox:LED_SX40.perBox,boxesPer:LED_SX40.boxesPer};
   const pn=custom?'processor':'SX40', bn=custom?'box':'XD box', fullPx=P.pxw*P.pxh, halfPx=H?H.pxw*H.pxh:0;
+  let gear=null; /* SX40 / XD quantities for Send to Power (SX40 + XD only) */
   $('led-sx40-fields').hidden=custom;$('led-proc-l').textContent=custom?'Processing':'Processing (SX40 + XD)';
   const clear=t=>{$('led-fit').textContent=t;$('led-fitsub').textContent='';$('led-ports').textContent='';$('led-red').textContent=''};
   if(C.total<=0||C.port<=0){clear('Enter capacity')}
@@ -1410,6 +1413,7 @@ function calcLed(){
     const procs=Math.max(1,byPx,byBoxes), procsAll=procs*(procRed?2:1), load=totalPx/(procs*C.total)*100, cls=load>85?'warn':'good';
     const bl=k=>k===1?bn:bn+'es';
     $('led-fit').textContent=`${fa(procsAll,0)} × ${pn}${boxesAll?` · ${fa(boxesAll,0)} × ${bl(boxesAll)}`:''}`;
+    if(!custom)gear={sx:procs,sxB:procRed?procs:0,xd:boxes,xdB:xdRed?boxes:0};
     const red=[];if(boxes&&xdRed)red.push(`${fa(boxes,0)} ${bl(boxes)} + ${fa(boxes,0)} backup`);if(procRed)red.push(`${fa(procs,0)} ${pn}${procs===1?'':'s'} + ${fa(procs,0)} backup`);
     $('led-red').textContent=red.length?`Redundancy: ${red.join(' · ')}`:'No redundancy';
     const why=procs===1?'':byBoxes>byPx?` (limited by ${bn} outputs${xdRed?', backups included':''})`:byPx>byBoxes?' (limited by pixels)':' (pixels and outputs both)';
@@ -1417,7 +1421,7 @@ function calcLed(){
     const perOut=Math.floor(C.port/fullPx);
     $('led-ports').textContent=`${fa(outs,0)} output${outs===1?'':'s'}${H?'':` at ${fa(perOut,0)} panel${perOut===1?'':'s'} each`} · ${fa(C.port,0)} px per output`;
   }
-  ledLast={name,cols,rows,nFull,nHalf,wMm,hMm,wmax:P.wmax,pf,volts:V,half:H,px:wallPx,hz:custom?0:fps};
+  ledLast={name,cols,rows,nFull,nHalf,wMm,hMm,wmax:P.wmax,pf,volts:V,half:H,px:wallPx,hz:custom?0:fps,gear};
 }
 $('led-unit').addEventListener('click',e=>{const b=e.target.closest('button[data-u]');if(!b)return;ledU=b.dataset.u;store.set('ledUnit',ledU);calcLed()});
 $('led-send-power').addEventListener('click',()=>{
@@ -1429,7 +1433,10 @@ $('led-send-power').addEventListener('click',()=>{
   const list=svc[L.volts===120?'r120':'r208'];
   if(L.nFull>0){const r=R(L.name+(L.half?' full':''),L.nFull,L.wmax);r.pf=L.pf;list.push(r)}
   if(L.nHalf>0){const r=R(L.half.n,L.nHalf,L.half.wmax);r.pf=L.pf;list.push(r)}
-  svcI[dept]=i;saveSvcI();savePower();renderPower();show('power');toast(`Added ${fa(L.nFull+L.nHalf,0)} panels to the LED service in ${DEPTS[dept]}`);
+  /* processing gear (primary and backup) goes in the 120V list: Brompton SX40 and XD run from 120V */
+  if(L.gear){const g=L.gear;[['Brompton Tessera SX40',g.sx,LED_GEAR_W.sx40],['Brompton Tessera SX40 (backup)',g.sxB,LED_GEAR_W.sx40],['Brompton Tessera XD',g.xd,LED_GEAR_W.xd],['Brompton Tessera XD (backup)',g.xdB,LED_GEAR_W.xd]]
+    .forEach(([n,q,w])=>{if(q>0){const r=R(n,q,w);r.pf=1;svc.r120.push(r)}})}
+  svcI[dept]=i;saveSvcI();savePower();renderPower();show('power');toast(`Added ${fa(L.nFull+L.nHalf,0)} panels${L.gear?' and the processing gear':''} to the LED service in ${DEPTS[dept]}`);
 });
 $('led-send-sc').addEventListener('click',()=>{
   const L=ledLast;if(!L){toast('Set up the wall first');return}
