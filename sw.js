@@ -1,6 +1,6 @@
 // Offline cache: always try the network first (so updates and new icons show up straight away),
 // fall back to the cache when offline or the connection is slow.
-const CACHE = 'avcalcs-3.4'; // keep in step with the version in index.html
+const CACHE = 'avcalcs-3.5'; // keep in step with the version in index.html
 const SHELL = ['./', 'index.html', 'manifest.webmanifest', 'favicon-32.png', 'favicon.ico', 'icon-180.png', 'icon-192.png', 'icon-512.png', 'icon-maskable-512.png'];
 self.addEventListener('install', e => {
   e.waitUntil(caches.open(CACHE)
