@@ -55,6 +55,7 @@ body::before{content:"";position:fixed;inset:0 0 auto;height:env(safe-area-inset
 .logo{flex:none;width:40px;height:40px;border-radius:9px;display:block;box-shadow:0 0 0 1px var(--line)}
 h1{font-family:var(--f-display);font-weight:700;font-size:1.35rem;letter-spacing:.01em;margin:0;line-height:1.1}
 .btn.mini-btn{padding:3px 9px;font-size:.8rem}
+.field input:disabled{opacity:.75;cursor:not-allowed;color:var(--ink);-webkit-text-fill-color:var(--ink)}
 .btn.mini-btn:disabled{opacity:.4;cursor:not-allowed}
 .seg .svc-item{display:inline-flex;align-items:center;border-radius:999px}
 .seg .svc-item.on{background:var(--surface);box-shadow:0 1px 2px rgba(0,0,0,.12)}
@@ -300,7 +301,7 @@ details.fold>summary:hover{border-color:var(--muted)}
   <div class="wrap">
     <div class="top-in">
       <img class="logo" src="icon-192.png?v=2.8" width="40" height="40" alt="" aria-hidden="true">
-      <div><h1>AV Show Calculators</h1><p id="app-ver">v3.0 · Nov 28, 2026</p></div>
+      <div><h1>AV Show Calculators</h1><p id="app-ver">v3.1 · Nov 28, 2026</p></div>
       <div class="top-act">
         <button class="btn" id="show-btn" type="button">Shows</button>
         <button class="btn icon-btn" id="theme-btn" type="button" aria-pressed="false"><span aria-hidden="true" id="theme-ico">☾</span> <span id="theme-lbl">Dark</span></button>
@@ -591,7 +592,7 @@ details.fold>summary:hover{border-color:var(--muted)}
           <label class="field"><span>Max watts</span><input id="led-wmax" type="number" inputmode="decimal" step="any" min="0" value="180" data-p></label>
           <label class="field"><span>Typical watts</span><input id="led-wtyp" type="number" inputmode="decimal" step="any" min="0" value="90" data-p></label>
         </div>
-        <p class="note">Picking a panel fills these in; change any value and it becomes Custom. ROE figures are per panel from ROE's spec sheets and brochures (Graphite weights are from the newer brochures). With Graphite, a row of half panels (500 × 500 mm, 192 × 192 px, 5.2 kg, 160 W max) can be added to the wall.</p>
+        <p class="note">The ROE presets are fixed to ROE's published per-panel figures (Graphite weights are from the newer brochures); choose Custom to enter your own. With Graphite, a row of half panels (500 × 500 mm, 192 × 192 px, 5.2 kg, 160 W max) can be added to the wall.</p>
       </div>
       <div class="panel">
         <h3>Wall</h3>
@@ -827,7 +828,7 @@ const clone=o=>JSON.parse(JSON.stringify(o));
 /* ---------------- shows, share links ---------------- */
 /* keys that are per-device preferences or bookkeeping, not part of a show */
 const NOT_SHOW=['theme','tab','shows','show'];
-const APP_VERSION='3.0';
+const APP_VERSION='3.1';
 function snapshot(){const o={};try{Object.keys(localStorage).forEach(k=>{if(!k.startsWith('avcalc:'))return;const n=k.slice(7);if(NOT_SHOW.includes(n))return;try{o[n]=JSON.parse(localStorage.getItem(k))}catch(e){}})}catch(e){}return o}
 function clearShowState(){try{Object.keys(localStorage).filter(k=>k.startsWith('avcalc:')&&!NOT_SHOW.includes(k.slice(7))).forEach(k=>localStorage.removeItem(k))}catch(e){}}
 function writeState(o){for(const k in o)if(!NOT_SHOW.includes(k))store.set(k,o[k])}
@@ -1327,10 +1328,6 @@ $('led-panel').addEventListener('change',()=>{
   const P=LED_PANELS[$('led-panel').value];if(!P)return;
   for(const k in LED_FIELDS)$(LED_FIELDS[k]).value=P[k];
 });
-Object.values(LED_FIELDS).forEach(id=>$(id).addEventListener('input',()=>{
-  const sel=$('led-panel'), P=LED_PANELS[sel.value];
-  if(P&&Object.keys(LED_FIELDS).some(k=>num(LED_FIELDS[k])!==P[k]))sel.value='custom';
-}));
 const gcd=(a,b)=>b?gcd(b,a%b):a;
 function ledLen(mm){
   const inch=mm/25.4;let F=Math.floor(inch/12+1e-9),I=inch-F*12;if(I>11.9995){F++;I=0}
@@ -1338,6 +1335,9 @@ function ledLen(mm){
 }
 function calcLed(){
   document.querySelectorAll('#led-unit button').forEach(b=>b.setAttribute('aria-pressed',b.dataset.u===ledU));
+  /* preset panels are fixed to ROE's published figures; only Custom can be edited */
+  const preset=LED_PANELS[$('led-panel').value];
+  for(const k in LED_FIELDS){const el=$(LED_FIELDS[k]);if(preset&&String(el.value)!==String(preset[k]))el.value=preset[k];el.disabled=!!preset}
   const mode=$('led-mode').value, custom=$('led-proc').value==='custom', graphite=$('led-panel').value==='graphite';
   const halfOn=graphite&&$('led-half').value==='1', H=halfOn?LED_GRAPHITE_HALF:null;
   $('led-count-fields').hidden=mode!=='panels';$('led-size-fields').hidden=mode!=='size';$('led-size-note').hidden=mode!=='size';
