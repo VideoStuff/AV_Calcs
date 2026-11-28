@@ -4,14 +4,14 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
 
 ## What this is
 
-"AV Show Calculators": a static, installable web app (PWA) of field calculators for live AV shows (storage, 3-phase power, projector, pixel density, camera lens, resolution scaling + EDID export, cabling reference). There is no build step, bundler, package.json, linter or test suite. The whole app is `index.html` (HTML, CSS and one IIFE of vanilla JS), plus `sw.js`, `manifest.webmanifest` and icon files. Fonts load from Google Fonts.
+"AV Show Calculators": a static, installable web app (PWA) of field calculators for live AV shows (storage, 3-phase power, projector, pixel density, LED wall, camera lens, resolution scaling + EDID export, cabling reference). There is no build step, bundler, package.json, linter or test suite. The whole app is `index.html` (HTML, CSS and one IIFE of vanilla JS), plus `sw.js`, `manifest.webmanifest` and icon files. Fonts load from Google Fonts.
 
 `Tanker Run.html` is an unrelated standalone game that lives in the same repo; leave it alone unless asked.
 
 ## Running and testing
 
 - Open `index.html` directly, or serve the folder (`python3 -m http.server`). The service worker only registers over http(s), not `file://`.
-- There are no tests. Verify changes in a real browser with Playwright (preinstalled in this environment: `require('playwright')`, plain `chromium.launch()`): load `index.html#<tab>`, drive inputs, read `#id` text, collect `pageerror`, and screenshot desktop and an iPhone-sized viewport. Jump to a tab with a hash: `#storage #power #projector #pixels #camera #scaling #cables`.
+- There are no tests. Verify changes in a real browser with Playwright (preinstalled in this environment: `require('playwright')`, plain `chromium.launch()`): load `index.html#<tab>`, drive inputs, read `#id` text, collect `pageerror`, and screenshot desktop and an iPhone-sized viewport. Jump to a tab with a hash: `#storage #power #projector #pixels #led #camera #scaling #cables`.
 - EDID files from the Res Scaling tab can be checked with `edid-decode -c file.bin` (`apt-get install edid-decode`). Every export should report `EDID conformity: PASS`; the only acceptable leftover warning is the made-up "AVS" manufacturer ID.
 
 ## Releasing (every change gets published)
@@ -43,6 +43,8 @@ Layout, top to bottom: `<style>`, header (theme/Shows/Reset buttons + tab bar), 
 **Power tab data model.** `power[dept] = {sv:[{n, r208, r120}, ...]}` for dept in `video|audio|lighting`, up to `MAX_SVC` services each, with `svcI[dept]` the active index. `normPower()` migrates older shapes (single `{r208, r120}`) and runs on every load, so any code path that writes `power` raw (share-link import, show load) is safe. `deptTotals(svc)` and `legLoads(svc)` take a service object. `legLoads` places each unit on a leg or leg pair (greedy, busiest-leg minimising) and returns the per-row placement the UI, print sheet and share text all use. The service rating is busiest leg / 0.8 (NEC continuous load).
 
 **Res Scaling and EDID export.** `cvtTiming()` generates VESA CVT reduced-blanking timing; `pixelClock()` and the table's Aquilon capacity badges derive from it, and `buildEdid()` writes the same timing into a binary EDID, so the table and exported files always agree. Supported connectors are HDMI 2.0 (max 600 MHz), DP 1.2 (about 720 MHz) and DP 1.4 (about 1,080 MHz), 8-bit RGB only; HDMI 2.1 is deliberately unsupported. Formats that do not fit a base-block DTD (over 4,095 px) go in a DisplayID extension with a 1080p60 fallback in the base block; the HDMI variant adds a block map. Change any EDID byte layout only with `edid-decode` verification.
+
+**LED Wall tab.** `calcLed()` turns one panel type (`LED_PANELS` presets or Custom; editing any spec flips the select to Custom) plus a panel count or target size into resolution, size, weight, power and processor fit. Processor fit counts whole panels per output (`LED_SX40`: 9M px total, 10 XD outputs of 525k px each at 8-bit 60 Hz; or Custom). Its "Send to Power" and "Send to Pixel Density" buttons write into `curSvc()` and `pix[pu].rows` and then call `show()`. The ROE panel figures were read from ROE's own spec PDFs; the Brompton figures came from datasheet text quoted in search results because Brompton's site was unreachable, so re-check them against the current Brompton datasheets if precision matters.
 
 **UI helpers worth reusing.** `twoTap(btn, action)` is the two-tap confirm used for every destructive button (the page has no `confirm()` dialogs). `toast(msg)`, `<dialog class="sheet">` for Shows/Share, `unit()`, `fx()`/`fa()` number formatters, and the `.ro` (readout), `.panel`, `.field`, `.btn`, `.pill` styles. Colour tokens are CSS variables with light and dark sets (`prefers-color-scheme` plus `[data-theme]`); use the tokens, not literal colours.
 

@@ -300,7 +300,7 @@ details.fold>summary:hover{border-color:var(--muted)}
   <div class="wrap">
     <div class="top-in">
       <img class="logo" src="icon-192.png?v=2.8" width="40" height="40" alt="" aria-hidden="true">
-      <div><h1>AV Show Calculators</h1><p id="app-ver">v2.8 · Nov 22, 2026</p></div>
+      <div><h1>AV Show Calculators</h1><p id="app-ver">v2.9 · Nov 28, 2026</p></div>
       <div class="top-act">
         <button class="btn" id="show-btn" type="button">Shows</button>
         <button class="btn icon-btn" id="theme-btn" type="button" aria-pressed="false"><span aria-hidden="true" id="theme-ico">☾</span> <span id="theme-lbl">Dark</span></button>
@@ -312,6 +312,7 @@ details.fold>summary:hover{border-color:var(--muted)}
       <button class="tab" role="tab" data-v="power">3-Phase Power</button>
       <button class="tab" role="tab" data-v="projector">Projector</button>
       <button class="tab" role="tab" data-v="pixels">Pixel Density</button>
+      <button class="tab" role="tab" data-v="led">LED Wall</button>
       <button class="tab" role="tab" data-v="camera">Camera Lens</button>
       <button class="tab" role="tab" data-v="scaling">Res Scaling</button>
       <button class="tab" role="tab" data-v="cables">Cabling</button>
@@ -569,6 +570,83 @@ details.fold>summary:hover{border-color:var(--muted)}
   </div>
 </section>
 
+<!-- ============ LED WALL ============ -->
+<section class="view" id="v-led" hidden>
+  <div class="view-head"><span class="eyebrow">Video wall</span><h2>LED Wall</h2>
+    <p class="lede">Panel count, pixel size, weight, power and processor fit for a wall built from one panel type.</p>
+    <div class="view-tools"><button class="btn" type="button" data-share="led">Share</button></div></div>
+  <div style="margin-bottom:14px"><div class="seg" id="led-unit" role="group" aria-label="Units"><button data-u="ft" aria-pressed="true">Feet</button><button data-u="m" aria-pressed="false">Meters</button></div></div>
+  <div class="layout">
+    <div class="stack">
+      <div class="panel">
+        <h3>Panel</h3>
+        <div class="fields">
+          <label class="field" style="grid-column:1/-1"><span>Panel</span><select id="led-panel" data-p><option value="diamond" selected>ROE Diamond 2.6 (500 × 500 mm)</option><option value="gpfull">ROE Graphite 2.6 full (500 × 1000 mm)</option><option value="gphalf">ROE Graphite 2.6 half (500 × 500 mm)</option><option value="custom">Custom</option></select></label>
+          <label class="field"><span>Pixel pitch (mm)</span><input id="led-pitch" type="number" inputmode="decimal" step="any" min="0" value="2.6" data-p></label>
+          <label class="field"><span>Weight (kg)</span><input id="led-kg" type="number" inputmode="decimal" step="any" min="0" value="5.76" data-p></label>
+          <label class="field"><span>Pixels wide</span><input id="led-pxw" type="number" inputmode="numeric" step="1" min="0" value="192" data-p></label>
+          <label class="field"><span>Pixels high</span><input id="led-pxh" type="number" inputmode="numeric" step="1" min="0" value="192" data-p></label>
+          <label class="field"><span>Width (mm)</span><input id="led-mmw" type="number" inputmode="decimal" step="any" min="0" value="500" data-p></label>
+          <label class="field"><span>Height (mm)</span><input id="led-mmh" type="number" inputmode="decimal" step="any" min="0" value="500" data-p></label>
+          <label class="field"><span>Max watts</span><input id="led-wmax" type="number" inputmode="decimal" step="any" min="0" value="180" data-p></label>
+          <label class="field"><span>Typical watts</span><input id="led-wtyp" type="number" inputmode="decimal" step="any" min="0" value="90" data-p></label>
+        </div>
+        <p class="note">Picking a panel fills these in; change any value and it becomes Custom. ROE figures are per panel from ROE's spec sheets and brochures (Graphite weights are from the newer brochures).</p>
+      </div>
+      <div class="panel">
+        <h3>Wall</h3>
+        <div class="fields">
+          <label class="field" style="grid-column:1/-1"><span>Size by</span><select id="led-mode" data-p><option value="panels">Number of panels</option><option value="size">Target size</option></select></label>
+        </div>
+        <div class="fields" id="led-count-fields" style="margin-top:10px">
+          <label class="field"><span>Panels wide</span><input id="led-cols" type="number" inputmode="numeric" step="1" min="0" value="10" data-p></label>
+          <label class="field"><span>Panels high</span><input id="led-rows" type="number" inputmode="numeric" step="1" min="0" value="6" data-p></label>
+        </div>
+        <div class="fields" id="led-size-fields" style="margin-top:10px" hidden>
+          <label class="field"><span id="led-tw-l">Width (ft)</span><input id="led-tw" type="number" inputmode="decimal" step="any" min="0" value="16" data-p></label>
+          <label class="field"><span id="led-th-l">Height (ft)</span><input id="led-th" type="number" inputmode="decimal" step="any" min="0" value="10" data-p></label>
+        </div>
+        <p class="note" id="led-size-note" hidden>The target is rounded to the nearest whole panel; the actual size is shown with the results.</p>
+      </div>
+      <div class="panel">
+        <h3>Power</h3>
+        <div class="fields">
+          <label class="field"><span>Voltage</span><select id="led-volts" data-p><option value="208" selected>208V</option><option value="120">120V</option></select></label>
+          <label class="field"><span>Power factor</span><input id="led-pf" type="number" inputmode="decimal" step="0.01" min="0" value="1" data-p></label>
+        </div>
+      </div>
+      <div class="panel">
+        <h3>Processing</h3>
+        <div class="fields">
+          <label class="field" style="grid-column:1/-1"><span>Processor</span><select id="led-proc" data-p><option value="sx40xd" selected>Brompton Tessera SX40 with XD boxes</option><option value="custom">Custom</option></select></label>
+        </div>
+        <div class="fields" id="led-proc-custom" style="margin-top:10px" hidden>
+          <label class="field"><span>Total pixel capacity</span><input id="led-ptotal" type="number" inputmode="numeric" step="any" min="0" value="" data-p></label>
+          <label class="field"><span>Pixels per output</span><input id="led-pport" type="number" inputmode="numeric" step="any" min="0" value="" data-p></label>
+          <label class="field"><span>Outputs per box (optional)</span><input id="led-pbox" type="number" inputmode="numeric" step="1" min="0" value="" data-p></label>
+        </div>
+        <p class="note" id="led-proc-note">SX40 with XD: 9 million pixels total (Brompton's nominal rating at 36 bits per pixel, 60 Hz), and 10 outputs per XD box at 525,000 pixels each (8-bit, 60 Hz). Per-output capacity falls at higher bit depths and frame rates; use Custom to enter other figures.</p>
+      </div>
+    </div>
+    <div class="panel">
+      <div class="panel-head"><h3>Wall results</h3><span class="pill mute" id="led-count">—</span></div>
+      <div class="readouts">
+        <div class="ro hero"><span class="lbl">Wall resolution</span><span class="val" id="led-px">—</span><span class="sub" id="led-pxsub"></span></div>
+        <div class="ro"><span class="lbl">Size</span><span class="val" id="led-size">—</span><span class="sub" id="led-sizesub"></span></div>
+        <div class="ro"><span class="lbl">Aspect ratio</span><span class="val" id="led-ar">—</span><span class="sub" id="led-arsub"></span></div>
+        <div class="ro"><span class="lbl">Weight</span><span class="val" id="led-wt">—</span><span class="sub" id="led-wtsub"></span></div>
+        <div class="ro"><span class="lbl">Power (max)</span><span class="val" id="led-pw">—</span><span class="sub" id="led-pwsub"></span></div>
+        <div class="ro"><span class="lbl">Amps per phase (max)</span><span class="val" id="led-amps">—</span><span class="sub" id="led-ampsub"></span></div>
+        <div class="ro"><span class="lbl">Heat (max)</span><span class="val" id="led-btu">—</span><span class="sub" id="led-btusub"></span></div>
+        <div class="ro"><span class="lbl">Min viewing distance</span><span class="val" id="led-view">—</span><span class="sub">Rule of thumb: 1 mm pitch = 1 m</span></div>
+        <div class="ro wide"><span class="lbl">Processing</span><span class="val" id="led-fit" style="font-size:1rem">—</span><span class="sub" id="led-fitsub"></span><span class="sub" id="led-ports"></span></div>
+      </div>
+      <div class="btn-row"><button class="btn primary" id="led-send-power" type="button">Send to Power</button><button class="btn" id="led-send-px" type="button">Send to Pixel Density</button></div>
+      <p class="note">Send to Power adds the panels to the current department and service at the voltage chosen. Send to Pixel Density adds the wall's physical size as a surface; that tab's reference screen sets its pixel counts. Weight is panels only, with no rigging or frames.</p>
+    </div>
+  </div>
+</section>
+
 <!-- ============ CAMERA ============ -->
 <section class="view" id="v-camera" hidden>
   <div class="view-head"><span class="eyebrow">Image Mag</span><h2>Camera Lensing</h2>
@@ -746,7 +824,7 @@ const clone=o=>JSON.parse(JSON.stringify(o));
 /* ---------------- shows, share links ---------------- */
 /* keys that are per-device preferences or bookkeeping, not part of a show */
 const NOT_SHOW=['theme','tab','shows','show'];
-const APP_VERSION='2.8';
+const APP_VERSION='2.9';
 function snapshot(){const o={};try{Object.keys(localStorage).forEach(k=>{if(!k.startsWith('avcalc:'))return;const n=k.slice(7);if(NOT_SHOW.includes(n))return;try{o[n]=JSON.parse(localStorage.getItem(k))}catch(e){}})}catch(e){}return o}
 function clearShowState(){try{Object.keys(localStorage).filter(k=>k.startsWith('avcalc:')&&!NOT_SHOW.includes(k.slice(7))).forEach(k=>localStorage.removeItem(k))}catch(e){}}
 function writeState(o){for(const k in o)if(!NOT_SHOW.includes(k))store.set(k,o[k])}
@@ -768,7 +846,7 @@ let incoming=null;
       if(d.inputs)store.set('inputs',Object.assign(store.get('inputs',{}),d.inputs));
       if(d.power){const pw=store.get('power',{})||{};Object.assign(pw,d.power);store.set('power',pw)}
       if(d.pix){const px=store.get('pix',{})||{};Object.assign(px,d.pix);store.set('pix',px)}
-      ['dept','pxunit','pjAnchor','camMode','cvM','leOpen'].forEach(k=>{if(k in d)store.set(k,d[k])});
+      ['dept','pxunit','ledUnit','pjAnchor','camMode','cvM','leOpen'].forEach(k=>{if(k in d)store.set(k,d[k])});
       if(pkt.v)store.set('tab',pkt.v);
       incoming='Opened shared calculation';
     }
@@ -1227,6 +1305,98 @@ CV.forEach(id=>$(id).addEventListener('input',()=>{
 $('cv-clear').addEventListener('click',()=>{cvM=null;store.set('cvM',null);cvShow([]);$('cv-ft').focus()});
 cvShow([]);
 
+/* ---------------- LED WALL ---------------- */
+/* per panel, from ROE spec sheets / brochures (weight in kg; Graphite weights from the newer brochures: 2024 half 5.2, 2026 full 9) */
+const LED_PANELS={
+  diamond:{n:'ROE Diamond 2.6',pitch:2.6,pxw:192,pxh:192,mmw:500,mmh:500,kg:5.76,wmax:180,wtyp:90},
+  gpfull:{n:'ROE Graphite 2.6 full',pitch:2.604,pxw:192,pxh:384,mmw:500,mmh:1000,kg:9,wmax:320,wtyp:160},
+  gphalf:{n:'ROE Graphite 2.6 half',pitch:2.604,pxw:192,pxh:192,mmw:500,mmh:500,kg:5.2,wmax:160,wtyp:80}
+};
+const LED_FIELDS={pitch:'led-pitch',pxw:'led-pxw',pxh:'led-pxh',mmw:'led-mmw',mmh:'led-mmh',kg:'led-kg',wmax:'led-wmax',wtyp:'led-wtyp'};
+/* Brompton Tessera SX40 + XD: 9M px nominal (36 bpp, 60 Hz); XD has 10 x 1G outputs, 525k px each at 8 bpc 60 Hz */
+const LED_SX40={total:9000000,port:525000,perBox:10};
+let ledU=store.get('ledUnit','ft');if(ledU!=='m')ledU='ft';
+let ledLast=null;
+$('led-panel').addEventListener('change',()=>{
+  const P=LED_PANELS[$('led-panel').value];if(!P)return;
+  for(const k in LED_FIELDS)$(LED_FIELDS[k]).value=P[k];
+});
+Object.values(LED_FIELDS).forEach(id=>$(id).addEventListener('input',()=>{
+  const sel=$('led-panel'), P=LED_PANELS[sel.value];
+  if(P&&Object.keys(LED_FIELDS).some(k=>num(LED_FIELDS[k])!==P[k]))sel.value='custom';
+}));
+const gcd=(a,b)=>b?gcd(b,a%b):a;
+function ledLen(mm){
+  const inch=mm/25.4;let F=Math.floor(inch/12+1e-9),I=inch-F*12;if(I>11.9995){F++;I=0}
+  return {ft:`${fa(F,0)}′ ${fx(I,1)}″`,m:`${fx(mm/1000,2)} m`};
+}
+function calcLed(){
+  document.querySelectorAll('#led-unit button').forEach(b=>b.setAttribute('aria-pressed',b.dataset.u===ledU));
+  const mode=$('led-mode').value, custom=$('led-proc').value==='custom';
+  $('led-count-fields').hidden=mode!=='panels';$('led-size-fields').hidden=mode!=='size';$('led-size-note').hidden=mode!=='size';
+  $('led-proc-custom').hidden=!custom;$('led-proc-note').hidden=custom;
+  $('led-tw-l').textContent=`Width (${ledU})`;$('led-th-l').textContent=`Height (${ledU})`;
+  const P={};for(const k in LED_FIELDS)P[k]=num(LED_FIELDS[k]);
+  const toMm=x=>ledU==='ft'?x*304.8:x*1000;
+  let cols,rows;
+  if(mode==='size'){cols=P.mmw>0&&num('led-tw')>0?Math.max(1,Math.round(toMm(num('led-tw'))/P.mmw)):0;rows=P.mmh>0&&num('led-th')>0?Math.max(1,Math.round(toMm(num('led-th'))/P.mmh)):0}
+  else{cols=Math.max(0,Math.round(num('led-cols')));rows=Math.max(0,Math.round(num('led-rows')))}
+  const n=cols*rows, ids=['px','pxsub','size','sizesub','ar','arsub','wt','wtsub','pw','pwsub','amps','ampsub','btu','btusub','view','fit','fitsub','ports'];
+  const blank=()=>{ids.forEach(i=>{$('led-'+i).textContent=i==='px'||i==='size'||i==='ar'||i==='wt'||i==='pw'||i==='amps'||i==='btu'||i==='view'||i==='fit'?'—':''});$('led-count').textContent='—';ledLast=null};
+  if(n<=0||P.pxw<=0||P.pxh<=0||P.mmw<=0||P.mmh<=0){blank();return}
+  const name=LED_PANELS[$('led-panel').value]?LED_PANELS[$('led-panel').value].n:'LED panel';
+  const wallPx=[cols*P.pxw,rows*P.pxh], totalPx=wallPx[0]*wallPx[1], wMm=cols*P.mmw, hMm=rows*P.mmh;
+  $('led-count').textContent=`${fa(cols,0)} × ${fa(rows,0)} · ${fa(n,0)} panel${n===1?'':'s'}`;
+  $('led-px').innerHTML=`${fa(wallPx[0],0)} × ${fa(wallPx[1],0)}`;
+  $('led-pxsub').textContent=`${fa(totalPx,0)} pixels · ${fx(totalPx/1e6,2)} MP`;
+  const w=ledLen(wMm), h=ledLen(hMm);
+  $('led-size').textContent=ledU==='ft'?`${w.ft} × ${h.ft}`:`${w.m} × ${h.m}`;
+  $('led-sizesub').textContent=ledU==='ft'?`${w.m} × ${h.m}`:`${w.ft} × ${h.ft}`;
+  const g=gcd(wallPx[0],wallPx[1]), rw=wallPx[0]/g, rh=wallPx[1]/g;
+  $('led-ar').textContent=rw<=100&&rh<=100?`${rw}:${rh}`:`${fx(wallPx[0]/wallPx[1],3)}:1`;
+  $('led-arsub').textContent=`${fx(wallPx[0]/wallPx[1],4)} : 1`;
+  const kg=n*P.kg, lb=kg*2.20462;
+  $('led-wt').innerHTML=ledU==='ft'?unit(fa(lb,0),'lb'):unit(fa(kg,0),'kg');
+  $('led-wtsub').textContent=ledU==='ft'?`${fa(kg,0)} kg`:`${fa(lb,0)} lb`;
+  const wMax=n*P.wmax, wTyp=n*P.wtyp, V=+$('led-volts').value||208, pf=num('led-pf')>0?num('led-pf'):1;
+  const phases=V===208?1.732:3, aMax=wMax/(V*pf), aTyp=wTyp/(V*pf);
+  $('led-pw').innerHTML=unit(fa(wMax,0),'W');
+  $('led-pwsub').textContent=`${fa(wTyp,0)} W typical`;
+  $('led-amps').innerHTML=unit(fx(aMax/phases,1),'A');
+  $('led-ampsub').textContent=`${fx(aMax,1)} A total at ${V}V · typical ${fx(aTyp/phases,1)} A per phase`;
+  $('led-btu').innerHTML=unit(fa(wMax*3.412,0),'BTU/hr');
+  $('led-btusub').textContent=`${fa(wTyp*3.412,0)} typical`;
+  $('led-view').textContent=ledU==='ft'?`${fx(P.pitch*3.2808,1)} ft`:`${fx(P.pitch,1)} m`;
+  /* processing: whole panels per output, outputs, boxes, and total pixel load */
+  const C=custom?{total:num('led-ptotal'),port:num('led-pport'),perBox:num('led-pbox')}:LED_SX40;
+  const panelPx=P.pxw*P.pxh, perOut=C.port>0?Math.floor(C.port/panelPx):0;
+  if(C.total<=0&&C.port<=0){$('led-fit').textContent='Enter capacity';$('led-fitsub').textContent='';$('led-ports').textContent='';}
+  else{
+    const util=C.total>0?totalPx/C.total*100:0, tooBig=C.port>0&&perOut<1;
+    const over=tooBig||(C.total>0&&util>100), cls=over?'bad':util>85?'warn':'good', lab=over?'Over':util>85?'Tight':'Fits';
+    $('led-fit').innerHTML=`<span class="pill ${cls}">${lab}</span>`;
+    $('led-fitsub').textContent=C.total>0?`${fx(util,0)}% of ${fa(C.total,0)} pixels`:'';
+    if(tooBig)$('led-ports').textContent=`One panel (${fa(panelPx,0)} px) is more than an output carries (${fa(C.port,0)} px)`;
+    else if(C.port>0){const outs=Math.ceil(n/perOut), boxes=C.perBox>0?Math.ceil(outs/C.perBox):0;
+      $('led-ports').textContent=`${fa(outs,0)} output${outs===1?'':'s'} at ${fa(perOut,0)} panel${perOut===1?'':'s'} each${boxes?` · ${fa(boxes,0)} ${custom?'box':'XD box'}${boxes===1?'':'es'}`:''}`}
+    else $('led-ports').textContent='';
+  }
+  ledLast={name,n,cols,rows,wMm,hMm,wmax:P.wmax,pf,volts:V};
+}
+$('led-unit').addEventListener('click',e=>{const b=e.target.closest('button[data-u]');if(!b)return;ledU=b.dataset.u;store.set('ledUnit',ledU);calcLed()});
+$('led-send-power').addEventListener('click',()=>{
+  const L=ledLast;if(!L){toast('Set up the wall first');return}
+  const row=R(L.name,L.n,L.wmax);row.pf=L.pf;
+  curSvc()[L.volts===120?'r120':'r208'].push(row);
+  savePower();renderPower();show('power');toast(`Added ${fa(L.n,0)} × ${L.name} to ${DEPTS[dept]}`);
+});
+$('led-send-px').addEventListener('click',()=>{
+  const L=ledLast;if(!L){toast('Set up the wall first');return}
+  const f=mm=>+(pu==='ft'?mm/304.8:mm/1000).toFixed(4);
+  pix[pu].rows.push({n:`LED wall ${L.cols}×${L.rows}`,h:f(L.wMm),v:f(L.hMm),skip:false});
+  savePix();renderPixels();show('pixels');toast('Added the wall to Pixel Density');
+});
+
 /* ---------------- CAMERA ---------------- */
 const SENSORS=[['2/3"',9.586,5.39],['Full Frame',36,24],['Super 35',24.89,14],['1.0 type CMOS',13.2,8.8]];
 const CAM_LENSES=[['Fujinon UA24x7.8BERD-S10','24x',7.8,187],['Fujinon HA42x9.7BERD-U48','42x',9.7,410],['Fujinon UA46x9.5BERD','46x',9.5,437],['Fujinon XA55x9.5','55x',9.5,525],['Fujinon XA88x8.8BESM','88x',8.8,777],['Canon HA18x7.6BERM / BERD','18x',7.6,137],['Canon HJ40x10B IASD-V','40x',10,400],['Canon XJ60x9BIE-D','60x',9,540],['Canon XJ86x9.3B','86x',9.3,800],['Canon XJ95x8.6B','95x',8.6,820]];
@@ -1433,6 +1603,7 @@ function tabPacket(v){
   if(v==='pixels'){d.pix={[pu]:pix[pu]};d.pxunit=pu;d.cvM=cvM}
   if(v==='projector'){d.pjAnchor=pjAnchor;d.leOpen=$('pj-le-box').open}
   if(v==='camera'){d.camMode=camMode}
+  if(v==='led'){d.ledUnit=ledU}
   return {v,d};
 }
 function tabText(v){
@@ -1528,7 +1699,7 @@ $('show-name').addEventListener('keydown',e=>{if(e.key==='Enter'){e.preventDefau
 paintShowBtn();
 
 /* ---------------- shared wiring ---------------- */
-const CALC={storage:calcStorage,projector:calcProjector,camera:calcCamera,scaling:calcScaling,pixels:calcPixels};
+const CALC={storage:calcStorage,projector:calcProjector,camera:calcCamera,scaling:calcScaling,pixels:calcPixels,led:calcLed};
 const persisted=[...document.querySelectorAll('[data-p]')];
 let saved=store.get('inputs',{});
 persisted.forEach(el=>{if(saved[el.id]!=null){if(el.tagName==='SELECT'&&![...el.options].some(o=>o.value===saved[el.id]))return;el.value=saved[el.id]}});
@@ -1539,7 +1710,7 @@ persisted.forEach(el=>{
   el.addEventListener(el.tagName==='SELECT'?'change':'input',()=>{fn&&fn();saveInputs()});
 });
 
-const VIEWS=['storage','power','projector','pixels','camera','scaling','cables'];
+const VIEWS=['storage','power','projector','pixels','led','camera','scaling','cables'];
 function show(v){
   if(!VIEWS.includes(v))v='storage';
   VIEWS.forEach(x=>{$('v-'+x).hidden=x!==v});
@@ -1552,7 +1723,7 @@ $('tabs').addEventListener('click',e=>{const t=e.target.closest('.tab');if(!t)re
 $('cam-d2').value=$('cam-d').value;
 $('pj-le-box').open=!!store.get('leOpen',false);
 $('pj-le-box').addEventListener('toggle',()=>store.set('leOpen',$('pj-le-box').open));
-calcStorage();renderPower();calcProjector();renderPixels();calcCamera();calcScaling();
+calcStorage();renderPower();calcProjector();renderPixels();calcLed();calcCamera();calcScaling();
 window.addEventListener('hashchange',()=>{const x=location.hash.slice(1);if(VIEWS.includes(x))show(x)});
 const h=(location.hash||'').slice(1);
 show(VIEWS.includes(h)?h:store.get('tab','storage'));
